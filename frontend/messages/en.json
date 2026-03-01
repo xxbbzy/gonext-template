@@ -1,0 +1,38 @@
+{
+    "common": {
+        "login": "Login",
+        "register": "Register",
+        "logout": "Logout",
+        "submit": "Submit",
+        "cancel": "Cancel",
+        "create": "Create",
+        "edit": "Edit",
+        "delete": "Delete",
+        "save": "Save",
+        "search": "Search",
+        "loading": "Loading...",
+        "noData": "No data",
+        "success": "Operation successful",
+        "error": "Operation failed"
+    },
+    "auth": {
+        "loginTitle": "Login",
+        "loginDesc": "Enter your credentials to access the system",
+        "registerTitle": "Register",
+        "registerDesc": "Create a new account to get started",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Confirm Password",
+        "username": "Username",
+        "noAccount": "Don't have an account?",
+        "hasAccount": "Already have an account?"
+    },
+    "dashboard": {
+        "welcome": "Welcome back",
+        "overview": "Dashboard overview",
+        "items": "Items",
+        "upload": "File Upload",
+        "totalItems": "Total Items",
+        "role": "Role"
+    }
+}

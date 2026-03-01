@@ -1,0 +1,38 @@
+{
+  "common": {
+    "login": "登录",
+    "register": "注册",
+    "logout": "退出登录",
+    "submit": "提交",
+    "cancel": "取消",
+    "create": "创建",
+    "edit": "编辑",
+    "delete": "删除",
+    "save": "保存",
+    "search": "搜索",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "success": "操作成功",
+    "error": "操作失败"
+  },
+  "auth": {
+    "loginTitle": "登录",
+    "loginDesc": "输入你的账号信息登录系统",
+    "registerTitle": "注册",
+    "registerDesc": "创建新账号开始使用",
+    "email": "邮箱",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "username": "用户名",
+    "noAccount": "还没有账号？",
+    "hasAccount": "已有账号？"
+  },
+  "dashboard": {
+    "welcome": "欢迎回来",
+    "overview": "项目仪表盘概览",
+    "items": "项目管理",
+    "upload": "文件上传",
+    "totalItems": "项目总数",
+    "role": "角色"
+  }
+}
