@@ -2,10 +2,10 @@ name: Frontend CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths: ['frontend/**']
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths: ['frontend/**']
 
 jobs:
@@ -40,7 +40,7 @@ jobs:
         run: npm ci
       - name: Type check
         working-directory: frontend
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
   build:
     runs-on: ubuntu-latest

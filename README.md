@@ -18,7 +18,7 @@ make dev
 
 ## 环境要求
 
-- Go 1.21+
+- Go（以 `backend/go.mod` 为准，当前为 1.25.3）
 - Node.js 18+
 - Make
 
@@ -53,6 +53,7 @@ make dev
 make help          # 列出所有命令
 make init          # 初始化项目
 make dev           # 启动开发服务器
+make check         # 本地质量门禁（lint + typecheck + test）
 make lint          # 代码检查
 make test          # 运行测试
 make build         # 构建生产镜像
@@ -65,16 +66,20 @@ make seed          # 生成测试数据
 ### 后端
 - **Gin** - Web 框架
 - **GORM** - ORM
-- **Wire** - 依赖注入
+- **Wire** - 依赖注入（可选，当前默认手动 DI）
 - **Viper** - 配置管理
 - **Zap** - 结构化日志
 
 ### 前端
-- **Next.js 15** - React 框架
+- **Next.js 16** - React 框架
 - **TypeScript** - 类型安全
 - **shadcn/ui** - UI 组件
 - **Zustand** - 状态管理
 - **TanStack Query** - 数据请求
+
+## 开发规范
+
+团队统一开发规范见 [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)（分支策略、接口/数据库变更流程、CI 门禁、发布流程）。
 
 ## License
 

@@ -1,4 +1,4 @@
-.PHONY: help init dev dev-backend dev-frontend lint lint-backend lint-frontend test test-backend build build-backend build-frontend seed swagger gen-types migrate-up migrate-down new-migration new-module clean
+.PHONY: help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend build build-backend build-frontend seed swagger gen-types migrate-up migrate-down new-migration new-module docker-up docker-down docker-build clean
 
 # Default target
 help: ## Show this help message
@@ -7,7 +7,7 @@ help: ## Show this help message
 
 # ===== Setup =====
 
-init: ## Initialize project: install deps, create .env, run migrations
+init: ## Initialize project: install deps, create .env, prepare local dirs
 	@echo "==> Initializing project..."
 	@[ -f .env ] || cp .env.example .env
 	@echo "==> Installing backend dependencies..."
@@ -24,7 +24,7 @@ dev: ## Start both backend and frontend dev servers
 	@echo "==> Starting development servers..."
 	@make -j2 dev-backend dev-frontend
 
-dev-backend: ## Start backend dev server with hot reload
+dev-backend: ## Start backend dev server
 	@echo "==> Starting backend server..."
 	@cd backend && go run ./cmd/server/
 
@@ -43,6 +43,12 @@ lint-backend: ## Run Go linters
 lint-frontend: ## Run frontend linters
 	@echo "==> Linting frontend..."
 	@cd frontend && npm run lint
+
+typecheck-frontend: ## Run frontend type checking
+	@echo "==> Type checking frontend..."
+	@cd frontend && npm run typecheck
+
+check: lint typecheck-frontend test ## Run local quality gates (lint, typecheck, tests)
 
 # ===== Testing =====
 

@@ -2,57 +2,17 @@
 
 感谢你对 GoNext Template 的贡献！
 
+> 团队统一开发规范请先阅读：[docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)
+
 ## 分支策略
 
-- `main` — 稳定版本，受保护
-- `develop` — 开发分支
-- `feature/<name>` — 功能分支
-- `fix/<name>` — 修复分支
+- `main`：稳定分支（受保护）
+- `develop`：日常集成分支
+- `feature/<name>`：功能分支（从 `develop` 切）
+- `fix/<name>`：修复分支（从 `develop` 切）
+- `hotfix/<name>`：紧急修复分支（从 `main` 切，修复后回合并到 `develop`）
 
-### 工作流
-
-1. 从 `develop` 创建功能分支
-2. 开发并提交
-3. 创建 PR 到 `develop`
-4. Review 通过后合并
-
-## Commit 规范
-
-使用 [Conventional Commits](https://www.conventionalcommits.org/) 格式：
-
-```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
-```
-
-### Type
-
-| Type       | 说明       |
-| ---------- | ---------- |
-| `feat`     | 新功能     |
-| `fix`      | Bug 修复   |
-| `docs`     | 文档更新   |
-| `style`    | 格式调整   |
-| `refactor` | 重构       |
-| `test`     | 测试相关   |
-| `chore`    | 构建/工具  |
-| `ci`       | CI/CD 配置 |
-
-### 示例
-
-```
-feat(auth): add JWT token refresh endpoint
-
-Add POST /api/v1/auth/refresh endpoint that accepts
-a refresh token and returns a new access token.
-
-Closes #42
-```
-
-## 开发流程
+## 提交流程
 
 ```bash
 # 1. Fork & Clone
@@ -64,51 +24,50 @@ make init
 # 3. 创建分支
 git checkout -b feature/your-feature
 
-# 4. 开发
+# 4. 开发联调
 make dev
 
-# 5. 代码检查
-make lint
+# 5. 本地质量门禁（必须通过）
+make check
 
-# 6. 测试
-make test
-
-# 7. 提交
+# 6. 提交
 git add .
 git commit -m "feat(scope): description"
 
-# 8. 推送并创建 PR
+# 7. 推送并创建 PR 到 develop
 git push origin feature/your-feature
 ```
+
+## Commit 规范
+
+使用 [Conventional Commits](https://www.conventionalcommits.org/)：
+
+```text
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+常用 `type`：`feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`ci`。
 
 ## 代码规范
 
 ### Go
-- 遵循 [Effective Go](https://go.dev/doc/effective_go) 规范
-- 使用 `golangci-lint` 检查
-- 函数和类型必须有注释
+- 遵循 [Effective Go](https://go.dev/doc/effective_go)
+- 通过 `golangci-lint`
+- 导出函数和类型需有注释
 
 ### TypeScript
-- 遵循 ESLint + Prettier 配置
-- 优先使用 TypeScript 类型而非 `any`
-- 组件使用函数式组件
+- 通过 ESLint + TypeScript typecheck
+- 优先使用明确类型，避免 `any`
+- 使用函数式组件
 
-## PR 模板
+## PR 必填清单
 
-```markdown
-## 描述
-<!-- 简要描述你的改动 -->
-
-## 改动类型
-- [ ] 新功能
-- [ ] Bug 修复
-- [ ] 文档更新
-- [ ] 重构
-- [ ] 其他
-
-## 检查清单
-- [ ] 代码通过 lint 检查
-- [ ] 添加了必要的测试
-- [ ] 文档已更新
-- [ ] Commit message 遵循 Conventional Commits
-```
+- [ ] 目标分支是 `develop`
+- [ ] 本地已通过 `make check`
+- [ ] 若改动 API，已同步 `api/openapi.yaml` 并执行 `make gen-types`
+- [ ] 若改动数据库 schema，已提供 migration（含回滚）
+- [ ] 文档已同步更新（如适用）
