@@ -57,7 +57,7 @@ make seed
 2. 用户 `user@example.com`（`user`）
 3. 若干示例 `items`
 
-实现位置：`scripts/seed/main.go`
+实现位置：`backend/cmd/seed/main.go`
 
 ## 5. 建议实践
 

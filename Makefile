@@ -74,7 +74,7 @@ build-frontend: ## Build frontend for production
 
 seed: ## Seed database with sample data
 	@echo "==> Seeding database..."
-	@cd backend && go run ../scripts/seed/main.go
+	@cd backend && go run ./cmd/seed/
 
 migrate-up: ## Run database migrations (up)
 	@echo "==> Running migrations..."
