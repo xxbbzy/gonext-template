@@ -1,71 +1,72 @@
-# 架构说明
+# 架构速览 / Architecture Summary
 
-## 1. 系统拓扑
+本页给人类贡献者一个简洁的技术栈地图；更完整的 AI 执行视图在仓库根目录的 `../ARCHITECTURE.md`。
+This page is the concise contributor summary; the fuller AI operational map lives in the root `../ARCHITECTURE.md`.
 
-```text
-Browser (Next.js)
-  -> REST API (Gin)
-     -> Service Layer
-        -> Repository Layer
-           -> Database (SQLite/PostgreSQL via GORM)
-```
-
-- 前端通过 `frontend/lib/api-client.ts` 统一请求后端 API。
-- 后端统一从 `api/openapi.yaml` 维护接口契约。
-- JWT 鉴权 + 全局中间件（日志、恢复、限流、CORS）。
-
-## 2. 后端分层
-
-目录：`backend/internal`
-
-1. `handler/`：HTTP 入参解析、响应封装、路由注册
-2. `service/`：业务逻辑（鉴权、数据校验、流程编排）
-3. `repository/`：数据访问与查询
-4. `model/`：GORM 数据模型
-5. `dto/`：请求/响应数据结构
-
-依赖方向：`handler -> service -> repository -> model`
-
-## 3. 请求链路
-
-后端启动后在 `main.go` 中注册的中间件顺序：
-
-1. `Recovery`：panic 恢复
-2. `RequestLogger`：结构化访问日志
-3. `ErrorHandler`：统一错误回包
-4. `RateLimiter`：按 IP 限流
-5. `CORS`
-
-鉴权路由通过 `middleware.Auth(jwtManager)` 解析 `Authorization: Bearer <token>`，把 `user_id` 和 `user_role` 注入 Gin Context。
-
-## 4. 认证与会话
-
-1. 登录/注册成功返回 `access_token` + `refresh_token`
-2. 前端 `zustand` 持久化 token（`auth-storage`）
-3. `axios` 请求拦截器自动附带 access token
-4. 遇到 `401` 自动调用 `/api/v1/auth/refresh`
-5. 刷新失败则登出并跳转登录页
-
-## 5. 文件上传
-
-- 路由：`POST /api/v1/upload`
-- 存储：本地目录（`UPLOAD_DIR`）
-- 静态访问：`/uploads/*`
-- 校验：后缀白名单 + 大小限制
-
-## 6. 数据库策略
-
-- 本地默认 `sqlite`（开发模式可自动 `AutoMigrate`）
-- `docker-compose.yml` 默认 `postgres`
-- 可发布变更应优先通过 `backend/migrations/*.sql` 管理
-
-## 7. 类型安全链路
+## 系统拓扑 / System Topology
 
 ```text
-backend behavior
-  -> api/openapi.yaml
-     -> make gen-types
-        -> frontend/types/api.ts
+Next.js App Router
+  -> frontend/lib/api-client.ts
+     -> Gin server (backend/cmd/server/main.go)
+        -> handler -> service -> repository -> GORM
+           -> SQLite or PostgreSQL
 ```
 
-接口改动必须先更新 OpenAPI，再生成前端类型并联调。
+- API 契约文件是 `api/openapi.yaml`。
+- The API contract file is `api/openapi.yaml`.
+- 前端页面位于 `frontend/app/`，共享请求逻辑位于 `frontend/lib/api-client.ts`。
+- Frontend routes live in `frontend/app/`, and shared request logic lives in `frontend/lib/api-client.ts`.
+
+## 后端运行时 / Backend Runtime
+
+- 启动入口：`backend/cmd/server/main.go`
+- Entry point: `backend/cmd/server/main.go`
+- DI 声明：`backend/cmd/server/wire.go`，辅助 provider 在 `backend/cmd/server/providers.go`
+- DI graph declaration: `backend/cmd/server/wire.go`, with helper providers in `backend/cmd/server/providers.go`
+- 数据库初始化：`backend/internal/config/database.go`
+- Database initialization: `backend/internal/config/database.go`
+
+当前后端全局中间件顺序：
+Current global middleware order:
+
+1. `Recovery`
+2. `RequestLogger`
+3. `ErrorHandler`
+4. `CORS`
+
+认证与限流挂在路由组上，而不是所有请求全局生效。
+Authentication and rate limiting are attached to route groups rather than applied globally.
+
+## 前端运行时 / Frontend Runtime
+
+- `frontend/app/layout.tsx` 负责 `next-intl`、TanStack Query 和 toast provider。
+- `frontend/app/layout.tsx` sets up `next-intl`, TanStack Query, and the toast provider.
+- `frontend/stores/auth.ts` 用 Zustand 持久化 token。
+- `frontend/stores/auth.ts` persists auth state with Zustand.
+- `frontend/lib/api-client.ts` 自动附带 Bearer Token，并在 `401` 时尝试刷新。
+- `frontend/lib/api-client.ts` attaches bearer tokens and attempts token refresh on `401`.
+
+## 数据与迁移 / Data and Migrations
+
+- 本地默认使用 SQLite，减少初始化成本。
+- SQLite is the default local database to keep bootstrap lightweight.
+- 可部署环境使用 PostgreSQL，详见 `docker-compose.yml` 与 `docs/adr/002-sqlite-dev-postgres-prod.md`。
+- Deployable environments use PostgreSQL; see `docker-compose.yml` and `docs/adr/002-sqlite-dev-postgres-prod.md`.
+- 开发模式下会在启动时执行有限的 `AutoMigrate`，但可发布 schema 变更仍应落到 `backend/migrations/`。
+- Development mode performs limited `AutoMigrate`, but release-oriented schema changes should still use `backend/migrations/`.
+
+## 扩展点 / Extension Points
+
+- 新增后端模块：查看 `../AGENTS.md` 和 `../CONVENTIONS.md`
+- Adding a backend module: start with `../AGENTS.md` and `../CONVENTIONS.md`
+- 新增 API：先改 `api/openapi.yaml`，再同步 handler/service/repository 与生成产物
+- Adding or changing an API: update `api/openapi.yaml` first, then sync handler/service/repository and generated artifacts
+- 新增前端页面：在 `frontend/app/` 建 route，并复用 `frontend/lib/api-client.ts`
+- Adding a frontend page: create a route in `frontend/app/` and reuse `frontend/lib/api-client.ts`
+
+## 继续阅读 / Continue Reading
+
+- 根目录 AI 文档 / Root AI docs: `../AGENTS.md`, `../ARCHITECTURE.md`, `../CONVENTIONS.md`
+- ADR / Decision records: `./adr/`
+- 开发与维护流程 / Workflow and maintenance: [DEVELOPMENT.md](./DEVELOPMENT.md)

@@ -1,31 +1,64 @@
-# GoNext Template 文档中心
+# 文档入口 / Documentation Index
 
-本目录提供项目的完整开发与交付文档，覆盖本地开发、架构设计、API 约定、数据库、CI/CD、部署与排障。
+本目录面向人类贡献者，提供简洁的中英双语导航。
+The `docs/` directory is the concise bilingual entrypoint for human contributors.
 
-## 文档地图
+## AI 根文档 / Root AI Docs
 
-| 文档 | 适用场景 |
-|---|---|
-| [QUICK_START.md](./QUICK_START.md) | 5-10 分钟内启动项目并完成联调 |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | 理解后端分层、前端结构、鉴权与请求链路 |
-| [CONFIGURATION.md](./CONFIGURATION.md) | 配置环境变量与运行参数 |
-| [API_GUIDE.md](./API_GUIDE.md) | 使用和调试后端 API |
-| [DATABASE.md](./DATABASE.md) | 数据模型、迁移、种子数据与数据库策略 |
-| [DEVELOPMENT.md](./DEVELOPMENT.md) | 团队协作规范、分支策略、提交流程 |
-| [CI_CD.md](./CI_CD.md) | GitHub Actions 流水线说明 |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | Docker/容器化部署实践 |
-| [CHANGELOG_GUIDE.md](./CHANGELOG_GUIDE.md) | 版本号、变更日志与发布记录规范 |
-| [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | 常见问题与排查路径 |
+这些文件位于仓库根目录，面向 AI 代理，保持英文且更偏执行规则。
+These files live at the repository root, are English-only, and act as the operational reference for AI agents.
 
-## 推荐阅读顺序
+| 文件 / File                                | 作用 / Purpose                                                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| [`../AGENTS.md`](../AGENTS.md)             | 任务入口、常见改动 playbook、验证清单 / Task flow, common change playbooks, verification checklist                 |
+| [`../ARCHITECTURE.md`](../ARCHITECTURE.md) | 运行拓扑、请求链路、DI、数据库初始化、扩展点 / Runtime topology, request flow, DI, database init, extension points |
+| [`../CONVENTIONS.md`](../CONVENTIONS.md)   | 命名、分层、错误处理、响应与测试规则 / Naming, layer boundaries, error handling, response and testing rules        |
 
-1. 新成员：`QUICK_START -> ARCHITECTURE -> DEVELOPMENT`
-2. 后端开发：`ARCHITECTURE -> API_GUIDE -> DATABASE`
-3. 前端开发：`QUICK_START -> API_GUIDE -> CONFIGURATION`
-4. 发布/运维：`CI_CD -> CHANGELOG_GUIDE -> DEPLOYMENT -> TROUBLESHOOTING`
+## 人类文档 / Human-Facing Docs
 
-## 文档维护约定
+| 文档 / Doc                                 | 适用场景 / When to read                                                                   |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| [ARCHITECTURE.md](./ARCHITECTURE.md)       | 快速理解实际技术栈与关键入口文件 / Fast summary of the actual stack and key entry points  |
+| [DEVELOPMENT.md](./DEVELOPMENT.md)         | 日常开发、生成流程、文档维护 / Daily workflow, generation flow, documentation maintenance |
+| [QUICK_START.md](./QUICK_START.md)         | 本地初始化与快速启动 / Local bootstrap and quick start                                    |
+| [CONFIGURATION.md](./CONFIGURATION.md)     | 环境变量与运行配置 / Environment variables and runtime configuration                      |
+| [API_GUIDE.md](./API_GUIDE.md)             | API 使用与调试 / API usage and debugging                                                  |
+| [DATABASE.md](./DATABASE.md)               | 数据模型、迁移与数据库策略 / Data model, migrations, database strategy                    |
+| [CI_CD.md](./CI_CD.md)                     | 持续集成与发布流水线 / CI and delivery pipeline                                           |
+| [DEPLOYMENT.md](./DEPLOYMENT.md)           | 部署与容器化说明 / Deployment and container guidance                                      |
+| [CHANGELOG_GUIDE.md](./CHANGELOG_GUIDE.md) | 版本与变更记录流程 / Versioning and changelog workflow                                    |
+| [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | 常见问题排查 / Troubleshooting                                                            |
 
-1. 修改 API 行为时，必须同步更新 `api/openapi.yaml` 与 [API_GUIDE.md](./API_GUIDE.md)。
-2. 修改环境变量时，必须同步 `.env.example` 与 [CONFIGURATION.md](./CONFIGURATION.md)。
-3. 修改流程类命令（`Makefile`、CI）时，必须同步 [QUICK_START.md](./QUICK_START.md) 与 [CI_CD.md](./CI_CD.md)。
+## ADR / 架构决策记录
+
+当你要理解“为什么这样做”，先看 ADR，而不是猜测或直接替换框架。
+When you need the rationale behind the stack, check ADRs before proposing framework-level changes.
+
+| ADR                                                                          | 主题 / Topic                                                                               |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [adr/001-openapi-as-contract.md](./adr/001-openapi-as-contract.md)           | `api/openapi.yaml` 是契约真相源 / `api/openapi.yaml` is the contract source of truth       |
+| [adr/002-sqlite-dev-postgres-prod.md](./adr/002-sqlite-dev-postgres-prod.md) | 本地 SQLite、可部署环境 PostgreSQL / SQLite locally, PostgreSQL in deployable environments |
+| [adr/003-wire-for-di.md](./adr/003-wire-for-di.md)                           | 使用 Google Wire 做依赖注入 / Using Google Wire for dependency injection                   |
+
+## 关键入口 / Key Entry Points
+
+- 后端启动入口：`backend/cmd/server/main.go`
+- 依赖注入图：`backend/cmd/server/wire.go`
+- 数据库初始化：`backend/internal/config/database.go`
+- API 契约：`api/openapi.yaml`
+- Frontend route tree: `frontend/app/`
+- Frontend API client: `frontend/lib/api-client.ts`
+
+## 推荐阅读顺序 / Suggested Reading Order
+
+1. 新贡献者 / New contributors: `README -> QUICK_START -> ARCHITECTURE -> DEVELOPMENT`
+2. 后端改动 / Backend changes: `../AGENTS.md -> ../ARCHITECTURE.md -> API_GUIDE -> DATABASE`
+3. 前端改动 / Frontend changes: `../AGENTS.md -> ARCHITECTURE -> DEVELOPMENT -> API_GUIDE`
+4. 架构调整 / Architecture changes: `../ARCHITECTURE.md -> adr/ -> DEVELOPMENT`
+
+## 维护规则 / Maintenance Rules
+
+- 修改 API 行为时，先更新 `api/openapi.yaml`，再同步生成产物与相关说明。
+- When API behavior changes, update `api/openapi.yaml` first, then refresh generated artifacts and summaries.
+- 根目录 AI 文档是结构和规则的主参考；`docs/` 负责双语摘要与导航。
+- The root AI docs are canonical for structure and rules; `docs/` should summarize and link rather than duplicate them.
