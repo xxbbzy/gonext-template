@@ -11,11 +11,12 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/xxbbzy/gonext-template/backend/internal/handler"
 	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/internal/model"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to initialize application: %v\n", err)
 		os.Exit(1)
 	}
-	defer app.Logger.Sync()
+	defer func() { _ = app.Logger.Sync() }()
 
 	app.Logger.Info("Starting application",
 		zap.String("name", app.Config.App.Name),
@@ -113,7 +114,7 @@ func main() {
 	// Close database
 	sqlDB, err := app.DB.DB()
 	if err == nil {
-		sqlDB.Close()
+		_ = sqlDB.Close()
 	}
 
 	app.Logger.Info("Server exited")

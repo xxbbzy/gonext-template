@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/xxbbzy/gonext-template/backend/internal/config"
-	"github.com/xxbbzy/gonext-template/backend/internal/model"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/xxbbzy/gonext-template/backend/internal/config"
+	"github.com/xxbbzy/gonext-template/backend/internal/model"
 )
 
 func main() {
@@ -18,7 +19,7 @@ func main() {
 	}
 
 	logger := config.NewLoggerOrPanic(cfg)
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 
 	db, err := config.NewDatabase(cfg, logger)
 	if err != nil {

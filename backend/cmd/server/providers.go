@@ -3,14 +3,15 @@ package main
 import (
 	"time"
 
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/internal/handler"
 	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	pkgjwt "github.com/xxbbzy/gonext-template/backend/pkg/jwt"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type Application struct {

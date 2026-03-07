@@ -4,6 +4,7 @@ package main
 
 import (
 	"github.com/google/wire"
+
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/internal/handler"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"

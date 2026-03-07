@@ -8,14 +8,15 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/xxbbzy/gonext-template/backend/internal/dto"
 	"github.com/xxbbzy/gonext-template/backend/internal/model"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	pkgjwt "github.com/xxbbzy/gonext-template/backend/pkg/jwt"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func testAuthHandler(t *testing.T) (*AuthHandler, *gorm.DB, *pkgjwt.Manager) {

@@ -3,13 +3,14 @@ package service
 import (
 	"errors"
 
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+
 	"github.com/xxbbzy/gonext-template/backend/internal/dto"
 	"github.com/xxbbzy/gonext-template/backend/internal/model"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"
 	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	pkgjwt "github.com/xxbbzy/gonext-template/backend/pkg/jwt"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 // AuthService handles authentication business logic.

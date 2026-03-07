@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 	"golang.org/x/time/rate"
+
+	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
 
 type visitor struct {

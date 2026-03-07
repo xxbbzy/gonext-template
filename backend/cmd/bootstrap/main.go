@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"go.uber.org/zap"
+
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/internal/model"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		os.Exit(1)
 	}
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 
 	db, err := config.NewDatabase(cfg, logger)
 	if err != nil {

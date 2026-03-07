@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 )
 

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
@@ -28,7 +29,7 @@ type LocalStorage struct {
 // NewLocalStorage creates a new LocalStorage.
 func NewLocalStorage(uploadDir, baseURL string) *LocalStorage {
 	// Ensure upload directory exists
-	os.MkdirAll(uploadDir, 0755)
+	_ = os.MkdirAll(uploadDir, 0755)
 	return &LocalStorage{
 		uploadDir: uploadDir,
 		baseURL:   baseURL,
@@ -113,7 +114,7 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 		response.InternalServerError(c, "failed to read file")
 		return
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	data := make([]byte, file.Size)
 	if _, err := f.Read(data); err != nil {

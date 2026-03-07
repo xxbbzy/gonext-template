@@ -5,9 +5,10 @@ import (
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
 	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	"github.com/xxbbzy/gonext-template/backend/pkg/response"
-	"go.uber.org/zap"
 )
 
 // Recovery returns a middleware that recovers from panics.

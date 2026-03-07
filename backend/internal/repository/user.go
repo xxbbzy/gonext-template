@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"github.com/xxbbzy/gonext-template/backend/internal/model"
 	"gorm.io/gorm"
+
+	"github.com/xxbbzy/gonext-template/backend/internal/model"
 )
 
 // UserRepository handles user data access.

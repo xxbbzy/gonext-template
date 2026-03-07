@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"github.com/xxbbzy/gonext-template/backend/internal/model"
 	"gorm.io/gorm"
+
+	"github.com/xxbbzy/gonext-template/backend/internal/model"
 )
 
 // ItemRepository handles item data access.

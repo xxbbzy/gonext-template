@@ -42,7 +42,7 @@ func NewLoggerOrPanic(cfg *Config) *zap.Logger {
 	logger, err := NewLogger(cfg)
 	if err != nil {
 		// Fallback: write to stderr and exit
-		os.Stderr.WriteString("Failed to initialize logger: " + err.Error() + "\n")
+		_, _ = os.Stderr.WriteString("Failed to initialize logger: " + err.Error() + "\n")
 		os.Exit(1)
 	}
 	return logger

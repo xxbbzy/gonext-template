@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+
 	pkgjwt "github.com/xxbbzy/gonext-template/backend/pkg/jwt"
 )
 
