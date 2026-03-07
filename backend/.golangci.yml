@@ -21,12 +21,3 @@ formatters:
     goimports:
       local-prefixes:
         - github.com/xxbbzy/gonext-template
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-    - path: docs/
-      linters:
-        - all
