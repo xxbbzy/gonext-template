@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -13,6 +14,8 @@ type visitor struct {
 	limiter  *rate.Limiter
 	lastSeen time.Time
 }
+
+type KeyFunc func(*gin.Context) string
 
 // RateLimiter implements per-IP rate limiting using token bucket algorithm.
 type RateLimiter struct {
@@ -66,9 +69,19 @@ func (rl *RateLimiter) getVisitor(ip string) *rate.Limiter {
 
 // Middleware returns a Gin middleware for rate limiting.
 func (rl *RateLimiter) Middleware() gin.HandlerFunc {
+	return rl.MiddlewareWithKey(IPKey)
+}
+
+// MiddlewareWithKey returns a Gin middleware for rate limiting using the given key.
+func (rl *RateLimiter) MiddlewareWithKey(keyFunc KeyFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
-		limiter := rl.getVisitor(ip)
+		key := keyFunc(c)
+		if key == "" {
+			c.Next()
+			return
+		}
+
+		limiter := rl.getVisitor(key)
 		if !limiter.Allow() {
 			c.Header("Retry-After", "60")
 			response.Error(c, 429, 429, "too many requests")
@@ -76,5 +89,31 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 			return
 		}
 		c.Next()
+	}
+}
+
+// IPKey returns the limiter key for anonymous traffic.
+func IPKey(c *gin.Context) string {
+	return "ip:" + c.ClientIP()
+}
+
+// UserKey returns the limiter key for authenticated traffic.
+func UserKey(c *gin.Context) string {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		return ""
+	}
+
+	switch id := userID.(type) {
+	case uint:
+		return fmt.Sprintf("user:%d", id)
+	case int:
+		return fmt.Sprintf("user:%d", id)
+	case int64:
+		return fmt.Sprintf("user:%d", id)
+	case uint64:
+		return fmt.Sprintf("user:%d", id)
+	default:
+		return ""
 	}
 }

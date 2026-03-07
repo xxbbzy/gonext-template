@@ -124,24 +124,37 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	// The user info is already in the context from JWT middleware
-	userRole, _ := c.Get("user_role")
-	role, _ := userRole.(string)
+	profile, err := h.authService.GetProfile(uid)
+	if err != nil {
+		if appErr, ok := err.(*errcode.AppError); ok {
+			response.Error(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+			return
+		}
+		response.InternalServerError(c, "failed to load profile")
+		return
+	}
 
-	response.Success(c, dto.UserResponse{
-		ID:   uid,
-		Role: role,
-	})
+	response.Success(c, profile)
 }
 
 // RegisterRoutes registers auth routes.
-func (h *AuthHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+func (h *AuthHandler) RegisterRoutes(
+	r *gin.RouterGroup,
+	publicMiddlewares []gin.HandlerFunc,
+	authMiddleware gin.HandlerFunc,
+	protectedMiddlewares ...gin.HandlerFunc,
+) {
 	auth := r.Group("/auth")
 	{
-		auth.POST("/register", h.Register)
-		auth.POST("/login", h.Login)
-		auth.POST("/refresh", h.Refresh)
-		auth.GET("/profile", authMiddleware, h.GetProfile)
+		registerHandlers := append(append([]gin.HandlerFunc{}, publicMiddlewares...), h.Register)
+		loginHandlers := append(append([]gin.HandlerFunc{}, publicMiddlewares...), h.Login)
+		refreshHandlers := append(append([]gin.HandlerFunc{}, publicMiddlewares...), h.Refresh)
+		auth.POST("/register", registerHandlers...)
+		auth.POST("/login", loginHandlers...)
+		auth.POST("/refresh", refreshHandlers...)
+		profileHandlers := append([]gin.HandlerFunc{authMiddleware}, protectedMiddlewares...)
+		profileHandlers = append(profileHandlers, h.GetProfile)
+		auth.GET("/profile", profileHandlers...)
 	}
 }
 

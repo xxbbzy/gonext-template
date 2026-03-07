@@ -21,6 +21,7 @@ WORKDIR /app
 
 COPY --from=builder /server .
 COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/docs ./docs
 
 RUN mkdir -p /app/data /app/uploads
 

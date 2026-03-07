@@ -8,6 +8,7 @@ services:
     environment:
       - APP_ENV=production
       - APP_PORT=8080
+      - APP_BASE_URL=http://localhost:8080
       - DB_DRIVER=postgres
       - DB_DSN=postgres://gonext:gonext@db:5432/gonext?sslmode=disable
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}

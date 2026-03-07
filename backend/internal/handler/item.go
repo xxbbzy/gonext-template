@@ -178,9 +178,12 @@ func (h *ItemHandler) Delete(c *gin.Context) {
 }
 
 // RegisterRoutes registers item routes.
-func (h *ItemHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+func (h *ItemHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc, protectedMiddlewares ...gin.HandlerFunc) {
 	items := r.Group("/items")
 	items.Use(authMiddleware)
+	if len(protectedMiddlewares) > 0 {
+		items.Use(protectedMiddlewares...)
+	}
 	{
 		items.POST("", h.Create)
 		items.GET("", h.List)

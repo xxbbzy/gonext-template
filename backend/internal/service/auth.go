@@ -88,6 +88,24 @@ func (s *AuthService) RefreshToken(refreshToken string) (*dto.AuthResponse, erro
 	return s.generateTokenResponse(user)
 }
 
+// GetProfile returns the current user's profile.
+func (s *AuthService) GetProfile(userID uint) (*dto.UserResponse, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errcode.ErrNotFoundMsg
+		}
+		return nil, errcode.ErrInternalServer
+	}
+
+	return &dto.UserResponse{
+		ID:       user.ID,
+		Username: user.Username,
+		Email:    user.Email,
+		Role:     user.Role,
+	}, nil
+}
+
 func (s *AuthService) generateTokenResponse(user *model.User) (*dto.AuthResponse, error) {
 	accessToken, err := s.jwtManager.GenerateAccessToken(user.ID, user.Role)
 	if err != nil {

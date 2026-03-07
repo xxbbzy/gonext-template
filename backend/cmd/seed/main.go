@@ -25,12 +25,10 @@ func main() {
 		logger.Fatal("Failed to connect to database", zap.Error(err))
 	}
 
-	// Auto-migrate
 	if err := db.AutoMigrate(&model.User{}, &model.Item{}); err != nil {
 		logger.Fatal("Failed to auto-migrate", zap.Error(err))
 	}
 
-	// Seed admin user
 	adminPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 	admin := model.User{
 		Username:     "admin",
@@ -44,7 +42,6 @@ func main() {
 		logger.Info("Seeded admin user", zap.String("email", admin.Email))
 	}
 
-	// Seed regular user
 	userPassword, _ := bcrypt.GenerateFromPassword([]byte("user123"), bcrypt.DefaultCost)
 	user := model.User{
 		Username:     "testuser",
@@ -58,7 +55,6 @@ func main() {
 		logger.Info("Seeded regular user", zap.String("email", user.Email))
 	}
 
-	// Seed sample items
 	items := []model.Item{
 		{Title: "示例任务 1", Description: "这是第一个示例任务", Status: "active", UserID: admin.ID},
 		{Title: "示例任务 2", Description: "这是第二个示例任务", Status: "active", UserID: admin.ID},

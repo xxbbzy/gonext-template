@@ -138,6 +138,8 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 }
 
 // RegisterRoutes registers upload routes.
-func (h *UploadHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	r.POST("/upload", authMiddleware, h.Upload)
+func (h *UploadHandler) RegisterRoutes(r *gin.RouterGroup, authMiddleware gin.HandlerFunc, protectedMiddlewares ...gin.HandlerFunc) {
+	handlers := append([]gin.HandlerFunc{authMiddleware}, protectedMiddlewares...)
+	handlers = append(handlers, h.Upload)
+	r.POST("/upload", handlers...)
 }

@@ -10,12 +10,18 @@ help: ## Show this help message
 init: ## Initialize project: install deps, create .env, prepare local dirs
 	@echo "==> Initializing project..."
 	@[ -f .env ] || cp .env.example .env
+	@if [ -f package.json ]; then npm install; fi
 	@echo "==> Installing backend dependencies..."
 	@cd backend && go mod download
 	@echo "==> Installing frontend dependencies..."
 	@cd frontend && npm install
 	@echo "==> Creating data directory..."
 	@mkdir -p data uploads
+	@echo "==> Bootstrapping development database..."
+	@cd backend && go run ./cmd/bootstrap
+	@echo "==> Generating API artifacts..."
+	@$(MAKE) swagger
+	@$(MAKE) gen-types
 	@echo "==> Project initialized! Run 'make dev' to start."
 
 # ===== Development =====
@@ -26,7 +32,7 @@ dev: ## Start both backend and frontend dev servers
 
 dev-backend: ## Start backend dev server
 	@echo "==> Starting backend server..."
-	@cd backend && go run ./cmd/server/
+	@cd backend && go run github.com/air-verse/air@latest -c .air.toml
 
 dev-frontend: ## Start frontend dev server
 	@echo "==> Starting frontend server..."
@@ -86,13 +92,15 @@ migrate-down: ## Rollback last database migration
 
 new-migration: ## Create new migration files (usage: make new-migration name=xxx)
 	@echo "==> Creating migration: $(name)"
-	@migrate create -ext sql -dir backend/migrations -seq $(name)
+	@test -n "$(name)" || (echo "name is required" && exit 1)
+	@timestamp=$$(date +"%Y%m%d%H%M%S"); \
+	touch backend/migrations/$${timestamp}_$(name).up.sql backend/migrations/$${timestamp}_$(name).down.sql
 
 # ===== Code Generation =====
 
 swagger: ## Generate Swagger documentation
 	@echo "==> Generating Swagger docs..."
-	@cd backend && swag init -g cmd/server/main.go -o docs
+	@cd backend && go run ../scripts/swagger/main.go
 
 gen-types: ## Generate TypeScript types from OpenAPI spec
 	@echo "==> Generating TypeScript types..."

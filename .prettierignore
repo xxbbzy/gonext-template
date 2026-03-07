@@ -1,0 +1,9 @@
+node_modules
+frontend/node_modules
+frontend/.next
+backend/tmp
+bin
+data
+uploads
+backend/docs/swagger.json
+frontend/types/api.ts

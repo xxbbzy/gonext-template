@@ -3,13 +3,8 @@ data/
 uploads/
 tmp/
 backend/tmp/
-backend/docs/swagger.json
-backend/docs/swagger.yaml
-backend/docs/docs.go
-backend/wire_gen.go
 frontend/.next/
 frontend/node_modules/
-frontend/types/api.ts
 node_modules/
 *.exe
 *.dll
@@ -23,3 +18,4 @@ node_modules/
 .claude
 .codex
 openspec
+.agents

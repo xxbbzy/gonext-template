@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -8,19 +9,21 @@ import (
 
 // Config holds all application configuration.
 type Config struct {
-	App      AppConfig
-	Database DatabaseConfig
-	JWT      JWTConfig
-	CORS     CORSConfig
+	App       AppConfig
+	Database  DatabaseConfig
+	JWT       JWTConfig
+	CORS      CORSConfig
 	RateLimit RateLimitConfig
-	Upload   UploadConfig
-	Log      LogConfig
+	Upload    UploadConfig
+	Log       LogConfig
 }
 
 type AppConfig struct {
-	Name string `mapstructure:"APP_NAME"`
-	Env  string `mapstructure:"APP_ENV"`
-	Port string `mapstructure:"APP_PORT"`
+	Name    string `mapstructure:"APP_NAME"`
+	Env     string `mapstructure:"APP_ENV"`
+	GinMode string `mapstructure:"GIN_MODE"`
+	Port    string `mapstructure:"APP_PORT"`
+	BaseURL string `mapstructure:"APP_BASE_URL"`
 }
 
 type DatabaseConfig struct {
@@ -56,61 +59,66 @@ type LogConfig struct {
 
 // Load reads configuration from .env file and environment variables.
 func Load() (*Config, error) {
-	viper.SetConfigFile(".env")
-	viper.AutomaticEnv()
+	v := viper.New()
+	v.AutomaticEnv()
 
 	// Set defaults
-	viper.SetDefault("APP_NAME", "gonext-template")
-	viper.SetDefault("APP_ENV", "development")
-	viper.SetDefault("APP_PORT", "8080")
-	viper.SetDefault("DB_DRIVER", "sqlite")
-	viper.SetDefault("DB_DSN", "./data/app.db")
-	viper.SetDefault("JWT_SECRET", "change-me-in-production")
-	viper.SetDefault("JWT_ACCESS_EXPIRY", "15m")
-	viper.SetDefault("JWT_REFRESH_EXPIRY", "168h")
-	viper.SetDefault("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
-	viper.SetDefault("RATE_LIMIT_REQUESTS", 100)
-	viper.SetDefault("RATE_LIMIT_DURATION", "1m")
-	viper.SetDefault("UPLOAD_MAX_SIZE", 10485760)
-	viper.SetDefault("UPLOAD_DIR", "./uploads")
-	viper.SetDefault("UPLOAD_ALLOWED_TYPES", ".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx")
-	viper.SetDefault("STORAGE_DRIVER", "local")
-	viper.SetDefault("LOG_LEVEL", "debug")
-	viper.SetDefault("LOG_FORMAT", "json")
+	v.SetDefault("APP_NAME", "gonext-template")
+	v.SetDefault("APP_ENV", "development")
+	v.SetDefault("GIN_MODE", "release")
+	v.SetDefault("APP_PORT", "8080")
+	v.SetDefault("APP_BASE_URL", "http://localhost:8080")
+	v.SetDefault("DB_DRIVER", "sqlite")
+	v.SetDefault("DB_DSN", "./data/app.db")
+	v.SetDefault("JWT_SECRET", "change-me-in-production")
+	v.SetDefault("JWT_ACCESS_EXPIRY", "15m")
+	v.SetDefault("JWT_REFRESH_EXPIRY", "168h")
+	v.SetDefault("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+	v.SetDefault("RATE_LIMIT_REQUESTS", 100)
+	v.SetDefault("RATE_LIMIT_DURATION", "1m")
+	v.SetDefault("UPLOAD_MAX_SIZE", 10485760)
+	v.SetDefault("UPLOAD_DIR", "./uploads")
+	v.SetDefault("UPLOAD_ALLOWED_TYPES", ".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx")
+	v.SetDefault("STORAGE_DRIVER", "local")
+	v.SetDefault("LOG_LEVEL", "debug")
+	v.SetDefault("LOG_FORMAT", "json")
 
-	// Read .env file (ignore error if not exists)
-	_ = viper.ReadInConfig()
+	loadOptionalConfig(v, "config.yaml")
+	loadOptionalConfig(v, "config.yml")
+	loadOptionalConfig(v, ".env")
 
 	cfg := &Config{
 		App: AppConfig{
-			Name: viper.GetString("APP_NAME"),
-			Env:  viper.GetString("APP_ENV"),
-			Port: viper.GetString("APP_PORT"),
+			Name:    v.GetString("APP_NAME"),
+			Env:     v.GetString("APP_ENV"),
+			GinMode: v.GetString("GIN_MODE"),
+			Port:    v.GetString("APP_PORT"),
+			BaseURL: v.GetString("APP_BASE_URL"),
 		},
 		Database: DatabaseConfig{
-			Driver: viper.GetString("DB_DRIVER"),
-			DSN:    viper.GetString("DB_DSN"),
+			Driver: v.GetString("DB_DRIVER"),
+			DSN:    v.GetString("DB_DSN"),
 		},
 		JWT: JWTConfig{
-			Secret:        viper.GetString("JWT_SECRET"),
-			AccessExpiry:  viper.GetString("JWT_ACCESS_EXPIRY"),
-			RefreshExpiry: viper.GetString("JWT_REFRESH_EXPIRY"),
+			Secret:        v.GetString("JWT_SECRET"),
+			AccessExpiry:  v.GetString("JWT_ACCESS_EXPIRY"),
+			RefreshExpiry: v.GetString("JWT_REFRESH_EXPIRY"),
 		},
 		CORS: CORSConfig{
-			AllowedOrigins: viper.GetString("CORS_ALLOWED_ORIGINS"),
+			AllowedOrigins: v.GetString("CORS_ALLOWED_ORIGINS"),
 		},
 		RateLimit: RateLimitConfig{
-			Requests: viper.GetInt("RATE_LIMIT_REQUESTS"),
-			Duration: viper.GetString("RATE_LIMIT_DURATION"),
+			Requests: v.GetInt("RATE_LIMIT_REQUESTS"),
+			Duration: v.GetString("RATE_LIMIT_DURATION"),
 		},
 		Upload: UploadConfig{
-			MaxSize:      viper.GetInt64("UPLOAD_MAX_SIZE"),
-			Dir:          viper.GetString("UPLOAD_DIR"),
-			AllowedTypes: viper.GetString("UPLOAD_ALLOWED_TYPES"),
+			MaxSize:      v.GetInt64("UPLOAD_MAX_SIZE"),
+			Dir:          v.GetString("UPLOAD_DIR"),
+			AllowedTypes: v.GetString("UPLOAD_ALLOWED_TYPES"),
 		},
 		Log: LogConfig{
-			Level:  viper.GetString("LOG_LEVEL"),
-			Format: viper.GetString("LOG_FORMAT"),
+			Level:  v.GetString("LOG_LEVEL"),
+			Format: v.GetString("LOG_FORMAT"),
 		},
 	}
 
@@ -130,4 +138,14 @@ func (c *Config) GetAllowedOrigins() []string {
 // GetAllowedFileTypes returns upload allowed file types as a slice.
 func (c *Config) GetAllowedFileTypes() []string {
 	return strings.Split(c.Upload.AllowedTypes, ",")
+}
+
+func loadOptionalConfig(v *viper.Viper, path string) {
+	v.SetConfigFile(path)
+	if err := v.MergeInConfig(); err != nil {
+		var notFound viper.ConfigFileNotFoundError
+		if errors.As(err, &notFound) {
+			return
+		}
+	}
 }
