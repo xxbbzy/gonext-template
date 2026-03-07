@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
@@ -30,6 +31,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
       - name: Run tests
         working-directory: backend
         run: |
@@ -49,6 +51,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
       - name: Build
         working-directory: backend
         run: CGO_ENABLED=1 go build -o server ./cmd/server/
