@@ -18,7 +18,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 - Response envelope helpers: `backend/pkg/response/response.go`
 - Application error catalog: `backend/pkg/errcode/errcode.go`
 - Frontend route tree: `frontend/app/`
-- Frontend request layer: `frontend/lib/api-client.ts`
+- Frontend request layer: `frontend/lib/api-client.gen.ts` (type-safe openapi-fetch)
 - Frontend query bootstrap: `frontend/lib/query-provider.tsx`
 - Frontend auth state: `frontend/stores/auth.ts`
 
@@ -32,7 +32,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 4. Wire new dependencies through `backend/cmd/server/wire.go` and `backend/cmd/server/providers.go`.
 5. Register routes in `backend/cmd/server/main.go`.
 6. If the change adds persistence, update model registration for development `AutoMigrate` and add SQL migrations under `backend/migrations/` for deployable schema changes.
-7. Regenerate derived artifacts with `make swagger` and `make gen-types` when the contract changed.
+7. Regenerate derived artifacts with `make gen` when the contract changed.
 8. Run practical verification before finishing.
 
 ### Frontend Page or Feature Change
@@ -72,5 +72,5 @@ This repository exposes a compact AI-facing documentation layer at the root:
 
 - `make check` for practical repository-level validation
 - `make swagger` after backend API annotation or contract changes
-- `make gen-types` after `api/openapi.yaml` changes
+- `make gen` after `api/openapi.yaml` changes
 - Review `docs/README.md` after documentation work to confirm the navigation still makes sense

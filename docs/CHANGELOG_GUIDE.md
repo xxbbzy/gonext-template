@@ -32,15 +32,23 @@
 # Changelog
 
 ## [Unreleased]
+
 ### Added
+
 - ...
 
 ## [1.2.0] - 2026-03-02
+
 ### Added
+
 - ...
+
 ### Changed
+
 - ...
+
 ### Fixed
+
 - ...
 ```
 
@@ -67,7 +75,7 @@
 ## 5. 发版前检查清单
 
 - [ ] `api/openapi.yaml` 与实现一致
-- [ ] 若改 API，已执行 `make gen-types`
+- [ ] 若改 API，已执行 `make gen`
 - [ ] 若改 DB schema，已提供 migration 与回滚 SQL
 - [ ] `docs/` 已同步更新（至少含 API/配置/流程）
 - [ ] `CHANGELOG.md` 已从 `Unreleased` 切出对应版本

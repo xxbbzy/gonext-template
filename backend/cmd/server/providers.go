@@ -19,6 +19,8 @@ type Application struct {
 	Logger            *zap.Logger
 	DB                *gorm.DB
 	JWTManager        *pkgjwt.Manager
+	AuthService       *service.AuthService
+	ItemService       *service.ItemService
 	AuthHandler       *handler.AuthHandler
 	ItemHandler       *handler.ItemHandler
 	UploadHandler     *handler.UploadHandler
@@ -67,6 +69,8 @@ func newApplication(
 	logger *zap.Logger,
 	db *gorm.DB,
 	jwtManager *pkgjwt.Manager,
+	authService *service.AuthService,
+	itemService *service.ItemService,
 	authHandler *handler.AuthHandler,
 	itemHandler *handler.ItemHandler,
 	uploadHandler *handler.UploadHandler,
@@ -78,6 +82,8 @@ func newApplication(
 		Logger:            logger,
 		DB:                db,
 		JWTManager:        jwtManager,
+		AuthService:       authService,
+		ItemService:       itemService,
 		AuthHandler:       authHandler,
 		ItemHandler:       itemHandler,
 		UploadHandler:     uploadHandler,

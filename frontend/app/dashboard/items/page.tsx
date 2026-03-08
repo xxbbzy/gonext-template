@@ -4,11 +4,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { components } from "@/types/api";
-import apiClient, {
-  ApiResponse,
-  ItemResponse,
-  PagedItemsResponse,
-} from "@/lib/api-client";
+import { client } from "@/lib/api-client.gen";
+import type { ItemResponse } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,6 +44,20 @@ const initialFormData: ItemFormData = {
   status: "active",
 };
 
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.trim() !== ""
+  ) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export default function ItemsPage() {
   const tCommon = useTranslations("common");
   const tItems = useTranslations("items");
@@ -59,21 +70,41 @@ export default function ItemsPage() {
   const [editItem, setEditItem] = useState<Item | null>(null);
   const [formData, setFormData] = useState<ItemFormData>(initialFormData);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["items", page, keyword],
     queryFn: async () => {
-      const res = await apiClient.get<ApiResponse<PagedItemsResponse>>(
-        "/api/v1/items",
-        {
-          params: { page, page_size: 10, keyword },
-        }
-      );
-      return res.data.data;
+      const { data: res, error: apiError } = await client.GET("/api/v1/items", {
+        params: {
+          query: { page, page_size: 10, keyword: keyword || undefined },
+        },
+      });
+      if (apiError || !res?.data) {
+        throw new Error(getApiErrorMessage(apiError, tCommon("error")));
+      }
+
+      return res.data as {
+        items: ItemResponse[];
+        total: number;
+        page: number;
+        page_size: number;
+        total_pages: number;
+      };
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: ItemFormData) => apiClient.post("/api/v1/items", data),
+    mutationFn: async (data: ItemFormData) => {
+      const { data: res, error: apiError } = await client.POST(
+        "/api/v1/items",
+        {
+          body: data,
+        }
+      );
+      if (apiError || !res?.data) {
+        throw new Error(getApiErrorMessage(apiError, tItems("createFailed")));
+      }
+      return res.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
       setShowCreate(false);
@@ -85,8 +116,19 @@ export default function ItemsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: ItemFormData }) =>
-      apiClient.put(`/api/v1/items/${id}`, data),
+    mutationFn: async ({ id, data }: { id: number; data: ItemFormData }) => {
+      const { data: res, error: apiError } = await client.PUT(
+        "/api/v1/items/{id}",
+        {
+          params: { path: { id } },
+          body: data,
+        }
+      );
+      if (apiError || !res?.data) {
+        throw new Error(getApiErrorMessage(apiError, tItems("updateFailed")));
+      }
+      return res.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
       setEditItem(null);
@@ -98,7 +140,14 @@ export default function ItemsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => apiClient.delete(`/api/v1/items/${id}`),
+    mutationFn: async (id: number) => {
+      const { error: apiError } = await client.DELETE("/api/v1/items/{id}", {
+        params: { path: { id } },
+      });
+      if (apiError) {
+        throw new Error(getApiErrorMessage(apiError, tItems("deleteFailed")));
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
       addToast({ title: tItems("deleteSuccess"), variant: "success" });
@@ -244,6 +293,11 @@ export default function ItemsPage() {
 
       <Card>
         <CardContent className="p-0">
+          {error ? (
+            <div className="p-6 text-sm text-red-600">
+              {error instanceof Error ? error.message : tCommon("error")}
+            </div>
+          ) : null}
           <Table>
             <TableHeader className="bg-gray-50">
               <TableRow className="hover:bg-gray-50">

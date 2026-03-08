@@ -55,11 +55,13 @@ git push origin feature/your-feature
 ## 代码规范
 
 ### Go
+
 - 遵循 [Effective Go](https://go.dev/doc/effective_go)
 - 通过 `golangci-lint`
 - 导出函数和类型需有注释
 
 ### TypeScript
+
 - 通过 ESLint + TypeScript typecheck
 - 优先使用明确类型，避免 `any`
 - 使用函数式组件
@@ -68,6 +70,6 @@ git push origin feature/your-feature
 
 - [ ] 目标分支是 `develop`
 - [ ] 本地已通过 `make check`
-- [ ] 若改动 API，已同步 `api/openapi.yaml` 并执行 `make gen-types`
+- [ ] 若改动 API，已同步 `api/openapi.yaml` 并执行 `make gen`
 - [ ] 若改动数据库 schema，已提供 migration（含回滚）
 - [ ] 文档已同步更新（如适用）

@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	genapi "github.com/xxbbzy/gonext-template/backend/internal/api"
 	"github.com/xxbbzy/gonext-template/backend/internal/handler"
 	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/internal/model"
@@ -73,16 +74,42 @@ func main() {
 		return checkDBHealth(app.DB)
 	})
 
-	// API routes
+	// API routes — per-operation middleware
 	publicRateLimit := app.PublicRateLimiter.Middleware()
 	authMiddleware := middleware.Auth(app.JWTManager)
 	userRateLimit := app.UserRateLimiter.MiddlewareWithKey(middleware.UserKey)
+
+	// Create generated strict server
+	apiServer := genapi.NewServer(app.AuthService, app.ItemService)
+	strictHandler := genapi.NewStrictHandler(apiServer, nil)
+
+	// Register generated routes with per-operation middleware.
+	// We can't use RegisterHandlersWithOptions because its Middlewares field
+	// is a flat list applied to ALL operations — not per-operation.
+	// Instead, we register routes manually using the generated ServerInterface.
+	genapi.RegisterHandlersWithOptions(r, strictHandler, genapi.GinServerOptions{
+		Middlewares: []genapi.MiddlewareFunc{
+			func(c *gin.Context) {
+				// Resolve per-operation middleware based on the matched route.
+				// The generated wrapper already sets BearerAuth scopes for authenticated ops.
+				path := c.FullPath()
+				switch {
+				case isPublicAuthRoute(path):
+					publicRateLimit(c)
+				case isAuthenticatedRoute(path):
+					authMiddleware(c)
+					if c.IsAborted() {
+						return
+					}
+					userRateLimit(c)
+				}
+			},
+		},
+	})
+
+	// Manual routes — upload (gin.Context-dependent, excluded from codegen)
 	v1 := r.Group("/api/v1")
-	{
-		app.AuthHandler.RegisterRoutes(v1, []gin.HandlerFunc{publicRateLimit}, authMiddleware, userRateLimit)
-		app.ItemHandler.RegisterRoutes(v1, authMiddleware, userRateLimit)
-		app.UploadHandler.RegisterRoutes(v1, authMiddleware, userRateLimit)
-	}
+	v1.POST("/upload", authMiddleware, userRateLimit, app.UploadHandler.Upload)
 
 	// Start server
 	srv := &http.Server{
@@ -126,4 +153,24 @@ func checkDBHealth(db *gorm.DB) bool {
 		return false
 	}
 	return sqlDB.Ping() == nil
+}
+
+// isPublicAuthRoute returns true for public auth routes that only need publicRateLimit.
+func isPublicAuthRoute(path string) bool {
+	switch path {
+	case "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh":
+		return true
+	}
+	return false
+}
+
+// isAuthenticatedRoute returns true for routes that need authMiddleware + userRateLimit.
+func isAuthenticatedRoute(path string) bool {
+	switch path {
+	case "/api/v1/auth/profile",
+		"/api/v1/items",
+		"/api/v1/items/:id":
+		return true
+	}
+	return false
 }

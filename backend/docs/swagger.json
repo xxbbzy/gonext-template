@@ -247,6 +247,7 @@
   "paths": {
     "/api/v1/auth/login": {
       "post": {
+        "operationId": "loginUser",
         "requestBody": {
           "content": {
             "application/json": {
@@ -279,6 +280,16 @@
             },
             "description": "Login successful"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
           "401": {
             "content": {
               "application/json": {
@@ -288,16 +299,28 @@
               }
             },
             "description": "Invalid credentials"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
           }
         },
         "summary": "Login with credentials",
         "tags": [
           "Auth"
-        ]
+        ],
+        "x-middleware-group": "public"
       }
     },
     "/api/v1/auth/profile": {
       "get": {
+        "operationId": "getProfile",
         "responses": {
           "200": {
             "content": {
@@ -329,6 +352,26 @@
               }
             },
             "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "User not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
           }
         },
         "security": [
@@ -339,11 +382,13 @@
         "summary": "Get current user profile",
         "tags": [
           "Auth"
-        ]
+        ],
+        "x-middleware-group": "authenticated"
       }
     },
     "/api/v1/auth/refresh": {
       "post": {
+        "operationId": "refreshToken",
         "requestBody": {
           "content": {
             "application/json": {
@@ -376,6 +421,16 @@
             },
             "description": "Token refreshed"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
           "401": {
             "content": {
               "application/json": {
@@ -385,16 +440,28 @@
               }
             },
             "description": "Invalid or expired refresh token"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
           }
         },
         "summary": "Refresh access token",
         "tags": [
           "Auth"
-        ]
+        ],
+        "x-middleware-group": "public"
       }
     },
     "/api/v1/auth/register": {
       "post": {
+        "operationId": "registerUser",
         "requestBody": {
           "content": {
             "application/json": {
@@ -446,16 +513,28 @@
               }
             },
             "description": "Email already registered"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
           }
         },
         "summary": "Register a new user",
         "tags": [
           "Auth"
-        ]
+        ],
+        "x-middleware-group": "public"
       }
     },
     "/api/v1/items": {
       "get": {
+        "operationId": "listItems",
         "parameters": [
           {
             "in": "query",
@@ -513,6 +592,16 @@
               }
             },
             "description": "Paginated items"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
           }
         },
         "security": [
@@ -523,9 +612,11 @@
         "summary": "List items with pagination",
         "tags": [
           "Items"
-        ]
+        ],
+        "x-middleware-group": "authenticated"
       },
       "post": {
+        "operationId": "createItem",
         "requestBody": {
           "content": {
             "application/json": {
@@ -567,6 +658,16 @@
               }
             },
             "description": "Validation error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
           }
         },
         "security": [
@@ -577,11 +678,13 @@
         "summary": "Create a new item",
         "tags": [
           "Items"
-        ]
+        ],
+        "x-middleware-group": "authenticated"
       }
     },
     "/api/v1/items/{id}": {
       "delete": {
+        "operationId": "deleteItem",
         "parameters": [
           {
             "in": "path",
@@ -612,6 +715,16 @@
               }
             },
             "description": "Item not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
           }
         },
         "security": [
@@ -622,9 +735,11 @@
         "summary": "Soft delete an item",
         "tags": [
           "Items"
-        ]
+        ],
+        "x-middleware-group": "authenticated"
       },
       "get": {
+        "operationId": "getItem",
         "parameters": [
           {
             "in": "path",
@@ -666,6 +781,16 @@
               }
             },
             "description": "Item not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
           }
         },
         "security": [
@@ -676,9 +801,11 @@
         "summary": "Get item by ID",
         "tags": [
           "Items"
-        ]
+        ],
+        "x-middleware-group": "authenticated"
       },
       "put": {
+        "operationId": "updateItem",
         "parameters": [
           {
             "in": "path",
@@ -721,6 +848,16 @@
             },
             "description": "Item updated"
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
           "404": {
             "content": {
               "application/json": {
@@ -730,6 +867,16 @@
               }
             },
             "description": "Item not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
           }
         },
         "security": [
@@ -740,11 +887,13 @@
         "summary": "Update an item",
         "tags": [
           "Items"
-        ]
+        ],
+        "x-middleware-group": "authenticated"
       }
     },
     "/api/v1/upload": {
       "post": {
+        "operationId": "uploadFile",
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -812,11 +961,13 @@
         "summary": "Upload a file",
         "tags": [
           "Upload"
-        ]
+        ],
+        "x-middleware-group": "authenticated"
       }
     },
     "/healthz": {
       "get": {
+        "operationId": "livenessCheck",
         "responses": {
           "200": {
             "description": "Service is alive"
@@ -830,6 +981,7 @@
     },
     "/readyz": {
       "get": {
+        "operationId": "readinessCheck",
         "responses": {
           "200": {
             "description": "Service is ready"

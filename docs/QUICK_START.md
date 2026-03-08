@@ -66,7 +66,7 @@ make check
 
 ```bash
 make help            # 查看所有命令
-make gen-types       # 基于 OpenAPI 生成前端类型
+make gen       # 基于 OpenAPI 生成前端类型
 make new-module name=product
 make new-migration name=add_xxx
 make docker-up       # 用 docker compose 启动

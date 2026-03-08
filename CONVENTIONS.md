@@ -53,7 +53,7 @@ summaries live under `docs/`, but repository-wide operational rules belong here.
 
 1. Update `api/openapi.yaml` before or alongside backend API behavior changes.
 2. Regenerate Swagger output with `make swagger` when backend API annotations or contract output must stay in sync.
-3. Regenerate frontend types with `make gen-types` after contract changes.
+3. Regenerate frontend types with `make gen` after contract changes.
 4. Keep handler comments, generated docs, and frontend request/response typing aligned with the OpenAPI contract.
 
 ## Documentation Maintenance

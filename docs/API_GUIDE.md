@@ -72,28 +72,28 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 ## 6. 错误码
 
-| 业务码 | 含义 |
-|---|---|
-| `0` | success |
-| `400` | bad request |
-| `401` | unauthorized |
-| `403` | forbidden |
-| `404` | resource not found |
-| `409` | conflict |
-| `413` | file too large |
-| `429` | too many requests |
+| 业务码 | 含义                     |
+| ------ | ------------------------ |
+| `0`    | success                  |
+| `400`  | bad request              |
+| `401`  | unauthorized             |
+| `403`  | forbidden                |
+| `404`  | resource not found       |
+| `409`  | conflict                 |
+| `413`  | file too large           |
+| `429`  | too many requests        |
 | `1002` | email already registered |
-| `1003` | invalid credentials |
-| `1004` | token expired |
-| `1005` | invalid token |
-| `1006` | file type not allowed |
+| `1003` | invalid credentials      |
+| `1004` | token expired            |
+| `1005` | invalid token            |
+| `1006` | file type not allowed    |
 
 ## 7. OpenAPI 与前端类型同步
 
 当接口契约变更时：
 
 ```bash
-make gen-types
+make gen
 ```
 
 会生成：`frontend/types/api.ts`

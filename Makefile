@@ -1,4 +1,4 @@
-.PHONY: help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend build build-backend build-frontend seed swagger gen-types migrate-up migrate-down new-migration new-module docker-up docker-down docker-build clean
+.PHONY: help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend build build-backend build-frontend seed swagger gen gen-server gen-client migrate-up migrate-down new-migration new-module docker-up docker-down docker-build clean
 
 # Default target
 help: ## Show this help message
@@ -20,8 +20,7 @@ init: ## Initialize project: install deps, create .env, prepare local dirs
 	@echo "==> Bootstrapping development database..."
 	@cd backend && go run ./cmd/bootstrap
 	@echo "==> Generating API artifacts..."
-	@$(MAKE) swagger
-	@$(MAKE) gen-types
+	@$(MAKE) gen
 	@echo "==> Project initialized! Run 'make dev' to start."
 
 # ===== Development =====
@@ -102,7 +101,19 @@ swagger: ## Generate Swagger documentation
 	@echo "==> Generating Swagger docs..."
 	@cd backend && go run ../scripts/swagger/main.go
 
-gen-types: ## Generate TypeScript types from OpenAPI spec
+gen: gen-server gen-client swagger ## Generate all code from OpenAPI spec
+
+gen-server: ## Generate Go server code from OpenAPI spec
+	@echo "==> Generating Go server code..."
+	@mkdir -p backend/internal/api
+	@cd backend && GOPROXY=https://goproxy.cn,direct go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen \
+		-package api \
+		-generate "types,gin,strict-server,spec" \
+		-exclude-operation-ids "uploadFile,livenessCheck,readinessCheck" \
+		-o internal/api/server.gen.go \
+		../api/openapi.yaml
+
+gen-client: ## Generate TypeScript API types from OpenAPI spec
 	@echo "==> Generating TypeScript types..."
 	@cd frontend && npx openapi-typescript ../api/openapi.yaml -o types/api.ts
 

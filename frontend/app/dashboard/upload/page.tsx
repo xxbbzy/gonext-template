@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import apiClient, { ApiResponse, UploadResponse } from "@/lib/api-client";
+import { uploadFile } from "@/lib/api-client.gen";
+import type { UploadResponse } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
@@ -19,26 +20,27 @@ export default function UploadPage() {
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await apiClient.post<ApiResponse<UploadResponse>>(
-        "/api/v1/upload",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      setUploadedFiles((prev) => [...prev, res.data.data]);
+      const { data: res, error: apiError } = await uploadFile(file);
+      if (apiError || !res?.data) {
+        const errMsg =
+          (apiError as { message?: string })?.message || tUpload("retry");
+        addToast({
+          title: tUpload("failed"),
+          description: errMsg,
+          variant: "error",
+        });
+        return;
+      }
+      setUploadedFiles((prev) => [...prev, res.data as UploadResponse]);
       addToast({
         title: tUpload("success"),
         description: file.name,
         variant: "success",
       });
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
+    } catch {
       addToast({
         title: tUpload("failed"),
-        description: axiosErr.response?.data?.message || tUpload("retry"),
+        description: tUpload("retry"),
         variant: "error",
       });
     } finally {

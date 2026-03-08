@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import apiClient, { ApiResponse } from "@/lib/api-client";
+import { client } from "@/lib/api-client.gen";
 import { useAuthStore, User } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-interface AuthData {
-  access_token: string;
-  refresh_token: string;
-  user: User;
-}
 
 export default function RegisterPage() {
   const tCommon = useTranslations("common");
@@ -64,20 +58,31 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await apiClient.post<ApiResponse<AuthData>>(
+      const { data: res, error: apiError } = await client.POST(
         "/api/v1/auth/register",
         {
-          username: data.username,
-          email: data.email,
-          password: data.password,
+          body: {
+            username: data.username,
+            email: data.email,
+            password: data.password,
+          },
         }
       );
-      const { access_token, refresh_token, user } = res.data.data;
+      if (apiError || !res?.data) {
+        setError(
+          (apiError as { message?: string })?.message || tAuth("registerFailed")
+        );
+        return;
+      }
+      const { access_token, refresh_token, user } = res.data as {
+        access_token: string;
+        refresh_token: string;
+        user: User;
+      };
       login(access_token, refresh_token, user);
       router.push("/dashboard");
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      setError(axiosErr.response?.data?.message || tAuth("registerFailed"));
+    } catch {
+      setError(tAuth("registerFailed"));
     } finally {
       setLoading(false);
     }

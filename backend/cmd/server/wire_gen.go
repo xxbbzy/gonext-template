@@ -45,6 +45,8 @@ func InitializeApplication() (*Application, error) {
 		logger,
 		db,
 		jwtManager,
+		authService,
+		itemService,
 		authHandler,
 		itemHandler,
 		uploadHandler,

@@ -1,0 +1,11 @@
+# oapi-codegen v2 configuration
+#
+# This is used via the Makefile "gen-server" target.
+# Because oapi-codegen v2 config file format has limited support for
+# exclusion, this file documents the intended config, but actual codegen
+# uses CLI flags: see Makefile "gen-server" target.
+#
+# Package: api
+# Output:  internal/api/server.gen.go
+# Generate: types, gin, strict-server, spec
+# Exclude:  uploadFile, livenessCheck, readinessCheck

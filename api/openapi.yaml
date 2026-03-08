@@ -172,6 +172,7 @@ components:
 paths:
   /healthz:
     get:
+      operationId: livenessCheck
       summary: Liveness check
       tags: [Health]
       responses:
@@ -180,6 +181,7 @@ paths:
 
   /readyz:
     get:
+      operationId: readinessCheck
       summary: Readiness check
       tags: [Health]
       responses:
@@ -190,6 +192,8 @@ paths:
 
   /api/v1/auth/register:
     post:
+      operationId: registerUser
+      x-middleware-group: public
       summary: Register a new user
       tags: [Auth]
       requestBody:
@@ -221,9 +225,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/auth/login:
     post:
+      operationId: loginUser
+      x-middleware-group: public
       summary: Login with credentials
       tags: [Auth]
       requestBody:
@@ -249,9 +261,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/auth/refresh:
     post:
+      operationId: refreshToken
+      x-middleware-group: public
       summary: Refresh access token
       tags: [Auth]
       requestBody:
@@ -277,9 +303,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/auth/profile:
     get:
+      operationId: getProfile
+      x-middleware-group: authenticated
       summary: Get current user profile
       tags: [Auth]
       security:
@@ -301,9 +341,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/items:
     get:
+      operationId: listItems
+      x-middleware-group: authenticated
       summary: List items with pagination
       tags: [Items]
       security:
@@ -339,7 +393,15 @@ paths:
                   - properties:
                       data:
                         $ref: "#/components/schemas/PagedItemsResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
+      operationId: createItem
+      x-middleware-group: authenticated
       summary: Create a new item
       tags: [Items]
       security:
@@ -367,9 +429,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/items/{id}:
     get:
+      operationId: getItem
+      x-middleware-group: authenticated
       summary: Get item by ID
       tags: [Items]
       security:
@@ -397,7 +467,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     put:
+      operationId: updateItem
+      x-middleware-group: authenticated
       summary: Update an item
       tags: [Items]
       security:
@@ -431,7 +509,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
+      operationId: deleteItem
+      x-middleware-group: authenticated
       summary: Soft delete an item
       tags: [Items]
       security:
@@ -455,9 +547,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/upload:
     post:
+      operationId: uploadFile
+      x-middleware-group: authenticated
       summary: Upload a file
       tags: [Upload]
       security:
