@@ -42,12 +42,15 @@ summaries live under `docs/`, but repository-wide operational rules belong here.
 - Avoid introducing parallel logging frameworks or per-handler logging patterns unless the change has a clear operational need.
 - Startup and shutdown logging belongs in the runtime entry points, not scattered across feature handlers.
 
-## Testing Placement
+## Testing
 
 - Put backend tests in the same package area as the code they exercise, using `_test.go` files.
-- Existing examples live in `backend/internal/handler/`, `backend/internal/middleware/`, and `backend/internal/config/`.
-- When adding middleware or handlers, extend nearby package tests first.
-- The frontend currently exposes lint and typecheck scripts but no dedicated test runner. If a future change adds frontend tests, place them close to the feature and update the documented verification flow.
+- Use `internal/testutil.NewTestDB(t, models...)` to get a fresh SQLite in-memory database for each test — zero external dependencies.
+- Existing backend test examples live in `backend/internal/handler/`, `backend/internal/service/`, `backend/internal/repository/`, `backend/internal/middleware/`, and `backend/internal/config/`.
+- When adding middleware, handlers, or modules, add corresponding tests. The `new-module.sh` scaffold auto-generates `_test.go` files.
+- Frontend tests use Vitest + React Testing Library (`npm test` or `make test-frontend`).
+- `make check` is the canonical validation command — it runs lint, typecheck, test, and build in one pipeline.
+- `make e2e` runs a full register → login → CRUD smoke test against a real backend (SQLite, ephemeral port).
 
 ## API Contract Synchronization
 

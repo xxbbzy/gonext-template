@@ -1,4 +1,7 @@
-.PHONY: help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend build build-backend build-frontend seed swagger gen gen-server gen-client migrate-up migrate-down new-migration new-module docker-up docker-down docker-build clean
+.PHONY: help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend test-frontend build build-backend build-frontend seed swagger gen gen-server gen-client migrate-up migrate-down new-migration new-module e2e docker-up docker-down docker-build clean
+
+BACKEND_GO_CACHE := $(CURDIR)/backend/.cache/go-build
+BACKEND_LINT_CACHE := $(CURDIR)/backend/.cache/golangci-lint
 
 # Default target
 help: ## Show this help message
@@ -43,7 +46,10 @@ lint: lint-backend lint-frontend ## Run all linters
 
 lint-backend: ## Run Go linters
 	@echo "==> Linting backend..."
-	@cd backend && golangci-lint run ./...
+	@cd backend && mkdir -p .cache/go-build .cache/golangci-lint && \
+		GOCACHE=$(BACKEND_GO_CACHE) \
+		GOLANGCI_LINT_CACHE=$(BACKEND_LINT_CACHE) \
+		golangci-lint run ./...
 
 lint-frontend: ## Run frontend linters
 	@echo "==> Linting frontend..."
@@ -53,15 +59,22 @@ typecheck-frontend: ## Run frontend type checking
 	@echo "==> Type checking frontend..."
 	@cd frontend && npm run typecheck
 
-check: lint typecheck-frontend test ## Run local quality gates (lint, typecheck, tests)
+check: lint typecheck-frontend test build ## Full validation pipeline
+	@echo "✅ All checks passed"
 
 # ===== Testing =====
 
-test: test-backend ## Run all tests
+test: test-backend test-frontend ## Run all tests
 
 test-backend: ## Run backend tests
 	@echo "==> Testing backend..."
-	@cd backend && go test -v ./...
+	@cd backend && mkdir -p .cache/go-build && \
+		GOCACHE=$(BACKEND_GO_CACHE) \
+		go test -v ./...
+
+test-frontend: ## Run frontend tests
+	@echo "==> Testing frontend..."
+	@cd frontend && npm test
 
 # ===== Build =====
 
@@ -69,7 +82,9 @@ build: build-backend build-frontend ## Build all for production
 
 build-backend: ## Build backend binary
 	@echo "==> Building backend..."
-	@cd backend && CGO_ENABLED=1 go build -o ../bin/server ./cmd/server/
+	@cd backend && mkdir -p .cache/go-build && \
+		GOCACHE=$(BACKEND_GO_CACHE) \
+		CGO_ENABLED=1 go build -o ../bin/server ./cmd/server/
 
 build-frontend: ## Build frontend for production
 	@echo "==> Building frontend..."
@@ -123,6 +138,12 @@ new-module: ## Generate new backend module (usage: make new-module name=xxx)
 	@echo "==> Generating module: $(name)"
 	@bash scripts/new-module.sh $(name)
 
+# ===== E2E Testing =====
+
+e2e: build-backend ## Run E2E smoke test (register → login → CRUD)
+	@echo "==> Running E2E smoke test..."
+	@bash scripts/e2e-smoke.sh
+
 # ===== Docker =====
 
 docker-up: ## Start all services with Docker Compose
@@ -137,4 +158,4 @@ docker-build: ## Build Docker images
 # ===== Cleanup =====
 
 clean: ## Remove build artifacts
-	@rm -rf bin/ data/ uploads/ backend/tmp/ frontend/.next/ frontend/node_modules/
+	@rm -rf bin/ data/ uploads/ backend/tmp/ backend/.cache/ frontend/.next/ frontend/node_modules/

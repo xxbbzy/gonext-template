@@ -179,6 +179,132 @@ func (h *${MODULE_NAME_UPPER}Handler) RegisterRoutes(r *gin.RouterGroup, authMid
 EOF
 echo "  Created handler/${MODULE_NAME_LOWER}.go"
 
+# Repository Test
+cat > "$BACKEND_DIR/repository/${MODULE_NAME_LOWER}_test.go" << EOF
+package repository
+
+import (
+	"testing"
+
+	"github.com/xxbbzy/gonext-template/backend/internal/model"
+	"github.com/xxbbzy/gonext-template/backend/internal/testutil"
+)
+
+func Test${MODULE_NAME_UPPER}Repository_CreateAndFindByID(t *testing.T) {
+	db := testutil.NewTestDB(t, &model.${MODULE_NAME_UPPER}{})
+	repo := New${MODULE_NAME_UPPER}Repository(db)
+
+	item := &model.${MODULE_NAME_UPPER}{Name: "Test ${MODULE_NAME_UPPER}"}
+	if err := repo.Create(item); err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if item.ID == 0 {
+		t.Fatal("Create() did not set ID")
+	}
+
+	found, err := repo.FindByID(item.ID)
+	if err != nil {
+		t.Fatalf("FindByID() error = %v", err)
+	}
+	if found.Name != "Test ${MODULE_NAME_UPPER}" {
+		t.Fatalf("FindByID() name = %q, want %q", found.Name, "Test ${MODULE_NAME_UPPER}")
+	}
+}
+
+func Test${MODULE_NAME_UPPER}Repository_List(t *testing.T) {
+	db := testutil.NewTestDB(t, &model.${MODULE_NAME_UPPER}{})
+	repo := New${MODULE_NAME_UPPER}Repository(db)
+
+	repo.Create(&model.${MODULE_NAME_UPPER}{Name: "A"})
+	repo.Create(&model.${MODULE_NAME_UPPER}{Name: "B"})
+
+	items, total, err := repo.List(0, 10)
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if total != 2 {
+		t.Fatalf("List() total = %d, want 2", total)
+	}
+	if len(items) != 2 {
+		t.Fatalf("List() len = %d, want 2", len(items))
+	}
+}
+
+func Test${MODULE_NAME_UPPER}Repository_Delete(t *testing.T) {
+	db := testutil.NewTestDB(t, &model.${MODULE_NAME_UPPER}{})
+	repo := New${MODULE_NAME_UPPER}Repository(db)
+
+	item := &model.${MODULE_NAME_UPPER}{Name: "To Delete"}
+	repo.Create(item)
+
+	if err := repo.Delete(item.ID); err != nil {
+		t.Fatalf("Delete() error = %v", err)
+	}
+
+	_, err := repo.FindByID(item.ID)
+	if err == nil {
+		t.Fatal("FindByID() after Delete should return error")
+	}
+}
+EOF
+echo "  Created repository/${MODULE_NAME_LOWER}_test.go"
+
+# Handler Test
+cat > "$BACKEND_DIR/handler/${MODULE_NAME_LOWER}_test.go" << EOF
+package handler
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/xxbbzy/gonext-template/backend/internal/dto"
+	"github.com/xxbbzy/gonext-template/backend/internal/model"
+	"github.com/xxbbzy/gonext-template/backend/internal/repository"
+	"github.com/xxbbzy/gonext-template/backend/internal/service"
+	"github.com/xxbbzy/gonext-template/backend/internal/testutil"
+)
+
+func test${MODULE_NAME_UPPER}Handler(t *testing.T) *gin.Engine {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+
+	db := testutil.NewTestDB(t, &model.${MODULE_NAME_UPPER}{})
+	repo := repository.New${MODULE_NAME_UPPER}Repository(db)
+	svc := service.New${MODULE_NAME_UPPER}Service(repo)
+	h := New${MODULE_NAME_UPPER}Handler(svc)
+
+	router := gin.New()
+	v1 := router.Group("/api/v1")
+	v1.Use(func(c *gin.Context) {
+		c.Set("user_id", uint(1))
+		c.Next()
+	})
+	h.RegisterRoutes(v1, func(c *gin.Context) { c.Next() })
+
+	return router
+}
+
+func Test${MODULE_NAME_UPPER}Handler_Create(t *testing.T) {
+	router := test${MODULE_NAME_UPPER}Handler(t)
+
+	body, _ := json.Marshal(dto.Create${MODULE_NAME_UPPER}Request{Name: "New ${MODULE_NAME_UPPER}"})
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/${MODULE_NAME_LOWER}s", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want %d; body = %s", resp.Code, http.StatusCreated, resp.Body.String())
+	}
+}
+EOF
+echo "  Created handler/${MODULE_NAME_LOWER}_test.go"
+
 echo ""
 echo "Module '$MODULE_NAME_LOWER' generated successfully!"
 echo "Don't forget to:"

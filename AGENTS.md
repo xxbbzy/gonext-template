@@ -68,9 +68,24 @@ This repository exposes a compact AI-facing documentation layer at the root:
 - Do not introduce framework drift. This project uses Gin, GORM, Google Wire, Next.js App Router, Zustand, TanStack Query, and OpenAPI-driven types.
 - Prefer minimal, file-local changes over broad rewrites unless the task explicitly requires a refactor.
 
+## Mandatory Verification
+
+> **After completing ANY code change, you MUST run `make check` and confirm all checks pass (exit code 0).**
+> Do **not** consider a task complete until `make check` is green.
+
+`make check` runs the full validation pipeline:
+
+1. **Lint** — `golangci-lint` (backend) + `eslint` (frontend)
+2. **Typecheck** — `tsc --noEmit` (frontend)
+3. **Test** — `go test ./...` (backend) + `vitest run` (frontend)
+4. **Build** — `go build` (backend) + `next build` (frontend)
+
+For API behavior changes that involve runtime, also run `make e2e` to exercise the register → login → CRUD cycle.
+
 ## Verification Shortlist
 
-- `make check` for practical repository-level validation
+- `make check` — **mandatory** after every code change
+- `make e2e` — after API or runtime behavior changes
 - `make swagger` after backend API annotation or contract changes
 - `make gen` after `api/openapi.yaml` changes
 - Review `docs/README.md` after documentation work to confirm the navigation still makes sense
