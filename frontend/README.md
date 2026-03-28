@@ -1,6 +1,6 @@
 # 前端概览
 
-本仓库前端由 Next.js App Router 驱动，负责渲染用户界面并通过 `frontend/lib/api-client.gen.ts` 等类型安全客户端直连后端 API，保持与 Gin + OpenAPI 约定一致的数据交互。
+本仓库前端由 Next.js App Router 驱动，负责渲染用户界面，并通过 `frontend/lib/api-client.gen.ts` 对接后端 API；接口类型以 `frontend/types/api.ts`（OpenAPI 生成）为准。
 
 ## 启动方式
 
@@ -11,7 +11,7 @@
 
 - 默认后端地址：`NEXT_PUBLIC_API_URL=http://localhost:8080`。
 - 本地前端访问地址：`http://localhost:3000`。
-- 所有页面和请求通过上述环境变量与后端保持一致。
+- API 请求基地址由上述环境变量控制。
 
 ## 常用脚本
 
@@ -24,6 +24,6 @@
 ## 目录说明
 
 - `app/`：App Router 页面、布局、服务器组件等入口，保持与路由对应。
-- `lib/`：共享逻辑层，含自动生成的 OpenAPI 客户端、查询提供器、工具函数等。
+- `lib/`：共享逻辑层，包含 API 请求封装、查询提供器、工具函数等。
 - `stores/`：Zustand 状态管理（如 `auth.ts`）统一保存认证与会话状态。
-- `types/`：前端手写类型与接口补充，扩展 `lib/api-client.gen.ts` 的契约。
+- `types/`：OpenAPI 生成的 API 类型定义（当前位于 `types/api.ts`）。
