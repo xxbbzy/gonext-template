@@ -19,5 +19,6 @@ node_modules/
 .claude
 .codex
 openspec
+docs/superpowers
 .agents
 bin/
