@@ -11,7 +11,7 @@
 
 ## Who This Is For
 
-- Solo founders and consultants who need a fully wired Go + Next.js scaffold before their engineers get back online.
+- Solo founders and consultants who need a Google Wire-based Go + Next.js scaffold before their engineers get back online.
 - AI engineers prototyping agent-assisted workflows that must stay in sync between backend, frontend, and instrumentation.
 - Bootcampers or learners who want a production-like full-stack example with OpenAPI-driven types and strong conventions.
 - Agencies building bespoke products that must move fast without sacrificing backend structure or deployment hygiene.
@@ -34,7 +34,7 @@ make dev
 
 ## Tech Stack & Architecture Conventions
 
-- **Backend:** Go, Gin, GORM, Google Wire + manual DI helpers, Zap logging, Viper configs.
+- **Backend:** Go, Gin, GORM, Google Wire compile-time dependency injection, Zap logging, Viper configs.
 - **Frontend:** Next.js 16 (App Router), TypeScript, shadcn/ui, Zustand, TanStack Query, OpenAPI fetch client.
 - **OpenAPI contract:** `api/openapi.yaml` is the source of truth for every request/response shape.
 - **Layering rule:** handlers → services → repositories; keep handlers thin and services orchestrating logic.
@@ -57,11 +57,11 @@ make docker-up
 make docker-down
 ```
 
-Services & ports:
+Services & ports (per `docker-compose.yml` services):
 
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:8080`
-- Postgres: `localhost:5432`
+- `frontend`: `http://localhost:3000`
+- `backend`: `http://localhost:8080`
+- `db` (PostgreSQL): `localhost:5432`
 
 ## OpenAPI & Type Generation
 
@@ -75,7 +75,7 @@ Run `make new-module name=product`, then:
 
 1. Update `api/openapi.yaml` first if the module exposes an API surface.
 2. Implement handler → service → repository (DTOs live under `backend/internal/dto/`).
-3. Wire providers/constructors via `backend/cmd/server/wire.go` and `providers.go`.
+3. Declare providers/constructors in `backend/cmd/server/wire.go` and `providers.go`, then run `make gen` to refresh Google Wire compile-time DI output (`wire_gen.go`).
 4. Register routes in `backend/cmd/server/main.go`.
 5. Add deployable SQL migrations under `backend/migrations` (AutoMigrate remains a dev convenience) and any seed data if needed.
 6. Verify with `make check` and `make e2e` (if behavior changed) before merging.
