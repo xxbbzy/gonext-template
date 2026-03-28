@@ -47,7 +47,7 @@ make build
 
 当前仓库存在 Go 版本配置漂移风险：
 
-1. `backend/go.mod` 指定 Go `1.25.3`
+1. Go：以 `backend/go.mod` 为准（要求 `1.25+`）
 2. `backend/Dockerfile` 的构建镜像为 `golang:1.21-alpine`
 
 建议在正式部署前统一版本，避免容器构建与本地/CI 行为不一致。

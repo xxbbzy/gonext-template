@@ -2,6 +2,8 @@ module github.com/xxbbzy/gonext-template/backend
 
 go 1.25.0
 
+toolchain go1.25.3
+
 require (
 	github.com/getkin/kin-openapi v0.133.0
 	github.com/gin-contrib/cors v1.7.6

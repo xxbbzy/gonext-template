@@ -18,8 +18,8 @@ make dev
 
 ## 环境要求
 
-- Go（以 `backend/go.mod` 为准，当前为 1.25.3）
-- Node.js 18+
+- Go（以 `backend/go.mod` 为准，要求 `1.25+`）
+- Node.js `20+`
 - Make
 
 ## 项目结构
@@ -64,6 +64,7 @@ make seed          # 生成测试数据
 ## 技术栈
 
 ### 后端
+
 - **Gin** - Web 框架
 - **GORM** - ORM
 - **Wire** - 依赖注入（可选，当前默认手动 DI）
@@ -71,6 +72,7 @@ make seed          # 生成测试数据
 - **Zap** - 结构化日志
 
 ### 前端
+
 - **Next.js 16** - React 框架
 - **TypeScript** - 类型安全
 - **shadcn/ui** - UI 组件
