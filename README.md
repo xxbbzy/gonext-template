@@ -5,8 +5,9 @@
 ## Prerequisites
 
 - Go toolchain `go1.25.x` (see `backend/go.mod` toolchain declaration).
-- Node.js `18+` and matching `npm`.
+- Node.js `>=20.9.0` and matching `npm`.
 - GNU `make` (for the included targets and workflows).
+- Optional tooling: Docker/Compose for the Docker workflow and the migrate CLI when adding SQL migrations.
 
 ## Who This Is For
 
