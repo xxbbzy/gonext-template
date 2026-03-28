@@ -2,8 +2,8 @@
 
 ## 1. 环境要求
 
-- Go：以 `backend/go.mod` 为准（当前为 `1.25.3`）
-- Node.js：`18+`（CI 使用 18）
+- Go：以 `backend/go.mod` 为准（要求 `1.25+`）
+- Node.js：`20+`（CI 使用 20）
 - npm：随 Node.js 安装
 - Make
 

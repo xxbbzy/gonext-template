@@ -7,12 +7,19 @@ on:
       - "backend/**"
       - "frontend/**"
       - "Makefile"
+      - "README.md"
+      - "docs/**"
+      - "scripts/check-versions.sh"
+      - ".github/workflows/codegen-check.yml"
 
 jobs:
   codegen-drift:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check runtime version policy
+        run: ./scripts/check-versions.sh
 
       - uses: actions/setup-go@v5
         with:
