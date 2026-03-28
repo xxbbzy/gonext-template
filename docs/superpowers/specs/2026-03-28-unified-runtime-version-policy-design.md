@@ -40,8 +40,10 @@ This causes onboarding confusion and "works locally but fails in CI" risk.
    - `backend/go.mod` sets `go 1.25`
    - `backend/go.mod` adds `toolchain go1.25.3` (recommended patch toolchain)
 2. Node minimum:
-   - Documentation states `Node.js 20+`
-   - CI runs Node 20 (`actions/setup-node`)
+   - CI workflow declarations are canonical:
+     - `.github/workflows/frontend-ci.yml` uses `node-version: "20"`
+     - `.github/workflows/codegen-check.yml` uses `node-version: "20"`
+   - Documentation (`README.md`, `docs/QUICK_START.md`) must mirror CI as `Node.js 20+`
 
 ## 5. Design Approach (Selected)
 
@@ -89,7 +91,11 @@ Rationale:
    - `backend/go.mod` contains `go 1.25`
    - `backend/go.mod` contains `toolchain go1.25.3` (current recommended patch)
    - `backend-ci.yml` contains `go-version: "1.25.x"`
-   - `README.md`, `docs/QUICK_START.md`, `docs/DEPLOYMENT.md` all state Go `1.25+` and Node `20+`
+   - `.github/workflows/frontend-ci.yml` contains `node-version: "20"`
+   - `.github/workflows/codegen-check.yml` contains `node-version: "20"`
+   - `README.md` environment requirements contain Go `1.25+` and Node `20+`
+   - `docs/QUICK_START.md` environment requirements contain Go `1.25+` and Node `20+`
+   - `docs/DEPLOYMENT.md` runtime requirements contain Go `1.25+`
 3. Integrate script into CI (prefer `codegen-check.yml` as an extra step/job).
 
 ## 7. Data Flow and Failure Behavior
