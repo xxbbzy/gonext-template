@@ -1,88 +1,86 @@
 # GoNext Template
 
-> AI-Friendly 全栈项目脚手架，基于 Go + Next.js，强调约定优于配置、端到端类型安全、一键启动。
+> AI-native full-stack template for solo builders who work like a team.
 
-## 快速开始
+## Who This Is For
+
+- Solo founders and consultants who need a fully wired Go + Next.js scaffold before their engineers get back online.
+- AI engineers prototyping agent-assisted workflows that must stay in sync between backend, frontend, and instrumentation.
+- Bootcampers or learners who want a production-like full-stack example with OpenAPI-driven types and strong conventions.
+- Agencies building bespoke products that must move fast without sacrificing backend structure or deployment hygiene.
+
+**Not ideal for:** Regulated enterprises with large, siloed teams needing multi-tenant SSO or legacy transformation initiatives.
+
+## Quick Start
 
 ```bash
-# 克隆项目
 git clone <your-repo-url>
 cd gonext-template
-
-# 一键初始化
 make init
-
-# 启动开发服务器
 make dev
 ```
 
-## 环境要求
+**Success checks**
 
-- Go（以 `backend/go.mod` 为准，要求 `1.25+`）
-- Node.js `20+`
-- Make
+- Backend health: `http://localhost:8080/healthz`
+- Frontend dev: `http://localhost:3000`
 
-## 项目结构
+## Tech Stack & Architecture Conventions
 
-```
-├── api/                    # OpenAPI spec（前后端共享契约）
-├── backend/                # Go 服务
-│   ├── cmd/server/         # 入口
-│   ├── internal/           # 内部包
-│   │   ├── config/         # 配置
-│   │   ├── middleware/     # 中间件
-│   │   ├── handler/        # HTTP 处理器
-│   │   ├── dto/            # 请求/响应 DTO
-│   │   ├── service/        # 业务逻辑
-│   │   ├── repository/     # 数据访问
-│   │   └── model/          # 数据模型
-│   ├── pkg/                # 公共工具
-│   ├── migrations/         # SQL 迁移
-│   └── docs/               # Swagger 文档
-├── frontend/               # Next.js 应用
-├── scripts/                # 辅助脚本
-├── .github/workflows/      # CI/CD
-├── docker-compose.yml
-├── Makefile
-└── .env.example
-```
+- **Backend:** Go, Gin, GORM, Google Wire + manual DI helpers, Zap logging, Viper configs.
+- **Frontend:** Next.js 16 (App Router), TypeScript, shadcn/ui, Zustand, TanStack Query, OpenAPI fetch client.
+- **OpenAPI contract:** `api/openapi.yaml` is the source of truth for every request/response shape.
+- **Layering rule:** handlers → services → repositories; keep handlers thin and services orchestrating logic.
+- **Response envelope:** use helpers in `backend/pkg/response` instead of raw JSON writes.
+- **Generated files:** treat artifacts such as `frontend/types/api.ts` and `backend/internal/api/server.gen.go` as outputs, never the source of truth.
 
-## 可用命令
+## Local Development Flow
+
+1. `make init` (once) beefs up `.env`, migrations, and schema seeds.
+2. `make dev` (runs backend + frontend watchers). Keep editing UI or Go sources.
+3. Run `make check` whenever you change logic/code paths to verify lint, typecheck, and tests.
+4. If the change touches runtime behavior or APIs, re-run `make e2e` to exercise the register → login → CRUD cycle.
+5. Repeat: edit → lint/type/test → `make check` → `make e2e` (if needed) → commit.
+
+## Docker Workflow
 
 ```bash
-make help          # 列出所有命令
-make init          # 初始化项目
-make dev           # 启动开发服务器
-make check         # 本地质量门禁（lint + typecheck + test）
-make lint          # 代码检查
-make test          # 运行测试
-make build         # 构建生产镜像
-make new-module    # 生成新模块
-make seed          # 生成测试数据
+make docker-build
+make docker-up
+make docker-down
 ```
 
-## 技术栈
+Services & ports:
 
-### 后端
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8080`
+- Postgres: `localhost:5432`
 
-- **Gin** - Web 框架
-- **GORM** - ORM
-- **Wire** - 依赖注入（可选，当前默认手动 DI）
-- **Viper** - 配置管理
-- **Zap** - 结构化日志
+## OpenAPI & Type Generation
 
-### 前端
+- Update `api/openapi.yaml` first whenever you touch API behavior, then regenerate downstream artifacts.
+- Run `make gen` to refresh `frontend/types/api.ts` and `backend/internal/api/server.gen.go`.
+- Run `make swagger` whenever you adjust OpenAPI metadata or docs, keeping `backend/docs/swagger.*` in sync.
 
-- **Next.js 16** - React 框架
-- **TypeScript** - 类型安全
-- **shadcn/ui** - UI 组件
-- **Zustand** - 状态管理
-- **TanStack Query** - 数据请求
+## How To Add A New Module
 
-## 开发规范
+Run `make new-module name=product`, then:
 
-团队统一开发规范见 [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)（分支策略、接口/数据库变更流程、CI 门禁、发布流程）。
+1. Update `api/openapi.yaml` first if the module exposes an API surface.
+2. Implement handler → service → repository (DTOs live under `backend/internal/dto/`).
+3. Wire providers/constructors via `backend/cmd/server/wire.go` and `providers.go`.
+4. Register routes in `backend/cmd/server/main.go`.
+5. Add GORM migrations (plugins call `AutoMigrate`) and seed data if needed.
+6. Verify with `make check` and `make e2e` (if behavior changed) before merging.
 
-## License
+## Roadmap
 
-MIT
+**Near-term (1‑2 months):** sharpen developer onboarding, shore up e2e coverage, and automate doc generation for latest APIs.
+**Longer-term (quarterly horizons):** invest in AI-native ops (agent-friendly scripts, observability), scale modules for plugin scenarios, and explore multi-cluster Docker compose support.
+
+## Documentation Map
+
+- [AGENTS.md](AGENTS.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [CONVENTIONS.md](CONVENTIONS.md)
+- [docs/README.md](docs/README.md)
