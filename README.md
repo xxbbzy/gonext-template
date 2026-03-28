@@ -4,8 +4,8 @@
 
 ## Prerequisites
 
-- Go toolchain `go1.25.x` (see `backend/go.mod` toolchain declaration).
-- Node.js `>=20.9.0` and matching `npm`.
+- Go 1.25+ toolchain (see `backend/go.mod` toolchain declaration).
+- Node.js 20+ with matching `npm` (`>=20.9.0` recommended for Next.js 16).
 - GNU `make` (for the included targets and workflows).
 - Optional tooling: Docker/Compose for the Docker workflow and the migrate CLI when adding SQL migrations.
 
