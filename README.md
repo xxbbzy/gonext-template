@@ -2,6 +2,12 @@
 
 > AI-native full-stack template for solo builders who work like a team.
 
+## Prerequisites
+
+- Go toolchain `go1.25.x` (see `backend/go.mod` toolchain declaration).
+- Node.js `18+` and matching `npm`.
+- GNU `make` (for the included targets and workflows).
+
 ## Who This Is For
 
 - Solo founders and consultants who need a fully wired Go + Next.js scaffold before their engineers get back online.
@@ -36,9 +42,9 @@ make dev
 
 ## Local Development Flow
 
-1. `make init` (once) beefs up `.env`, migrations, and schema seeds.
+1. `make init` (once) bootstraps `.env`, installs dependencies and local folders, runs the backend bootstrap (AutoMigrate convenience), and refreshes generated artifacts.
 2. `make dev` (runs backend + frontend watchers). Keep editing UI or Go sources.
-3. Run `make check` whenever you change logic/code paths to verify lint, typecheck, and tests.
+3. Run `make check` (lint + typecheck + test + build) whenever you change logic/code paths to verify the full gate.
 4. If the change touches runtime behavior or APIs, re-run `make e2e` to exercise the register → login → CRUD cycle.
 5. Repeat: edit → lint/type/test → `make check` → `make e2e` (if needed) → commit.
 
@@ -70,13 +76,13 @@ Run `make new-module name=product`, then:
 2. Implement handler → service → repository (DTOs live under `backend/internal/dto/`).
 3. Wire providers/constructors via `backend/cmd/server/wire.go` and `providers.go`.
 4. Register routes in `backend/cmd/server/main.go`.
-5. Add GORM migrations (plugins call `AutoMigrate`) and seed data if needed.
+5. Add deployable SQL migrations under `backend/migrations` (AutoMigrate remains a dev convenience) and any seed data if needed.
 6. Verify with `make check` and `make e2e` (if behavior changed) before merging.
 
 ## Roadmap
 
-**Near-term (1‑2 months):** sharpen developer onboarding, shore up e2e coverage, and automate doc generation for latest APIs.
-**Longer-term (quarterly horizons):** invest in AI-native ops (agent-friendly scripts, observability), scale modules for plugin scenarios, and explore multi-cluster Docker compose support.
+**Near-term focus:** sharpen developer onboarding, shore up e2e coverage, and automate doc generation for latest APIs.
+**Longer-term direction:** invest in AI-native ops (agent-friendly scripts, observability), scale modules for plugin scenarios, and explore multi-cluster Docker compose support.
 
 ## Documentation Map
 
