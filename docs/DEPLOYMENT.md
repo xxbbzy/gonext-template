@@ -6,17 +6,19 @@
 make docker-up
 ```
 
-默认服务：
+`make docker-up` 是 `docker compose up -d` 的封装，会启动 `docker-compose.yml` 中的三个服务：
 
-1. backend：`http://localhost:8080`
-2. frontend：`http://localhost:3000`
-3. postgres：`localhost:5432`
+- `backend`：对外暴露 `http://localhost:8080`（映射 `8080:8080`）
+- `frontend`：对外暴露 `http://localhost:3000`（映射 `3000:3000`）
+- `db`：Postgres 服务，容器端口 `5432` 也映射到宿主机，供 `backend` 的 `DB_DSN` 使用
 
 停止服务：
 
 ```bash
 make docker-down
 ```
+
+该命令会执行 `docker compose down`，并停止上述三个服务。
 
 ## 2. 部署前检查
 

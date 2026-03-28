@@ -36,7 +36,7 @@ make dev
 
 等价于并行启动：
 
-1. 后端：`make dev-backend`（默认 `http://localhost:8080`）
+1. 后端：`make dev-backend`（默认 `http://localhost:8080`，`make dev` 会通过 `make -j2 dev-backend dev-frontend` 触发）
 2. 前端：`make dev-frontend`（默认 `http://localhost:3000`）
 
 ## 4. 初始化测试数据（可选）
@@ -58,9 +58,10 @@ make check
 
 执行内容：
 
-1. `make lint`
+1. `make lint`（包含 `lint-backend` 与 `lint-frontend`）
 2. `make typecheck-frontend`
-3. `make test`
+3. `make test`（包含 `test-backend` 与 `test-frontend`）
+4. `make build`（包含 `build-backend` 与 `build-frontend`）
 
 ## 6. 常用命令速查
 
