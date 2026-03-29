@@ -44,4 +44,4 @@ that file to generate frontend types.
 - `api/openapi.yaml`
 - `backend/docs/swagger.yaml`
 - `frontend/types/api.ts`
-- `Makefile` targets: `gen` (includes `gen-server`, `gen-client`, `swagger`)
+- `Makefile` targets: `gen-types` (frontend TypeScript types) and `gen` (full regen: `gen-server`, `gen-types`, `swagger`). Older docs may refer to `gen-client`; treat it as `gen-types`.

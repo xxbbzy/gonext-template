@@ -70,6 +70,6 @@ git push origin feature/your-feature
 
 - [ ] 目标分支是 `develop`
 - [ ] 本地已通过 `make check`
-- [ ] 若改动 API，已同步 `api/openapi.yaml` 并执行 `make gen`
+- [ ] 若改动 API，已同步 `api/openapi.yaml` 并执行 `make gen-types`（需要全量刷新派生产物时再执行 `make gen`）
 - [ ] 若改动数据库 schema，已提供 migration（含回滚）
 - [ ] 文档已同步更新（如适用）

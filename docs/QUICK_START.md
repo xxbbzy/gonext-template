@@ -29,7 +29,7 @@ make init
 4. 安装前端 npm 依赖
 5. 创建 `data/` 与 `uploads/` 目录
 6. 初始化数据库（`go run ./cmd/bootstrap`）
-7. 生成代码与文档（`make gen`，包含 `gen-server`、`gen-client`、`swagger`）
+7. 生成代码与文档（`make gen`，包含 `gen-server`、`gen-types`、`swagger`）
 
 ## 3. 启动开发环境
 
@@ -70,7 +70,8 @@ make check
 
 ```bash
 make help            # 查看所有命令
-make gen             # 基于 OpenAPI 生成后端/前端代码并更新 Swagger（gen-server + gen-client + swagger）
+make gen-types        # 基于 OpenAPI 生成前端 TypeScript 类型（frontend/types/api.ts）
+make gen              # 全量生成：Go server stub + 前端类型 + Swagger（gen-server + gen-types + swagger）
 make new-module name=product
 make new-migration name=add_xxx
 make docker-up       # 用 docker compose 启动

@@ -7,7 +7,7 @@ This page is the concise contributor summary; the fuller AI operational map live
 
 ```text
 Next.js App Router
-  -> frontend/lib/api-client.ts
+  -> frontend/lib/api-client.gen.ts
      -> Gin server (backend/cmd/server/main.go)
         -> handler -> service -> repository -> GORM
            -> SQLite or PostgreSQL
@@ -15,8 +15,8 @@ Next.js App Router
 
 - API 契约文件是 `api/openapi.yaml`。
 - The API contract file is `api/openapi.yaml`.
-- 前端页面位于 `frontend/app/`，共享请求逻辑位于 `frontend/lib/api-client.ts`。
-- Frontend routes live in `frontend/app/`, and shared request logic lives in `frontend/lib/api-client.ts`.
+- 前端页面位于 `frontend/app/`，推荐使用 `frontend/lib/api-client.gen.ts` 作为请求客户端（`frontend/lib/api-client.ts` 仅保留兼容/迁移用途）。
+- Frontend routes live in `frontend/app/`. Prefer `frontend/lib/api-client.gen.ts` as the request client (`frontend/lib/api-client.ts` is kept only for compatibility during migration).
 
 ## 后端运行时 / Backend Runtime
 
@@ -44,8 +44,10 @@ Authentication and rate limiting are attached to route groups rather than applie
 - `frontend/app/layout.tsx` sets up `next-intl`, TanStack Query, and the toast provider.
 - `frontend/stores/auth.ts` 用 Zustand 持久化 token。
 - `frontend/stores/auth.ts` persists auth state with Zustand.
-- `frontend/lib/api-client.ts` 自动附带 Bearer Token，并在 `401` 时尝试刷新。
-- `frontend/lib/api-client.ts` attaches bearer tokens and attempts token refresh on `401`.
+- `frontend/lib/api-client.gen.ts` 自动附带 Bearer Token，并在 `401` 时尝试刷新。
+- `frontend/lib/api-client.gen.ts` attaches bearer tokens and attempts token refresh on `401`.
+- `frontend/lib/api-client.ts` 为兼容层（deprecated），仅用于逐步迁移旧页面的 import。
+- `frontend/lib/api-client.ts` is a deprecated compatibility layer for gradual import migration.
 
 ## 数据与迁移 / Data and Migrations
 
@@ -62,8 +64,8 @@ Authentication and rate limiting are attached to route groups rather than applie
 - Adding a backend module: start with `../AGENTS.md` and `../CONVENTIONS.md`
 - 新增 API：先改 `api/openapi.yaml`，再同步 handler/service/repository 与生成产物
 - Adding or changing an API: update `api/openapi.yaml` first, then sync handler/service/repository and generated artifacts
-- 新增前端页面：在 `frontend/app/` 建 route，并复用 `frontend/lib/api-client.ts`
-- Adding a frontend page: create a route in `frontend/app/` and reuse `frontend/lib/api-client.ts`
+- 新增前端页面：在 `frontend/app/` 建 route，并复用 `frontend/lib/api-client.gen.ts`
+- Adding a frontend page: create a route in `frontend/app/` and reuse `frontend/lib/api-client.gen.ts`
 
 ## 继续阅读 / Continue Reading
 

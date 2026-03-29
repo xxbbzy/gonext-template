@@ -93,10 +93,12 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 当接口契约变更时：
 
 ```bash
-make gen
+make gen-types
+# 需要全量刷新（含 Go server stub + Swagger）时再执行：
+# make gen
 ```
 
-会生成：`frontend/types/api.ts`
+默认会生成：`frontend/types/api.ts`
 
 ## 8. 当前实现与契约差异
 

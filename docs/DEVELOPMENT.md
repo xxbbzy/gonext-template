@@ -10,6 +10,7 @@ This page is the concise workflow summary for human contributors; repository-wid
 3. 进行改动 / Implement changes in the existing layer structure
 4. 本地检查 / Run practical checks: `make check`
 5. 生成产物（如需要）/ Refresh generated artifacts when needed:
+   - `make gen-types`
    - `make swagger`
    - `make gen`
 6. 更新必要文档 / Update the minimal docs affected by the change
@@ -18,10 +19,12 @@ This page is the concise workflow summary for human contributors; repository-wid
 
 - 先改 `api/openapi.yaml`，它是契约真相源。
 - Update `api/openapi.yaml` first because it is the contract source of truth.
-- 后端实现后，如果契约或 Swagger 输出受影响，执行 `make swagger`。
-- After backend API changes, run `make swagger` when contract-derived backend docs must be refreshed.
-- 前端类型依赖 OpenAPI，契约变更后先执行 `make gen-types`（它输出 `frontend/types/api.ts`）；只有在还需要刷新 Go server stub 与 Swagger 等全部派生产物时，才再运行 `make gen`。
-- Frontend types depend on OpenAPI, so run `make gen-types` after contract changes (it writes `frontend/types/api.ts`); run `make gen` only when you also need to regenerate the Go server stubs and Swagger docs.
+- 契约变更后，默认先执行 `make gen-types` 刷新前端类型（输出 `frontend/types/api.ts`）。
+- After contract changes, run `make gen-types` as the default step to refresh frontend types (writes `frontend/types/api.ts`).
+- 只有在需要全量刷新全部派生产物（Go server stub + 前端类型 + Swagger）时，才执行 `make gen`。
+- Run `make gen` only when you need a full regeneration (Go server stubs + frontend types + Swagger).
+- 仅需刷新 Swagger 文档输出时，执行 `make swagger`。
+- If you only need to refresh Swagger docs output, run `make swagger`.
 - 相关背景见 `docs/adr/001-openapi-as-contract.md`。
 - For rationale, see `docs/adr/001-openapi-as-contract.md`.
 
