@@ -30,7 +30,7 @@ make init
 5. 创建 `data/` 与 `uploads/` 目录
 6. 初始化数据库（`go run ./cmd/bootstrap`）
 7. 生成代码与文档（`make gen`，包含 `gen-server`、`gen-types`、`swagger`）
-7. Generate code and documentation (`make gen`, includes `gen-server`, `gen-types`, `swagger`)
+8. Generate code and documentation (`make gen`, includes `gen-server`, `gen-types`, `swagger`)
 
 ## 3. 启动开发环境
 

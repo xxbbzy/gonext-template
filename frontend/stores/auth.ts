@@ -6,62 +6,64 @@ import type { components } from "@/types/api";
 type ApiUser = components["schemas"]["UserResponse"];
 
 export type User = {
-    id: NonNullable<ApiUser["id"]>;
-    username: NonNullable<ApiUser["username"]>;
-    email: NonNullable<ApiUser["email"]>;
-    role: NonNullable<ApiUser["role"]>;
+  id: NonNullable<ApiUser["id"]>;
+  username: NonNullable<ApiUser["username"]>;
+  email: NonNullable<ApiUser["email"]>;
+  role: NonNullable<ApiUser["role"]>;
 };
 
 interface AuthState {
-    accessToken: string | null;
-    refreshToken: string | null;
-    user: User | null;
-    isAuthenticated: boolean;
+  accessToken: string | null;
+  refreshToken: string | null;
+  user: User | null;
+  isAuthenticated: boolean;
 
-    setTokens: (accessToken: string, refreshToken: string) => void;
-    setUser: (user: User) => void;
-    login: (accessToken: string, refreshToken: string, user: User) => void;
-    logout: () => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
+  setUser: (user: User) => void;
+  login: (accessToken: string, refreshToken: string, user: User) => void;
+  logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
-    persist(
-        (set) => ({
-            accessToken: null,
-            refreshToken: null,
-            user: null,
-            isAuthenticated: false,
+  persist(
+    (set) => ({
+      accessToken: null,
+      refreshToken: null,
+      user: null,
+      isAuthenticated: false,
 
-            setTokens: (accessToken: string, refreshToken: string) =>
-                set({ accessToken, refreshToken, isAuthenticated: true }),
+      setTokens: (accessToken: string, refreshToken: string) =>
+        set({ accessToken, refreshToken, isAuthenticated: true }),
 
-            setUser: (user: User) => set({ user }),
+      setUser: (user: User) => set({ user }),
 
-            login: (accessToken: string, refreshToken: string, user: User) =>
-                set({
-                    accessToken,
-                    refreshToken,
-                    user,
-                    isAuthenticated: true,
-                }),
-
-            logout: () =>
-                set({
-                    accessToken: null,
-                    refreshToken: null,
-                    user: null,
-                    isAuthenticated: false,
-                }),
+      login: (accessToken: string, refreshToken: string, user: User) =>
+        set({
+          accessToken,
+          refreshToken,
+          user,
+          isAuthenticated: true,
         }),
-        {
-            name: "auth-storage",
-            storage: createJSONStorage(() =>
-                typeof window !== "undefined" ? localStorage : {
-                    getItem: () => null,
-                    setItem: () => { },
-                    removeItem: () => { },
-                }
-            ),
-        }
-    )
+
+      logout: () =>
+        set({
+          accessToken: null,
+          refreshToken: null,
+          user: null,
+          isAuthenticated: false,
+        }),
+    }),
+    {
+      name: "auth-storage",
+      storage: createJSONStorage(() =>
+        typeof window !== "undefined"
+          ? localStorage
+          : {
+              getItem: () => null,
+              setItem: () => {},
+              removeItem: () => {},
+            }
+      ),
+    }
+  )
 );
