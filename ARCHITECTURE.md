@@ -11,7 +11,7 @@ for the rationale behind major stack choices.
 - Backend DI: Google Wire inputs in `backend/cmd/server/wire.go` and provider helpers in `backend/cmd/server/providers.go`
 - Persistence: GORM models and repositories, initialized by `backend/internal/config/database.go`
 - Frontend runtime: Next.js App Router under `frontend/app/`
-- Frontend data access: Axios client in `frontend/lib/api-client.ts` plus generated OpenAPI types in `frontend/types/api.ts`
+- Frontend data access: Axios client in `frontend/lib/api-client.ts`, the generated OpenAPI-backed wrapper in `frontend/lib/api-client.gen.ts`, and the generated request/response DTOs in `frontend/types/api.ts` (refresh these types with `make gen-types` when the contract changes).
 
 ## Request Flow
 
@@ -75,6 +75,7 @@ When adding a new backend module, the usual extension points are:
 - `frontend/lib/query-provider.tsx` owns the shared TanStack Query client.
 - `frontend/lib/api-client.ts` computes the API base URL, attaches tokens, and handles refresh-on-401 behavior.
 - `frontend/stores/auth.ts` persists auth state in local storage via Zustand middleware.
+- `frontend/types/api.ts` contains the generated OpenAPI request/response models; refresh them with `make gen-types` when the contract changes, and pair them with the generated wrapper `frontend/lib/api-client.gen.ts` for type-safe fetchers.
 
 ## Documentation and Decision Links
 
