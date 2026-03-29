@@ -40,7 +40,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 
 1. Confirm the API contract in `api/openapi.yaml`, run `make gen-types`, and import the generated request/response types from `frontend/types/api.ts` (especially for auth and item work) so the UI relies on the OpenAPI DTOs.
 2. Add or update routes under `frontend/app/`.
-3. Keep network access in `frontend/lib/api-client.ts` or feature-specific wrappers that use it.
+3. Keep network access in `frontend/lib/api-client.gen.ts` (the preferred generated OpenAPI wrapper); `frontend/lib/api-client.ts` persists only as a legacy compatibility shim for older imports.
 4. Keep auth state in `frontend/stores/auth.ts`; do not duplicate token persistence logic.
 5. Reuse `frontend/lib/query-provider.tsx` for server-state flows and existing UI/component patterns in `frontend/components/`.
 6. Run `npm run build` in `frontend/` or `make build` when practical.
