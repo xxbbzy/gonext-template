@@ -47,7 +47,8 @@ When you need the rationale behind the stack, check ADRs before proposing framew
 - 数据库初始化：`backend/internal/config/database.go`
 - API 契约：`api/openapi.yaml`
 - Frontend route tree: `frontend/app/`
-- Frontend API client (preferred): `frontend/lib/api-client.gen.ts` (legacy/compat: `frontend/lib/api-client.ts`)
+- Frontend API helpers: `frontend/lib/api-client.gen.ts`
+- Frontend TanStack Query helpers: `frontend/lib/api-query.ts`
 
 ## 推荐阅读顺序 / Suggested Reading Order
 

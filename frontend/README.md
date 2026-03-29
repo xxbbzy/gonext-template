@@ -1,6 +1,6 @@
 # 前端概览
 
-本仓库前端由 Next.js App Router 驱动，负责渲染用户界面。所有请求通过 `frontend/lib/api-client.gen.ts` 统一发出，请求/响应类型则来自 `frontend/types/api.ts`，该文件由 OpenAPI 契约生成，并在契约变更后通过 `make gen-types` 刷新。
+本仓库前端由 Next.js App Router 驱动，负责渲染用户界面。共享请求辅助函数集中在 `frontend/lib/api-client.gen.ts`，TanStack Query 选项封装集中在 `frontend/lib/api-query.ts`，而请求/响应类型来自 OpenAPI 生成的 `frontend/types/api.ts`。契约变更后先运行 `make gen-types` 刷新这些类型。
 
 ## 启动方式
 
@@ -25,6 +25,6 @@
 ## 目录说明
 
 - `app/`：App Router 页面、布局、服务器组件等入口，保持与路由对应。
-- `lib/`：共享逻辑层，包含 API 请求封装、查询提供器、工具函数等。
+- `lib/`：共享逻辑层，包含 OpenAPI 请求封装（`api-client.gen.ts`）、TanStack Query 选项（`api-query.ts`）、查询提供器、工具函数等。
 - `stores/`：Zustand 状态管理（如 `auth.ts`）统一保存认证与会话状态。
 - `types/`：OpenAPI 生成的 API 类型定义（当前位于 `types/api.ts`）。

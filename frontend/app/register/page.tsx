@@ -7,9 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { client } from "@/lib/api-client.gen";
-import { useAuthStore, User } from "@/stores/auth";
-import type { components } from "@/types/api";
+import { getApiErrorMessage, registerUser } from "@/lib/api-client.gen";
+import { toStoredUser, useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,7 +41,6 @@ export default function RegisterPage() {
     });
 
   type RegisterForm = z.infer<typeof registerSchema>;
-  type AuthResponse = components["schemas"]["AuthResponse"];
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
   const [error, setError] = useState("");
@@ -60,55 +58,16 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     try {
-      const { data: res, error: apiError } = await client.POST(
-        "/api/v1/auth/register",
-        {
-          body: {
-            username: data.username,
-            email: data.email,
-            password: data.password,
-          },
-        }
-      );
-      if (apiError) {
-        setError(
-          (apiError as { message?: string })?.message || tAuth("registerFailed")
-        );
-        return;
-      }
-      const auth: AuthResponse | undefined = res?.data;
-      if (
-        !auth ||
-        auth.access_token == null ||
-        auth.refresh_token == null ||
-        auth.user == null
-      ) {
-        setError(tAuth("registerFailed"));
-        return;
-      }
+      const auth = await registerUser({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+      });
 
-      const apiUser = auth.user;
-      if (
-        apiUser.id == null ||
-        apiUser.username == null ||
-        apiUser.email == null ||
-        apiUser.role == null
-      ) {
-        setError(tAuth("registerFailed"));
-        return;
-      }
-
-      const user: User = {
-        id: apiUser.id,
-        username: apiUser.username,
-        email: apiUser.email,
-        role: apiUser.role,
-      };
-
-      login(auth.access_token, auth.refresh_token, user);
+      login(auth.access_token, auth.refresh_token, toStoredUser(auth.user));
       router.push("/dashboard");
-    } catch {
-      setError(tAuth("registerFailed"));
+    } catch (error) {
+      setError(getApiErrorMessage(error, tAuth("registerFailed")));
     } finally {
       setLoading(false);
     }

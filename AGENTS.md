@@ -19,7 +19,8 @@ This repository exposes a compact AI-facing documentation layer at the root:
 - Application error catalog: `backend/pkg/errcode/errcode.go`
 - Frontend route tree: `frontend/app/`
 - Generated frontend types: `frontend/types/api.ts` (OpenAPI request/response models refreshed via `make gen-types`, the standard command after contract changes; run `make gen` when committed server code or Swagger artifacts must also be refreshed).
-- Frontend request layer: `frontend/lib/api-client.gen.ts` (preferred typed OpenAPI-backed client wrapper for base URL configuration, bearer token injection, and refresh-on-401) with `frontend/lib/api-client.ts` retained only as a deprecated compatibility shim.
+- Frontend request layer: `frontend/lib/api-client.gen.ts` (typed OpenAPI-backed client wrapper for base URL configuration, bearer token injection, refresh-on-401, and shared operation helpers).
+- Frontend TanStack Query helpers: `frontend/lib/api-query.ts`
 - Frontend query bootstrap: `frontend/lib/query-provider.tsx`
 - Frontend auth state: `frontend/stores/auth.ts`
 
@@ -40,7 +41,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 
 1. Confirm the API contract in `api/openapi.yaml`, run `make gen-types`, and import the generated request/response types from `frontend/types/api.ts` (especially for auth and item work) so the UI relies on the OpenAPI DTOs.
 2. Add or update routes under `frontend/app/`.
-3. Keep network access in `frontend/lib/api-client.gen.ts` (the preferred typed OpenAPI-backed client wrapper); `frontend/lib/api-client.ts` persists only as a deprecated compatibility shim for older imports.
+3. Keep network access and shared operation helpers in `frontend/lib/api-client.gen.ts`, and prefer `frontend/lib/api-query.ts` for TanStack Query option builders instead of page-local request wrappers.
 4. Keep auth state in `frontend/stores/auth.ts`; do not duplicate token persistence logic.
 5. Reuse `frontend/lib/query-provider.tsx` for server-state flows and existing UI/component patterns in `frontend/components/`.
 6. Run `npm run build` in `frontend/` or `make build` when practical.

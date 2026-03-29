@@ -2,8 +2,11 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { uploadFile } from "@/lib/api-client.gen";
-import type { UploadResponse } from "@/lib/api-client";
+import {
+  getApiErrorMessage,
+  uploadFile,
+  type UploadResponse,
+} from "@/lib/api-client.gen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
@@ -20,27 +23,17 @@ export default function UploadPage() {
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
-      const { data: res, error: apiError } = await uploadFile(file);
-      if (apiError || !res?.data) {
-        const errMsg =
-          (apiError as { message?: string })?.message || tUpload("retry");
-        addToast({
-          title: tUpload("failed"),
-          description: errMsg,
-          variant: "error",
-        });
-        return;
-      }
-      setUploadedFiles((prev) => [...prev, res.data as UploadResponse]);
+      const uploadedFile = await uploadFile(file);
+      setUploadedFiles((prev) => [...prev, uploadedFile]);
       addToast({
         title: tUpload("success"),
         description: file.name,
         variant: "success",
       });
-    } catch {
+    } catch (error) {
       addToast({
         title: tUpload("failed"),
-        description: tUpload("retry"),
+        description: getApiErrorMessage(error, tUpload("retry")),
         variant: "error",
       });
     } finally {
@@ -133,7 +126,7 @@ export default function UploadPage() {
                     <div>
                       <p className="text-sm font-medium">{file.filename}</p>
                       <p className="text-xs text-gray-400">
-                        {formatSize(file.size ?? 0)}
+                        {formatSize(file.size)}
                       </p>
                     </div>
                   </div>

@@ -7,9 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { client } from "@/lib/api-client.gen";
-import { useAuthStore, User } from "@/stores/auth";
-import type { components } from "@/types/api";
+import { getApiErrorMessage, loginUser } from "@/lib/api-client.gen";
+import { toStoredUser, useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,7 +28,6 @@ function LoginForm() {
   });
 
   type LoginForm = z.infer<typeof loginSchema>;
-  type AuthResponse = components["schemas"]["AuthResponse"];
   const router = useRouter();
   const searchParams = useSearchParams();
   const login = useAuthStore((s) => s.login);
@@ -48,51 +46,17 @@ function LoginForm() {
     setLoading(true);
     setError("");
     try {
-      const { data: res, error: apiError } = await client.POST(
-        "/api/v1/auth/login",
-        { body: { email: data.email, password: data.password } }
-      );
-      if (apiError) {
-        setError(
-          (apiError as { message?: string })?.message || tAuth("loginFailed")
-        );
-        return;
-      }
-      const auth: AuthResponse | undefined = res?.data;
-      if (
-        !auth ||
-        auth.access_token == null ||
-        auth.refresh_token == null ||
-        auth.user == null
-      ) {
-        setError(tAuth("loginFailed"));
-        return;
-      }
+      const auth = await loginUser({
+        email: data.email,
+        password: data.password,
+      });
 
-      const apiUser = auth.user;
-      if (
-        apiUser.id == null ||
-        apiUser.username == null ||
-        apiUser.email == null ||
-        apiUser.role == null
-      ) {
-        setError(tAuth("loginFailed"));
-        return;
-      }
-
-      const user: User = {
-        id: apiUser.id,
-        username: apiUser.username,
-        email: apiUser.email,
-        role: apiUser.role,
-      };
-
-      login(auth.access_token, auth.refresh_token, user);
+      login(auth.access_token, auth.refresh_token, toStoredUser(auth.user));
 
       const redirect = searchParams.get("redirect") || "/dashboard";
       router.push(redirect);
-    } catch {
-      setError(tAuth("loginFailed"));
+    } catch (error) {
+      setError(getApiErrorMessage(error, tAuth("loginFailed")));
     } finally {
       setLoading(false);
     }

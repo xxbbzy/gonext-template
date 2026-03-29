@@ -8,6 +8,7 @@ This page is the concise contributor summary; the fuller AI operational map live
 ```text
 Next.js App Router
   -> frontend/lib/api-client.gen.ts
+     -> frontend/lib/api-query.ts
      -> Gin server (backend/cmd/server/main.go)
         -> handler -> service -> repository -> GORM
            -> SQLite or PostgreSQL
@@ -15,8 +16,8 @@ Next.js App Router
 
 - API 契约文件是 `api/openapi.yaml`。
 - The API contract file is `api/openapi.yaml`.
-- 前端页面位于 `frontend/app/`，推荐使用 `frontend/lib/api-client.gen.ts` 作为请求客户端（`frontend/lib/api-client.ts` 仅保留兼容/迁移用途）。
-- Frontend routes live in `frontend/app/`. Prefer `frontend/lib/api-client.gen.ts` as the request client (`frontend/lib/api-client.ts` is kept only for compatibility during migration).
+- 前端页面位于 `frontend/app/`；直接请求优先走 `frontend/lib/api-client.gen.ts`，TanStack Query 选项优先复用 `frontend/lib/api-query.ts`。
+- Frontend routes live in `frontend/app/`; prefer `frontend/lib/api-client.gen.ts` for shared request helpers and `frontend/lib/api-query.ts` for TanStack Query options.
 
 ## 后端运行时 / Backend Runtime
 
@@ -46,8 +47,8 @@ Authentication and rate limiting are attached to route groups rather than applie
 - `frontend/stores/auth.ts` persists auth state with Zustand.
 - `frontend/lib/api-client.gen.ts` 自动附带 Bearer Token，并在 `401` 时尝试刷新。
 - `frontend/lib/api-client.gen.ts` attaches bearer tokens and attempts token refresh on `401`.
-- `frontend/lib/api-client.ts` 为兼容层（deprecated），仅用于逐步迁移旧页面的 import。
-- `frontend/lib/api-client.ts` is a deprecated compatibility layer for gradual import migration.
+- `frontend/lib/api-query.ts` 复用 OpenAPI 类型，提供列表/增删改等 TanStack Query 选项构建器。
+- `frontend/lib/api-query.ts` reuses OpenAPI types to provide TanStack Query option builders for list/create/update/delete flows.
 
 ## 数据与迁移 / Data and Migrations
 
