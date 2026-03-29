@@ -56,7 +56,7 @@ summaries live under `docs/`, but repository-wide operational rules belong here.
 
 1. Update `api/openapi.yaml` before or alongside backend API behavior changes.
 2. Run `make gen-types` to refresh the generated TypeScript request/response models in `frontend/types/api.ts`.
-3. Run `make gen` when every derived artifact (backend helpers, client wrappers, docs, etc.) must be regenerated together.
+3. Run `make gen` when the generated Go server code, TypeScript types, and Swagger/docs artifacts must be refreshed together.
 4. Run `make swagger` whenever the Swagger output must stay aligned with the OpenAPI contract.
 5. Keep handler comments, generated docs, and frontend request/response typing aligned with the OpenAPI contract.
 
