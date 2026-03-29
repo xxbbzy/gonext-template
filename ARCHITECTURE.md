@@ -11,12 +11,12 @@ for the rationale behind major stack choices.
 - Backend DI: Google Wire inputs in `backend/cmd/server/wire.go` and provider helpers in `backend/cmd/server/providers.go`
 - Persistence: GORM models and repositories, initialized by `backend/internal/config/database.go`
 - Frontend runtime: Next.js App Router under `frontend/app/`
-- Frontend data access: Axios client in `frontend/lib/api-client.ts` plus generated OpenAPI types in `frontend/types/api.ts`
+- Frontend data access: typed OpenAPI-backed client wrapper `frontend/lib/api-client.gen.ts` (it manages the base URL, bearer token injection, and refresh-on-401 behavior); the deprecated `frontend/lib/api-client.ts` remains only for compatibility while request/response DTOs live in `frontend/types/api.ts` (refresh with `make gen-types` whenever the contract changes).
 
 ## Request Flow
 
 1. A browser request enters a Next.js App Router page under `frontend/app/`.
-2. Client-side data access goes through `frontend/lib/api-client.ts`, which attaches bearer tokens from `frontend/stores/auth.ts`.
+2. Client-side data access goes through `frontend/lib/api-client.gen.ts`, which builds on openapi-fetch to configure the base URL, attach bearer tokens from `frontend/stores/auth.ts`, and handle refresh-on-401; `frontend/lib/api-client.ts` survives only as a deprecated compatibility shim for legacy imports.
 3. The request hits Gin in `backend/cmd/server/main.go`.
 4. Global middleware runs in this order:
    - `middleware.Recovery`
@@ -73,8 +73,9 @@ When adding a new backend module, the usual extension points are:
 
 - `frontend/app/layout.tsx` sets up `NextIntlClientProvider`, `QueryProvider`, and the toast provider.
 - `frontend/lib/query-provider.tsx` owns the shared TanStack Query client.
-- `frontend/lib/api-client.ts` computes the API base URL, attaches tokens, and handles refresh-on-401 behavior.
+- `frontend/lib/api-client.ts` exists as a deprecated compatibility shim for older code paths; prefer `frontend/lib/api-client.gen.ts` for typed, OpenAPI-backed requests.
 - `frontend/stores/auth.ts` persists auth state in local storage via Zustand middleware.
+- `frontend/types/api.ts` contains the generated OpenAPI request/response models; refresh them with `make gen-types` when the contract changes, and pair them with `frontend/lib/api-client.gen.ts` for type-safe fetchers.
 
 ## Documentation and Decision Links
 

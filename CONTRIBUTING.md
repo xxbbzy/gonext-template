@@ -70,6 +70,6 @@ git push origin feature/your-feature
 
 - [ ] 目标分支是 `develop`
 - [ ] 本地已通过 `make check`
-- [ ] 若改动 API，已同步 `api/openapi.yaml` 并执行 `make gen`
+- [ ] 若改动 API 契约，已同步 `api/openapi.yaml`：开发联调可先执行 `make gen-types` 刷新前端类型；提交/合并前需确保后端生成文件与 Swagger 同步（推荐 `make gen`，或至少 `make gen-server` + `make swagger`）
 - [ ] 若改动数据库 schema，已提供 migration（含回滚）
 - [ ] 文档已同步更新（如适用）

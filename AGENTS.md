@@ -4,7 +4,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 
 1. Read `ARCHITECTURE.md` for runtime topology, dependency injection, middleware order, and extension points.
 2. Read `CONVENTIONS.md` for coding rules, layer boundaries, error handling, response shape, and testing expectations.
-3. Treat `api/openapi.yaml` as the contract source of truth for backend and generated frontend types.
+3. Treat `api/openapi.yaml` as the contract source of truth for backend behavior and for the generated frontend types that live at `frontend/types/api.ts`.
 4. Use `docs/adr/` for the rationale behind OpenAPI, database strategy, and Google Wire.
 5. Use `docs/README.md` when you need the curated human-facing bilingual index.
 
@@ -18,7 +18,8 @@ This repository exposes a compact AI-facing documentation layer at the root:
 - Response envelope helpers: `backend/pkg/response/response.go`
 - Application error catalog: `backend/pkg/errcode/errcode.go`
 - Frontend route tree: `frontend/app/`
-- Frontend request layer: `frontend/lib/api-client.gen.ts` (type-safe openapi-fetch)
+- Generated frontend types: `frontend/types/api.ts` (OpenAPI request/response models refreshed via `make gen-types`, the standard command after contract changes; run `make gen` when committed server code or Swagger artifacts must also be refreshed).
+- Frontend request layer: `frontend/lib/api-client.gen.ts` (preferred typed OpenAPI-backed client wrapper for base URL configuration, bearer token injection, and refresh-on-401) with `frontend/lib/api-client.ts` retained only as a deprecated compatibility shim.
 - Frontend query bootstrap: `frontend/lib/query-provider.tsx`
 - Frontend auth state: `frontend/stores/auth.ts`
 
@@ -32,14 +33,14 @@ This repository exposes a compact AI-facing documentation layer at the root:
 4. Wire new dependencies through `backend/cmd/server/wire.go` and `backend/cmd/server/providers.go`.
 5. Register routes in `backend/cmd/server/main.go`.
 6. If the change adds persistence, update model registration for development `AutoMigrate` and add SQL migrations under `backend/migrations/` for deployable schema changes.
-7. Regenerate derived artifacts with `make gen` when the contract changed.
+7. After contract changes, run `make gen-types` to refresh frontend types; run `make gen` when committed server code or Swagger artifacts must also be regenerated.
 8. Run practical verification before finishing.
 
 ### Frontend Page or Feature Change
 
-1. Confirm the API contract in `api/openapi.yaml` and generated types in `frontend/types/api.ts`.
+1. Confirm the API contract in `api/openapi.yaml`, run `make gen-types`, and import the generated request/response types from `frontend/types/api.ts` (especially for auth and item work) so the UI relies on the OpenAPI DTOs.
 2. Add or update routes under `frontend/app/`.
-3. Keep network access in `frontend/lib/api-client.ts` or feature-specific wrappers that use it.
+3. Keep network access in `frontend/lib/api-client.gen.ts` (the preferred typed OpenAPI-backed client wrapper); `frontend/lib/api-client.ts` persists only as a deprecated compatibility shim for older imports.
 4. Keep auth state in `frontend/stores/auth.ts`; do not duplicate token persistence logic.
 5. Reuse `frontend/lib/query-provider.tsx` for server-state flows and existing UI/component patterns in `frontend/components/`.
 6. Run `npm run build` in `frontend/` or `make build` when practical.
@@ -86,6 +87,6 @@ For API behavior changes that involve runtime, also run `make e2e` to exercise t
 
 - `make check` — **mandatory** after every code change
 - `make e2e` — after API or runtime behavior changes
-- `make swagger` after backend API annotation or contract changes
-- `make gen` after `api/openapi.yaml` changes
+- `make gen-types` after `api/openapi.yaml` changes (frontend DTO refresh)
+- `make gen` when committed server code or Swagger artifacts must also be refreshed
 - Review `docs/README.md` after documentation work to confirm the navigation still makes sense

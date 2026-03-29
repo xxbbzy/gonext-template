@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { client } from "@/lib/api-client.gen";
 import { useAuthStore, User } from "@/stores/auth";
+import type { components } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,6 +42,7 @@ export default function RegisterPage() {
     });
 
   type RegisterForm = z.infer<typeof registerSchema>;
+  type AuthResponse = components["schemas"]["AuthResponse"];
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
   const [error, setError] = useState("");
@@ -68,18 +70,42 @@ export default function RegisterPage() {
           },
         }
       );
-      if (apiError || !res?.data) {
+      if (apiError) {
         setError(
           (apiError as { message?: string })?.message || tAuth("registerFailed")
         );
         return;
       }
-      const { access_token, refresh_token, user } = res.data as {
-        access_token: string;
-        refresh_token: string;
-        user: User;
+      const auth: AuthResponse | undefined = res?.data;
+      if (
+        !auth ||
+        auth.access_token == null ||
+        auth.refresh_token == null ||
+        auth.user == null
+      ) {
+        setError(tAuth("registerFailed"));
+        return;
+      }
+
+      const apiUser = auth.user;
+      if (
+        apiUser.id == null ||
+        apiUser.username == null ||
+        apiUser.email == null ||
+        apiUser.role == null
+      ) {
+        setError(tAuth("registerFailed"));
+        return;
+      }
+
+      const user: User = {
+        id: apiUser.id,
+        username: apiUser.username,
+        email: apiUser.email,
+        role: apiUser.role,
       };
-      login(access_token, refresh_token, user);
+
+      login(auth.access_token, auth.refresh_token, user);
       router.push("/dashboard");
     } catch {
       setError(tAuth("registerFailed"));

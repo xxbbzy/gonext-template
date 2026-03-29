@@ -5,7 +5,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { components } from "@/types/api";
 import { client } from "@/lib/api-client.gen";
-import type { ItemResponse } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,8 +34,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-type Item = ItemResponse;
+type Item = components["schemas"]["ItemResponse"];
 type ItemFormData = components["schemas"]["CreateItemRequest"];
+type PagedItemsResponse = components["schemas"]["PagedItemsResponse"];
 
 const initialFormData: ItemFormData = {
   title: "",
@@ -78,17 +78,12 @@ export default function ItemsPage() {
           query: { page, page_size: 10, keyword: keyword || undefined },
         },
       });
-      if (apiError || !res?.data) {
+      const paged: PagedItemsResponse | undefined = res?.data;
+      if (apiError || !paged) {
         throw new Error(getApiErrorMessage(apiError, tCommon("error")));
       }
 
-      return res.data as {
-        items: ItemResponse[];
-        total: number;
-        page: number;
-        page_size: number;
-        total_pages: number;
-      };
+      return paged;
     },
   });
 

@@ -47,7 +47,7 @@ When you need the rationale behind the stack, check ADRs before proposing framew
 - 数据库初始化：`backend/internal/config/database.go`
 - API 契约：`api/openapi.yaml`
 - Frontend route tree: `frontend/app/`
-- Frontend API client: `frontend/lib/api-client.ts`
+- Frontend API client (preferred): `frontend/lib/api-client.gen.ts` (legacy/compat: `frontend/lib/api-client.ts`)
 
 ## 推荐阅读顺序 / Suggested Reading Order
 
@@ -58,7 +58,7 @@ When you need the rationale behind the stack, check ADRs before proposing framew
 
 ## 维护规则 / Maintenance Rules
 
-- 修改 API 行为时，先更新 `api/openapi.yaml`，再同步生成产物与相关说明。
-- When API behavior changes, update `api/openapi.yaml` first, then refresh generated artifacts and summaries.
+- 修改 API 行为/契约时，先更新 `api/openapi.yaml`；开发联调阶段可先运行 `make gen-types` 刷新 `frontend/types/api.ts`。提交/合并前需确保后端生成文件与 Swagger 同步：推荐执行 `make gen`（或至少 `make gen-server` + `make swagger`）。
+- When API behavior/contract changes, update `api/openapi.yaml` first; during iteration you can run `make gen-types` to refresh `frontend/types/api.ts`. Before committing/merging, keep backend-generated artifacts and Swagger in sync: prefer `make gen` (or at minimum `make gen-server` + `make swagger`).
 - 根目录 AI 文档是结构和规则的主参考；`docs/` 负责双语摘要与导航。
 - The root AI docs are canonical for structure and rules; `docs/` should summarize and link rather than duplicate them.
