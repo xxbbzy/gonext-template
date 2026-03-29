@@ -1,4 +1,4 @@
-.PHONY: help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend test-frontend build build-backend build-frontend seed swagger gen gen-server gen-client migrate-up migrate-down new-migration new-module e2e docker-up docker-down docker-build clean
+.PHONY: help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend test-frontend build build-backend build-frontend seed swagger gen gen-server gen-client gen-types migrate-up migrate-down new-migration new-module e2e docker-up docker-down docker-build clean
 
 BACKEND_GO_CACHE := $(CURDIR)/backend/.cache/go-build
 BACKEND_LINT_CACHE := $(CURDIR)/backend/.cache/golangci-lint
@@ -116,7 +116,7 @@ swagger: ## Generate Swagger documentation
 	@echo "==> Generating Swagger docs..."
 	@cd backend && go run ../scripts/swagger/main.go
 
-gen: gen-server gen-client swagger ## Generate all code from OpenAPI spec
+gen: gen-server gen-types swagger ## Generate all code from OpenAPI spec
 
 gen-server: ## Generate Go server code from OpenAPI spec
 	@echo "==> Generating Go server code..."
@@ -128,9 +128,13 @@ gen-server: ## Generate Go server code from OpenAPI spec
 		-o internal/api/server.gen.go \
 		../api/openapi.yaml
 
-gen-client: ## Generate TypeScript API types from OpenAPI spec
+# ===== TypeScript Generation =====
+
+gen-types: ## Generate TypeScript API types from OpenAPI spec
 	@echo "==> Generating TypeScript types..."
 	@cd frontend && npx openapi-typescript ../api/openapi.yaml -o types/api.ts
+
+gen-client: gen-types ## Alias for gen-types (legacy)
 
 # ===== Module Scaffolding =====
 
