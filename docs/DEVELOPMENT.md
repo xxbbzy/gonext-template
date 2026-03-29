@@ -21,8 +21,8 @@ This page is the concise workflow summary for human contributors; repository-wid
 - Update `api/openapi.yaml` first because it is the contract source of truth.
 - 契约变更后，默认先执行 `make gen-types` 刷新前端类型（输出 `frontend/types/api.ts`）。
 - After contract changes, run `make gen-types` as the default step to refresh frontend types (writes `frontend/types/api.ts`).
-- 只有在需要全量刷新全部派生产物（Go server stub + 前端类型 + Swagger）时，才执行 `make gen`。
-- Run `make gen` only when you need a full regeneration (Go server stubs + frontend types + Swagger).
+- 准备提交/合并包含契约变更的 PR 时，确保后端派生文件也已同步：推荐执行 `make gen`；或至少执行 `make gen-server`（并在需要更新 Swagger 输出时执行 `make swagger`）。
+- Before committing/merging a PR that includes contract changes, keep committed backend-derived artifacts in sync: prefer `make gen`; or at minimum `make gen-server` (and run `make swagger` when Swagger output must be refreshed).
 - 仅需刷新 Swagger 文档输出时，执行 `make swagger`。
 - If you only need to refresh Swagger docs output, run `make swagger`.
 - 相关背景见 `docs/adr/001-openapi-as-contract.md`。

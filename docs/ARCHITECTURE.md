@@ -62,8 +62,8 @@ Authentication and rate limiting are attached to route groups rather than applie
 
 - 新增后端模块：查看 `../AGENTS.md` 和 `../CONVENTIONS.md`
 - Adding a backend module: start with `../AGENTS.md` and `../CONVENTIONS.md`
-- 新增 API：先改 `api/openapi.yaml`，再同步 handler/service/repository 与生成产物
-- Adding or changing an API: update `api/openapi.yaml` first, then sync handler/service/repository and generated artifacts
+- 新增 API：先改 `api/openapi.yaml`，再同步 handler/service/repository；提交/合并前推荐执行 `make gen`，确保 Go server stub 与 Swagger 同步
+- Adding or changing an API: update `api/openapi.yaml` first, then sync handler/service/repository; before committing/merging prefer `make gen` to keep the Go server stubs and Swagger in sync
 - 新增前端页面：在 `frontend/app/` 建 route，并复用 `frontend/lib/api-client.gen.ts`
 - Adding a frontend page: create a route in `frontend/app/` and reuse `frontend/lib/api-client.gen.ts`
 

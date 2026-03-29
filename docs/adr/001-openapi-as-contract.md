@@ -31,6 +31,8 @@ that file to generate frontend types.
 - Contract updates add a small amount of extra workflow overhead.
 - Generated artifacts must be refreshed after contract changes to avoid stale
   type information.
+- Contract changes that are merged must keep committed backend-derived outputs
+  in sync (Go server stubs and Swagger), not only frontend types.
 
 ## Alternatives Considered
 

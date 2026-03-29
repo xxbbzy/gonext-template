@@ -94,8 +94,11 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 ```bash
 make gen-types
-# 需要全量刷新（含 Go server stub + Swagger）时再执行：
+# 准备提交/合并含契约变更的 PR 时，推荐全量刷新派生产物：
 # make gen
+# 或至少：
+# make gen-server
+# make swagger
 ```
 
 默认会生成：`frontend/types/api.ts`
