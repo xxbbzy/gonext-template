@@ -1,12 +1,16 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-export interface User {
-    id: number;
-    username: string;
-    email: string;
-    role: string;
-}
+import type { components } from "@/types/api";
+
+type ApiUser = components["schemas"]["UserResponse"];
+
+export type User = {
+    id: NonNullable<ApiUser["id"]>;
+    username: NonNullable<ApiUser["username"]>;
+    email: NonNullable<ApiUser["email"]>;
+    role: NonNullable<ApiUser["role"]>;
+};
 
 interface AuthState {
     accessToken: string | null;
