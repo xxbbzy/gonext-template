@@ -1,15 +1,35 @@
 name: Codegen Check
 
 on:
-  pull_request:
+  push:
+    branches: [main, develop]
     paths:
-      - "api/**"
-      - "backend/**"
-      - "frontend/**"
-      - "Makefile"
-      - "README.md"
-      - "docs/**"
+      - "api/openapi.yaml"
+      - "backend/internal/api/**"
+      - "backend/docs/**"
+      - "backend/go.mod"
+      - "backend/go.sum"
+      - "frontend/types/**"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - "scripts/swagger/**"
       - "scripts/check-versions.sh"
+      - "Makefile"
+      - ".github/workflows/codegen-check.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "api/openapi.yaml"
+      - "backend/internal/api/**"
+      - "backend/docs/**"
+      - "backend/go.mod"
+      - "backend/go.sum"
+      - "frontend/types/**"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - "scripts/swagger/**"
+      - "scripts/check-versions.sh"
+      - "Makefile"
       - ".github/workflows/codegen-check.yml"
 
 jobs:
@@ -38,12 +58,5 @@ jobs:
       - name: Install frontend dependencies
         run: cd frontend && npm ci
 
-      - name: Run code generation
-        run: make gen
-
-      - name: Check for drift
-        run: |
-          if ! git diff --exit-code; then
-            echo "::error::Codegen drift detected. Run 'make gen' and commit the changes."
-            exit 1
-          fi
+      - name: Run shared codegen drift check
+        run: make check-codegen-drift

@@ -23,6 +23,10 @@ This page is the concise workflow summary for human contributors; repository-wid
 - After contract changes, run `make gen-types` as the default step to refresh frontend types (writes `frontend/types/api.ts`).
 - 准备提交/合并包含契约变更的 PR 时，确保后端派生文件也已同步：推荐执行 `make gen`；或至少执行 `make gen-server`（并在需要更新 Swagger 输出时执行 `make swagger`）。
 - Before committing/merging a PR that includes contract changes, keep committed backend-derived artifacts in sync: prefer `make gen`; or at minimum `make gen-server` (and run `make swagger` when Swagger output must be refreshed).
+- 在推送涉及 OpenAPI/代码生成输入的改动前，执行 `make check-codegen-drift`，它会复用 CI 的漂移检查规则（先生成，再校验仓库状态）。
+- Before pushing changes that touch OpenAPI/codegen inputs, run `make check-codegen-drift`; it uses the same CI drift check semantics (regenerate first, then verify repo state).
+- 若 `make check-codegen-drift` 失败，先执行 `make gen`，再检查 `git status` 并提交生成文件，最后重新运行 `make check-codegen-drift` 直到通过。
+- If `make check-codegen-drift` fails, run `make gen`, review `git status`, commit generated artifacts, then rerun `make check-codegen-drift` until it passes.
 - 仅需刷新 Swagger 文档输出时，执行 `make swagger`。
 - If you only need to refresh Swagger docs output, run `make swagger`.
 - 相关背景见 `docs/adr/001-openapi-as-contract.md`。

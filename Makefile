@@ -1,4 +1,4 @@
-.PHONY: all help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend test-frontend build build-backend build-frontend seed swagger gen gen-server gen-client gen-types migrate-up migrate-down new-migration new-module e2e docker-up docker-down docker-build clean
+.PHONY: all help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend test-frontend build build-backend build-frontend seed swagger gen gen-server gen-client gen-types check-codegen-drift migrate-up migrate-down new-migration new-module e2e docker-up docker-down docker-build clean
 
 BACKEND_GO_CACHE := $(CURDIR)/backend/.cache/go-build
 BACKEND_LINT_CACHE := $(CURDIR)/backend/.cache/golangci-lint
@@ -137,6 +137,23 @@ gen-types: ## Generate TypeScript API types from OpenAPI spec
 	@cd frontend && npx openapi-typescript ../api/openapi.yaml -o types/api.ts
 
 gen-client: gen-types ## Alias for gen-types (legacy)
+
+check-codegen-drift: ## Regenerate and fail if repository state drifts
+	@echo "==> Checking codegen drift..."
+	@set -eu; \
+	before_file=$$(mktemp); \
+	after_file=$$(mktemp); \
+	trap 'rm -f "$$before_file" "$$after_file"' EXIT; \
+	git status --porcelain=v1 --untracked-files=all > "$$before_file"; \
+	$(MAKE) gen; \
+	git status --porcelain=v1 --untracked-files=all > "$$after_file"; \
+	if ! diff -u "$$before_file" "$$after_file" >/dev/null; then \
+		echo "::error::Codegen drift detected. Run 'make gen' and commit all generated changes."; \
+		echo "Repository changes after regeneration:"; \
+		git status --short; \
+		exit 1; \
+	fi; \
+	echo "✅ Codegen artifacts are in sync"
 
 # ===== Module Scaffolding =====
 

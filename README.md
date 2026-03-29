@@ -68,6 +68,8 @@ Services & ports (per `docker-compose.yml` services):
 - Update `api/openapi.yaml` first whenever you touch API behavior, then refresh downstream artifacts.
 - Run `make gen-types` as the standard TypeScript refresh; it always writes the API shapes to `frontend/types/api.ts` and should follow any contract change that affects the frontend.
 - Run `make gen` only when you need to regenerate the Go server stubs and Swagger docs in addition to the TypeScript types (it runs `gen-server`, `gen-types`, and `swagger`).
+- Before pushing a PR that changes OpenAPI/codegen inputs, run `make check-codegen-drift` to execute the same regeneration drift rule as CI.
+- If `make check-codegen-drift` fails, run `make gen`, inspect `git status`, commit all generated artifact changes, then rerun `make check-codegen-drift`.
 - Run `make swagger` whenever you adjust OpenAPI metadata or docs, keeping `backend/docs/swagger.*` in sync.
 
 ## How To Add A New Module
