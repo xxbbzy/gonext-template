@@ -10,22 +10,10 @@ import (
 func TestLoadPrefersEnvironmentOverYAML(t *testing.T) {
 	t.Setenv("APP_PORT", "7070")
 
-	tempDir := t.TempDir()
+	tempDir := setupTempWD(t)
 	configYAML := []byte("APP_PORT: \"9090\"\nAPP_BASE_URL: \"http://yaml.example\"\n")
 	if err := os.WriteFile(filepath.Join(tempDir, "config.yaml"), configYAML, 0644); err != nil {
 		t.Fatalf("write config.yaml: %v", err)
-	}
-
-	previousDir, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("getwd: %v", err)
-	}
-	defer func() {
-		_ = os.Chdir(previousDir)
-	}()
-
-	if err := os.Chdir(tempDir); err != nil {
-		t.Fatalf("chdir temp dir: %v", err)
 	}
 
 	cfg, err := Load()
@@ -44,20 +32,9 @@ func TestLoadPrefersEnvironmentOverYAML(t *testing.T) {
 func TestLoadFailsFastOnInvalidConfig(t *testing.T) {
 	t.Setenv("APP_ENV", "invalid-env")
 
-	tempDir := t.TempDir()
-	previousDir, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("getwd: %v", err)
-	}
-	defer func() {
-		_ = os.Chdir(previousDir)
-	}()
+	setupTempWD(t)
 
-	if err := os.Chdir(tempDir); err != nil {
-		t.Fatalf("chdir temp dir: %v", err)
-	}
-
-	_, err = Load()
+	_, err := Load()
 	if err == nil {
 		t.Fatalf("expected Load() to fail for invalid APP_ENV")
 	}
@@ -245,4 +222,24 @@ func newValidConfig() *Config {
 			AllowedTypes: ".jpg,.png",
 		},
 	}
+}
+
+func setupTempWD(t *testing.T) string {
+	t.Helper()
+
+	tempDir := t.TempDir()
+	previousDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatalf("chdir temp dir: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_ = os.Chdir(previousDir)
+	})
+
+	return tempDir
 }
