@@ -19,7 +19,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 - Application error catalog: `backend/pkg/errcode/errcode.go`
 - Frontend route tree: `frontend/app/`
 - Generated frontend types: `frontend/types/api.ts` (OpenAPI request/response models refreshed via `make gen-types`, the standard command after contract changes; `make gen` remains the full regeneration command when every derived artifact must be rebuilt).
-- Frontend request layer: `frontend/lib/api-client.ts` (manual helper) plus the generated OpenAPI-backed wrapper `frontend/lib/api-client.gen.ts`.
+- Frontend request layer: `frontend/lib/api-client.gen.ts` (preferred generated openapi-fetch wrapper that handles base URL configuration, bearer token injection, and refresh-on-401) with `frontend/lib/api-client.ts` retained only as a legacy compatibility shim.
 - Frontend query bootstrap: `frontend/lib/query-provider.tsx`
 - Frontend auth state: `frontend/stores/auth.ts`
 
@@ -87,6 +87,6 @@ For API behavior changes that involve runtime, also run `make e2e` to exercise t
 
 - `make check` — **mandatory** after every code change
 - `make e2e` — after API or runtime behavior changes
-- `make swagger` after backend API annotation or contract changes
-- `make gen` after `api/openapi.yaml` changes
+- `make gen-types` after `api/openapi.yaml` changes (frontend DTO refresh)
+- `make gen` when the full generator suite must rebuild every derived artifact
 - Review `docs/README.md` after documentation work to confirm the navigation still makes sense
