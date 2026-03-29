@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"go.uber.org/zap"
@@ -41,17 +42,17 @@ func newUploadStorage(cfg *config.Config) handler.Storage {
 }
 
 func newPublicRateLimiter(cfg *config.Config) *middleware.RateLimiter {
-	return middleware.NewRateLimiter(cfg.RateLimit.Requests, parseRateLimitDuration(cfg))
+	return middleware.NewRateLimiter(cfg.RateLimit.Requests, mustParseRateLimitDuration(cfg))
 }
 
 func newUserRateLimiter(cfg *config.Config) *middleware.RateLimiter {
-	return middleware.NewRateLimiter(cfg.RateLimit.Requests, parseRateLimitDuration(cfg))
+	return middleware.NewRateLimiter(cfg.RateLimit.Requests, mustParseRateLimitDuration(cfg))
 }
 
-func parseRateLimitDuration(cfg *config.Config) time.Duration {
+func mustParseRateLimitDuration(cfg *config.Config) time.Duration {
 	duration, err := time.ParseDuration(cfg.RateLimit.Duration)
 	if err != nil || duration <= 0 {
-		return time.Minute
+		panic(fmt.Sprintf("invalid RATE_LIMIT_DURATION after validation: %q", cfg.RateLimit.Duration))
 	}
 	return duration
 }

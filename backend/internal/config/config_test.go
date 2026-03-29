@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -37,5 +38,193 @@ func TestLoadPrefersEnvironmentOverYAML(t *testing.T) {
 	}
 	if cfg.App.BaseURL != "http://yaml.example" {
 		t.Fatalf("expected APP_BASE_URL from yaml, got %q", cfg.App.BaseURL)
+	}
+}
+
+func TestLoadFailsFastOnInvalidConfig(t *testing.T) {
+	t.Setenv("APP_ENV", "invalid-env")
+
+	tempDir := t.TempDir()
+	previousDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	defer func() {
+		_ = os.Chdir(previousDir)
+	}()
+
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatalf("chdir temp dir: %v", err)
+	}
+
+	_, err = Load()
+	if err == nil {
+		t.Fatalf("expected Load() to fail for invalid APP_ENV")
+	}
+	if !strings.Contains(err.Error(), "APP_ENV") {
+		t.Fatalf("expected APP_ENV in error, got %q", err.Error())
+	}
+}
+
+func TestConfigValidateAcceptsAllAllowedAppEnvs(t *testing.T) {
+	allowedEnvs := []string{"development", "test", "staging", "production"}
+	for _, env := range allowedEnvs {
+		t.Run(env, func(t *testing.T) {
+			cfg := newValidConfig()
+			cfg.App.Env = env
+			cfg.JWT.Secret = "a-strong-secret"
+
+			if err := cfg.Validate(); err != nil {
+				t.Fatalf("Validate() error = %v", err)
+			}
+		})
+	}
+}
+
+func TestConfigValidateRejectsInvalidValues(t *testing.T) {
+	tests := []struct {
+		name       string
+		mutate     func(*Config)
+		wantSubstr string
+	}{
+		{
+			name: "invalid app env",
+			mutate: func(cfg *Config) {
+				cfg.App.Env = "qa"
+			},
+			wantSubstr: "APP_ENV",
+		},
+		{
+			name: "invalid db driver",
+			mutate: func(cfg *Config) {
+				cfg.Database.Driver = "mysql"
+			},
+			wantSubstr: "DB_DRIVER",
+		},
+		{
+			name: "empty jwt secret",
+			mutate: func(cfg *Config) {
+				cfg.JWT.Secret = "   "
+			},
+			wantSubstr: "JWT_SECRET must be non-empty",
+		},
+		{
+			name: "production jwt placeholder rejected",
+			mutate: func(cfg *Config) {
+				cfg.App.Env = "production"
+				cfg.JWT.Secret = "change-me-in-production"
+			},
+			wantSubstr: "JWT_SECRET must not use default or placeholder values in production",
+		},
+		{
+			name: "rate limit requests must be positive",
+			mutate: func(cfg *Config) {
+				cfg.RateLimit.Requests = 0
+			},
+			wantSubstr: "RATE_LIMIT_REQUESTS",
+		},
+		{
+			name: "rate limit duration must parse",
+			mutate: func(cfg *Config) {
+				cfg.RateLimit.Duration = "abc"
+			},
+			wantSubstr: "RATE_LIMIT_DURATION",
+		},
+		{
+			name: "rate limit duration must be positive",
+			mutate: func(cfg *Config) {
+				cfg.RateLimit.Duration = "0s"
+			},
+			wantSubstr: "RATE_LIMIT_DURATION",
+		},
+		{
+			name: "upload max size must be positive",
+			mutate: func(cfg *Config) {
+				cfg.Upload.MaxSize = -1
+			},
+			wantSubstr: "UPLOAD_MAX_SIZE",
+		},
+		{
+			name: "upload dir must be non-empty",
+			mutate: func(cfg *Config) {
+				cfg.Upload.Dir = "  "
+			},
+			wantSubstr: "UPLOAD_DIR",
+		},
+		{
+			name: "upload allowed types must be non-empty",
+			mutate: func(cfg *Config) {
+				cfg.Upload.AllowedTypes = " "
+			},
+			wantSubstr: "UPLOAD_ALLOWED_TYPES",
+		},
+		{
+			name: "upload allowed types entries must start with dot",
+			mutate: func(cfg *Config) {
+				cfg.Upload.AllowedTypes = "jpg,.png"
+			},
+			wantSubstr: "UPLOAD_ALLOWED_TYPES",
+		},
+		{
+			name: "upload allowed types entries must be simple extensions",
+			mutate: func(cfg *Config) {
+				cfg.Upload.AllowedTypes = ".jp-g,.png"
+			},
+			wantSubstr: "UPLOAD_ALLOWED_TYPES",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := newValidConfig()
+			tt.mutate(cfg)
+
+			err := cfg.Validate()
+			if err == nil {
+				t.Fatalf("expected Validate() to fail")
+			}
+			if !strings.Contains(err.Error(), tt.wantSubstr) {
+				t.Fatalf("expected error to contain %q, got %q", tt.wantSubstr, err.Error())
+			}
+		})
+	}
+}
+
+func TestGetAllowedFileTypesNormalizesWhitespaceAndCase(t *testing.T) {
+	cfg := newValidConfig()
+	cfg.Upload.AllowedTypes = " .JPG , .Pdf "
+
+	got := cfg.GetAllowedFileTypes()
+	want := []string{".jpg", ".pdf"}
+	if len(got) != len(want) {
+		t.Fatalf("len(GetAllowedFileTypes()) = %d, want %d (values: %v)", len(got), len(want), got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("GetAllowedFileTypes()[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
+}
+
+func newValidConfig() *Config {
+	return &Config{
+		App: AppConfig{
+			Env: "development",
+		},
+		Database: DatabaseConfig{
+			Driver: "sqlite",
+		},
+		JWT: JWTConfig{
+			Secret: "dev-secret-123",
+		},
+		RateLimit: RateLimitConfig{
+			Requests: 100,
+			Duration: "1m",
+		},
+		Upload: UploadConfig{
+			MaxSize:      1024,
+			Dir:          "./uploads",
+			AllowedTypes: ".jpg,.png",
+		},
 	}
 }
