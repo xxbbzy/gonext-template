@@ -4,35 +4,38 @@ This file is the compact AI-facing map for runtime topology, backend layer bound
 
 ## System Topology
 
-The canonical data path flows through the following components:
+The canonical runtime path flows through:
 
 ```
 api/openapi.yaml
 -> frontend/app/
--> frontend/lib/api-client.ts + frontend/lib/api-client.gen.ts
--> frontend/lib/query-provider.tsx / frontend/stores/auth.ts
+-> frontend/lib/api-client.gen.ts
+-> frontend/stores/auth.ts
+-> frontend/lib/query-provider.tsx
 -> backend/cmd/server/main.go
 -> global and route-group middleware
--> handler -> service -> repository -> model
--> backend/internal/config/database.go
+-> backend/internal/api/server_impl.go -> services
+   backend/internal/handler/ (manual Gin routes)
+-> repositories
+-> models (with `*gorm.DB` bootstrapped at startup via `backend/internal/config/database.go`)
 ```
 
-The OpenAPI contract powers the generated frontend client, TanStack Query relies on `QueryProvider`, and frontend auth state feeds the client before the request reaches Gin. Middleware and the handler/service/repository/model chain push the work down to the database initializer in `backend/internal/config/database.go`.
+The OpenAPI contract feeds the generated client in `frontend/lib/api-client.gen.ts`, which injects tokens from `frontend/stores/auth.ts`, handles 401 refresh, and is consumed by routes under `frontend/app/` that bootstrap TanStack Query through `frontend/lib/query-provider.tsx`. Gin starts in `backend/cmd/server/main.go`, applies middleware, and either dispatches through the generated strict handler implemented in `backend/internal/api/server_impl.go` (auth/item routes) or hits manual Gin endpoints in `backend/internal/handler/`. Services orchestrate use cases after middleware unwinds, repositories talk to models, and the shared `*gorm.DB` connection comes from `backend/internal/config/database.go` during startup.
 
 ## Backend Layer Responsibilities
 
 ### handler
 
-- Owns HTTP binding, validation, error translation, and response envelopes for each API surface.
-- Depends on services, DTOs, `pkg/response`, application middleware for auth/rate limits, and the running context wired in `backend/cmd/server/main.go`.
+- Owns HTTP binding, validation, error translation, and response envelopes for manual Gin endpoints (uploads, health, etc.).
+- Depends on services, DTOs, `pkg/response`, and the middleware + router wiring in `backend/cmd/server/main.go`.
 - Must not reach into GORM, mutate domain models, or emit raw JSON that bypasses `pkg/response`.
-- Lives in `backend/internal/handler/`, and routes plus middleware chains are tied together in `backend/cmd/server/main.go`.
-- When adding a module, add handler constructors, wire them through `backend/cmd/server/main.go`, register routes, and expose them via `wire.go`/`providers.go`.
+- Lives in `backend/internal/handler/`; generated OpenAPI routes instead run through `backend/internal/api/server_impl.go`, but this layer covers Gin-specific hooks and constructor wiring.
+- When adding a module with manual routes, add handler constructors, register them and middleware in `backend/cmd/server/main.go`, and expose them via `wire.go`/`providers.go`.
 
 ### service
 
 - Owns orchestration, business rules, and conversion of infrastructure errors into `pkg/errcode.AppError`.
-- Depends on repositories, DTOs, auth helpers (JWT manager, rate limiter), and the shapes defined in `backend/internal/model/`.
+- Depends on repositories, DTOs, JWT helpers, and the shapes defined in `backend/internal/model/`.
 - Must not know about Gin, middleware, or HTTP response envelopes; it should not import handler packages.
 - Lives in `backend/internal/service/`.
 - When adding a module, extend service constructors, add providers/wire entries, and update unit tests focused on business logic.
