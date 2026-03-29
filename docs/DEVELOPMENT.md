@@ -20,8 +20,8 @@ This page is the concise workflow summary for human contributors; repository-wid
 - Update `api/openapi.yaml` first because it is the contract source of truth.
 - 后端实现后，如果契约或 Swagger 输出受影响，执行 `make swagger`。
 - After backend API changes, run `make swagger` when contract-derived backend docs must be refreshed.
-- 前端类型依赖 OpenAPI，契约变更后执行 `make gen`。
-- Frontend types depend on OpenAPI, so run `make gen` after contract changes.
+- 前端类型依赖 OpenAPI，契约变更后先执行 `make gen-types`（它输出 `frontend/types/api.ts`）；只有在还需要刷新 Go server stub 与 Swagger 等全部派生产物时，才再运行 `make gen`。
+- Frontend types depend on OpenAPI, so run `make gen-types` after contract changes (it writes `frontend/types/api.ts`); run `make gen` only when you also need to regenerate the Go server stubs and Swagger docs.
 - 相关背景见 `docs/adr/001-openapi-as-contract.md`。
 - For rationale, see `docs/adr/001-openapi-as-contract.md`.
 

@@ -58,7 +58,7 @@ When you need the rationale behind the stack, check ADRs before proposing framew
 
 ## 维护规则 / Maintenance Rules
 
-- 修改 API 行为时，先更新 `api/openapi.yaml`，再同步生成产物与相关说明。
-- When API behavior changes, update `api/openapi.yaml` first, then refresh generated artifacts and summaries.
+- 修改 API 行为时，先更新 `api/openapi.yaml`，再运行 `make gen-types` 刷新 `frontend/types/api.ts`；仅在需要同时刷新 Go 服务 stub 和 Swagger 文档时，再跑 `make gen`。
+- When API behavior changes, update `api/openapi.yaml` first, then run `make gen-types` to refresh `frontend/types/api.ts`; run `make gen` only when you must regenerate all derived artifacts, including the Go server stubs and Swagger docs.
 - 根目录 AI 文档是结构和规则的主参考；`docs/` 负责双语摘要与导航。
 - The root AI docs are canonical for structure and rules; `docs/` should summarize and link rather than duplicate them.
