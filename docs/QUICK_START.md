@@ -26,7 +26,9 @@ make init
 1. 若 `.env` 不存在，则从 `.env.example` 复制
 2. 下载后端 Go 依赖
 3. 安装前端 npm 依赖
-4. 创建 `data/` 与 `uploads/` 目录
+4. 初始化数据库（`go run ./cmd/bootstrap`）
+5. 生成代码与文档（`make gen`，包含 `gen-server`、`gen-client`、`swagger`）
+6. 创建 `data/` 与 `uploads/` 目录
 
 ## 3. 启动开发环境
 
@@ -67,7 +69,7 @@ make check
 
 ```bash
 make help            # 查看所有命令
-make gen       # 基于 OpenAPI 生成前端类型
+make gen             # 基于 OpenAPI 生成后端/前端代码并更新 Swagger（gen-server + gen-client + swagger）
 make new-module name=product
 make new-migration name=add_xxx
 make docker-up       # 用 docker compose 启动

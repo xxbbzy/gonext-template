@@ -10,7 +10,7 @@ make docker-up
 
 - `backend`：对外暴露 `http://localhost:8080`（映射 `8080:8080`）
 - `frontend`：对外暴露 `http://localhost:3000`（映射 `3000:3000`）
-- `db`：Postgres 服务，容器端口 `5432` 也映射到宿主机，供 `backend` 的 `DB_DSN` 使用
+- `db`：Postgres 服务，`backend` 在容器网络内通过 `db:5432` 访问；`5432:5432` 映射主要用于宿主机直连与调试
 
 停止服务：
 
