@@ -2,9 +2,34 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
+)
+
+var (
+	allowedAppEnvs = map[string]struct{}{
+		"development": {},
+		"test":        {},
+		"staging":     {},
+		"production":  {},
+	}
+
+	allowedDBDrivers = map[string]struct{}{
+		"sqlite":   {},
+		"postgres": {},
+	}
+
+	disallowedProductionJWTSecrets = map[string]struct{}{
+		"change-me-in-production":    {},
+		"changeme":                   {},
+		"your-jwt-secret":            {},
+		"replace-me":                 {},
+		"replace-with-strong-secret": {},
+		"placeholder-secret":         {},
+	}
 )
 
 // Config holds all application configuration.
@@ -122,7 +147,67 @@ func Load() (*Config, error) {
 		},
 	}
 
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
 	return cfg, nil
+}
+
+// Validate enforces startup-critical configuration constraints.
+func (c *Config) Validate() error {
+	var validationErrors []string
+
+	env := strings.ToLower(strings.TrimSpace(c.App.Env))
+	if _, ok := allowedAppEnvs[env]; !ok {
+		validationErrors = append(validationErrors, "APP_ENV must be one of: development, test, staging, production")
+	}
+
+	driver := strings.ToLower(strings.TrimSpace(c.Database.Driver))
+	if _, ok := allowedDBDrivers[driver]; !ok {
+		validationErrors = append(validationErrors, "DB_DRIVER must be one of: sqlite, postgres")
+	}
+
+	secret := strings.TrimSpace(c.JWT.Secret)
+	if secret == "" {
+		validationErrors = append(validationErrors, "JWT_SECRET must be non-empty")
+	}
+	if env == "production" && secret != "" {
+		if _, blocked := disallowedProductionJWTSecrets[strings.ToLower(secret)]; blocked {
+			validationErrors = append(validationErrors, "JWT_SECRET must not use default or placeholder values in production")
+		}
+	}
+
+	if c.RateLimit.Requests <= 0 {
+		validationErrors = append(validationErrors, "RATE_LIMIT_REQUESTS must be greater than 0")
+	}
+
+	rateLimitDuration := strings.TrimSpace(c.RateLimit.Duration)
+	duration, err := time.ParseDuration(rateLimitDuration)
+	if err != nil || duration <= 0 {
+		validationErrors = append(validationErrors, "RATE_LIMIT_DURATION must be a parseable positive duration (for example: 1m, 30s)")
+	}
+
+	if c.Upload.MaxSize <= 0 {
+		validationErrors = append(validationErrors, "UPLOAD_MAX_SIZE must be greater than 0")
+	}
+
+	if strings.TrimSpace(c.Upload.Dir) == "" {
+		validationErrors = append(validationErrors, "UPLOAD_DIR must be non-empty")
+	}
+
+	if _, err := parseAllowedUploadTypes(c.Upload.AllowedTypes); err != nil {
+		validationErrors = append(validationErrors, fmt.Sprintf("UPLOAD_ALLOWED_TYPES %s", err.Error()))
+	}
+
+	if len(validationErrors) > 0 {
+		return fmt.Errorf("config validation failed: %s", strings.Join(validationErrors, "; "))
+	}
+
+	c.App.Env = env
+	c.Database.Driver = driver
+
+	return nil
 }
 
 // IsDevelopment returns true if the app is running in development mode.
@@ -137,7 +222,20 @@ func (c *Config) GetAllowedOrigins() []string {
 
 // GetAllowedFileTypes returns upload allowed file types as a slice.
 func (c *Config) GetAllowedFileTypes() []string {
-	return strings.Split(c.Upload.AllowedTypes, ",")
+	allowedTypes, err := parseAllowedUploadTypes(c.Upload.AllowedTypes)
+	if err == nil {
+		return allowedTypes
+	}
+
+	parts := strings.Split(c.Upload.AllowedTypes, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.ToLower(strings.TrimSpace(part))
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }
 
 func loadOptionalConfig(v *viper.Viper, path string) {
@@ -148,4 +246,31 @@ func loadOptionalConfig(v *viper.Viper, path string) {
 			return
 		}
 	}
+}
+
+func parseAllowedUploadTypes(raw string) ([]string, error) {
+	trimmedRaw := strings.TrimSpace(raw)
+	if trimmedRaw == "" {
+		return nil, fmt.Errorf("must be a non-empty comma-separated list like .jpg,.png")
+	}
+
+	parts := strings.Split(trimmedRaw, ",")
+	types := make([]string, 0, len(parts))
+	for i, part := range parts {
+		trimmed := strings.ToLower(strings.TrimSpace(part))
+		if trimmed == "" {
+			return nil, fmt.Errorf("contains an empty extension entry at position %d", i+1)
+		}
+		if !strings.HasPrefix(trimmed, ".") || len(trimmed) == 1 {
+			return nil, fmt.Errorf("entry %q must start with '.' and include extension characters", trimmed)
+		}
+		for _, ch := range trimmed[1:] {
+			if (ch < 'a' || ch > 'z') && (ch < '0' || ch > '9') {
+				return nil, fmt.Errorf("entry %q must use format .ext with lowercase letters and numbers", trimmed)
+			}
+		}
+		types = append(types, trimmed)
+	}
+
+	return types, nil
 }
