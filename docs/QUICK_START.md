@@ -11,7 +11,7 @@
 
 - `golangci-lint`（`make lint-backend` 依赖）
 - `migrate`（`make migrate-*`、`make new-migration` 依赖）
-- `swag`（`make swagger` 依赖）
+- `make swagger` 无需额外 CLI（由 `go run ../scripts/swagger/main.go` 执行）
 
 ## 2. 初始化
 
@@ -24,11 +24,12 @@ make init
 `make init` 会执行：
 
 1. 若 `.env` 不存在，则从 `.env.example` 复制
-2. 下载后端 Go 依赖
-3. 安装前端 npm 依赖
-4. 初始化数据库（`go run ./cmd/bootstrap`）
-5. 生成代码与文档（`make gen`，包含 `gen-server`、`gen-client`、`swagger`）
-6. 创建 `data/` 与 `uploads/` 目录
+2. 若仓库根目录存在 `package.json`，执行根目录 `npm install`
+3. 下载后端 Go 依赖
+4. 安装前端 npm 依赖
+5. 创建 `data/` 与 `uploads/` 目录
+6. 初始化数据库（`go run ./cmd/bootstrap`）
+7. 生成代码与文档（`make gen`，包含 `gen-server`、`gen-client`、`swagger`）
 
 ## 3. 启动开发环境
 

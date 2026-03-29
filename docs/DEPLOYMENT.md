@@ -19,6 +19,7 @@ make docker-down
 ```
 
 该命令会执行 `docker compose down`，并停止上述三个服务。
+默认会停止并移除服务容器与网络，但不会删除卷；例如 `pgdata` 会保留。若需同时删除卷，请显式使用 `docker compose down -v`（或 `--volumes`）。
 
 ## 2. 部署前检查
 

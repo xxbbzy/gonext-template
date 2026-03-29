@@ -75,7 +75,7 @@ Run `make new-module name=product`, then:
 
 1. Update `api/openapi.yaml` first if the module exposes an API surface.
 2. Implement handler → service → repository (DTOs live under `backend/internal/dto/`).
-3. Declare providers/constructors in `backend/cmd/server/wire.go` and `providers.go`, then run `go generate` in `backend/cmd/server` (or run `wire`) to refresh Google Wire compile-time DI output (`wire_gen.go`).
+3. Declare providers/constructors in `backend/cmd/server/wire.go` and `providers.go`, then run `wire` (or `go run github.com/google/wire/cmd/wire`; if using `go generate`, run `go generate -tags wireinject`) in `backend/cmd/server` to refresh `wire_gen.go`.
 4. Register routes in `backend/cmd/server/main.go`.
 5. Add deployable SQL migrations under `backend/migrations` (AutoMigrate remains a dev convenience) and any seed data if needed.
 6. Verify with `make check` and `make e2e` (if behavior changed) before merging.
