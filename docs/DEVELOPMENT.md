@@ -54,6 +54,17 @@ This page is the concise workflow summary for human contributors; repository-wid
 - 架构级决策放到 `docs/adr/`，不要只散落在 PR 或代码注释里。
 - Repository-wide architecture decisions should be captured in `docs/adr/`, not only in PR text or code comments.
 
+## 文档一致性检查清单 / Documentation Consistency Checklist
+
+- 修改 `Makefile` 命令行为时，同步检查并更新 `README.md`、`docs/QUICK_START.md`、`docs/DEPLOYMENT.md` 中对应描述。
+- When `Makefile` command behavior changes, update matching descriptions in `README.md`, `docs/QUICK_START.md`, and `docs/DEPLOYMENT.md`.
+- 修改 `docker-compose.yml` 服务、端口或环境变量约定时，同步更新部署与运行相关文档。
+- When `docker-compose.yml` service/port/environment conventions change, update deployment/runtime docs in the same change.
+- 修改 DI 策略或运行时装配方式（如 Wire provider/wiring）时，同步更新 README 和相关架构/ADR 引用说明。
+- When DI strategy or runtime wiring changes (for example Wire providers/wiring), update README plus relevant architecture/ADR references.
+- 不要提交默认脚手架 README 文案（例如 create-next-app 默认文本）；模块 README 必须写明仓库实际用法。
+- Do not commit default scaffold README text (for example create-next-app defaults); module READMEs must describe real repository usage.
+
 ## 参考入口 / Recommended References
 
 - AI 执行入口 / AI operational entrypoint: `../AGENTS.md`
