@@ -10,6 +10,7 @@ The canonical runtime path flows through:
 api/openapi.yaml
 -> frontend/app/
 -> frontend/lib/api-client.gen.ts
+-> frontend/lib/api-query.ts
 -> frontend/stores/auth.ts
 -> frontend/lib/query-provider.tsx
 -> backend/cmd/server/main.go
@@ -20,7 +21,7 @@ api/openapi.yaml
 -> models (with `*gorm.DB` bootstrapped at startup via `backend/internal/config/database.go`)
 ```
 
-The OpenAPI contract is the source of truth: it feeds the generated client in `frontend/lib/api-client.gen.ts`, pairs with generated request/response types in `frontend/types/api.ts`, and is consumed by routes under `frontend/app/` that bootstrap TanStack Query through `frontend/lib/query-provider.tsx`. The auth store in `frontend/stores/auth.ts` provides token persistence and refresh state, while `frontend/app/layout.tsx` assembles the top-level frontend providers.
+The OpenAPI contract is the source of truth: it feeds the shared request helpers in `frontend/lib/api-client.gen.ts`, the TanStack Query option builders in `frontend/lib/api-query.ts`, and the generated request/response types in `frontend/types/api.ts`. Routes under `frontend/app/` consume that path while `frontend/lib/query-provider.tsx` bootstraps TanStack Query defaults. The auth store in `frontend/stores/auth.ts` provides token persistence and refresh state, while `frontend/app/layout.tsx` assembles the top-level frontend providers.
 
 Gin starts in `backend/cmd/server/main.go`, applies global middleware in the order `middleware.Recovery`, `middleware.RequestLogger`, `middleware.ErrorHandler`, then `cors.New(...)`, and registers health/static routes before the `/api/v1` groups. Generated strict handlers are mounted via `genapi.RegisterHandlersWithOptions(...)` with per-operation middleware for auth and item routes; manual Gin endpoints (like upload) stay in `backend/internal/handler/` with their own routing. Public auth endpoints use the public rate limiter, protected routes use JWT auth plus user rate limiting, services orchestrate use cases after middleware unwinds, repositories talk to models, and the shared `*gorm.DB` connection comes from `backend/internal/config/database.go` during startup.
 
@@ -30,8 +31,8 @@ Start cross-stack integration work at these anchors; they are the stable entry p
 
 - `frontend/app/` is the route tree that calls the API layer and hosts page-level composition.
 - `frontend/app/layout.tsx` assembles shared frontend providers such as i18n, TanStack Query, and toasts.
-- `frontend/lib/api-client.gen.ts` is the active generated OpenAPI client with auth + refresh middleware.
-- `frontend/lib/api-client.ts` is a deprecated compatibility wrapper that re-exports the generated client and legacy types.
+- `frontend/lib/api-client.gen.ts` is the canonical OpenAPI-backed client entry point with auth + refresh middleware plus shared operation wrappers.
+- `frontend/lib/api-query.ts` provides the typed TanStack Query option builders that sit on top of the shared client path.
 - `frontend/lib/query-provider.tsx` configures TanStack Query defaults for frontend data access.
 - `frontend/stores/auth.ts` owns token persistence and user state for client auth.
 - `frontend/types/api.ts` contains the generated OpenAPI request/response models; refresh it alongside the client artifacts when the contract changes.

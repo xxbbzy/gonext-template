@@ -13,6 +13,36 @@
             "$ref": "#/components/schemas/UserResponse"
           }
         },
+        "required": [
+          "access_token",
+          "refresh_token",
+          "user"
+        ],
+        "type": "object"
+      },
+      "AuthSuccessResponse": {
+        "properties": {
+          "code": {
+            "enum": [
+              0
+            ],
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthResponse"
+          },
+          "message": {
+            "enum": [
+              "success"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
         "type": "object"
       },
       "CreateItemRequest": {
@@ -34,6 +64,32 @@
         },
         "required": [
           "title"
+        ],
+        "type": "object"
+      },
+      "EmptySuccessResponse": {
+        "properties": {
+          "code": {
+            "enum": [
+              0
+            ],
+            "type": "integer"
+          },
+          "data": {
+            "description": "Null for successful operations without a payload",
+            "nullable": true
+          },
+          "message": {
+            "enum": [
+              "success"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "message"
         ],
         "type": "object"
       },
@@ -85,6 +141,40 @@
             "type": "integer"
           }
         },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "status",
+          "user_id",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "ItemSuccessResponse": {
+        "properties": {
+          "code": {
+            "enum": [
+              0
+            ],
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ItemResponse"
+          },
+          "message": {
+            "enum": [
+              "success"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
         "type": "object"
       },
       "LoginRequest": {
@@ -124,6 +214,38 @@
             "type": "integer"
           }
         },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "type": "object"
+      },
+      "PagedItemsSuccessResponse": {
+        "properties": {
+          "code": {
+            "enum": [
+              0
+            ],
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PagedItemsResponse"
+          },
+          "message": {
+            "enum": [
+              "success"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
         "type": "object"
       },
       "RefreshRequest": {
@@ -167,13 +289,17 @@
             "type": "integer"
           },
           "data": {
-            "nullable": true,
-            "type": "object"
+            "nullable": true
           },
           "message": {
             "type": "string"
           }
         },
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
         "type": "object"
       },
       "UpdateItemRequest": {
@@ -207,6 +333,36 @@
             "type": "string"
           }
         },
+        "required": [
+          "url",
+          "filename",
+          "size"
+        ],
+        "type": "object"
+      },
+      "UploadSuccessResponse": {
+        "properties": {
+          "code": {
+            "enum": [
+              0
+            ],
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UploadResponse"
+          },
+          "message": {
+            "enum": [
+              "success"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
         "type": "object"
       },
       "UserResponse": {
@@ -224,6 +380,37 @@
             "type": "string"
           }
         },
+        "required": [
+          "id",
+          "username",
+          "email",
+          "role"
+        ],
+        "type": "object"
+      },
+      "UserSuccessResponse": {
+        "properties": {
+          "code": {
+            "enum": [
+              0
+            ],
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserResponse"
+          },
+          "message": {
+            "enum": [
+              "success"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "data",
+          "message"
+        ],
         "type": "object"
       }
     },
@@ -263,18 +450,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/AuthResponse"
-                        }
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AuthSuccessResponse"
                 }
               }
             },
@@ -326,18 +502,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/UserResponse"
-                        }
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/UserSuccessResponse"
                 }
               }
             },
@@ -404,18 +569,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/AuthResponse"
-                        }
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AuthSuccessResponse"
                 }
               }
             },
@@ -477,18 +631,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/AuthResponse"
-                        }
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/AuthSuccessResponse"
                 }
               }
             },
@@ -576,18 +719,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/PagedItemsResponse"
-                        }
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/PagedItemsSuccessResponse"
                 }
               }
             },
@@ -632,18 +764,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/ItemResponse"
-                        }
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ItemSuccessResponse"
                 }
               }
             },
@@ -700,7 +821,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Response"
+                  "$ref": "#/components/schemas/EmptySuccessResponse"
                 }
               }
             },
@@ -755,18 +876,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/ItemResponse"
-                        }
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ItemSuccessResponse"
                 }
               }
             },
@@ -831,18 +941,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/ItemResponse"
-                        }
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/ItemSuccessResponse"
                 }
               }
             },
@@ -904,6 +1003,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "file"
+                ],
                 "type": "object"
               }
             }
@@ -915,18 +1017,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [
-                    {
-                      "$ref": "#/components/schemas/Response"
-                    },
-                    {
-                      "properties": {
-                        "data": {
-                          "$ref": "#/components/schemas/UploadResponse"
-                        }
-                      }
-                    }
-                  ]
+                  "$ref": "#/components/schemas/UploadSuccessResponse"
                 }
               }
             },

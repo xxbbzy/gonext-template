@@ -20,11 +20,11 @@ components:
   schemas:
     Response:
       type: object
+      required: [code, data, message]
       properties:
         code:
           type: integer
         data:
-          type: object
           nullable: true
         message:
           type: string
@@ -78,6 +78,7 @@ components:
 
     AuthResponse:
       type: object
+      required: [access_token, refresh_token, user]
       properties:
         access_token:
           type: string
@@ -88,6 +89,7 @@ components:
 
     UserResponse:
       type: object
+      required: [id, username, email, role]
       properties:
         id:
           type: integer
@@ -125,6 +127,8 @@ components:
 
     ItemResponse:
       type: object
+      required:
+        [id, title, description, status, user_id, created_at, updated_at]
       properties:
         id:
           type: integer
@@ -145,6 +149,7 @@ components:
 
     PagedItemsResponse:
       type: object
+      required: [items, total, page, page_size, total_pages]
       properties:
         items:
           type: array
@@ -161,6 +166,7 @@ components:
 
     UploadResponse:
       type: object
+      required: [url, filename, size]
       properties:
         url:
           type: string
@@ -168,6 +174,85 @@ components:
           type: string
         size:
           type: integer
+
+    AuthSuccessResponse:
+      type: object
+      required: [code, data, message]
+      properties:
+        code:
+          type: integer
+          enum: [0]
+        data:
+          $ref: "#/components/schemas/AuthResponse"
+        message:
+          type: string
+          enum: [success]
+
+    UserSuccessResponse:
+      type: object
+      required: [code, data, message]
+      properties:
+        code:
+          type: integer
+          enum: [0]
+        data:
+          $ref: "#/components/schemas/UserResponse"
+        message:
+          type: string
+          enum: [success]
+
+    ItemSuccessResponse:
+      type: object
+      required: [code, data, message]
+      properties:
+        code:
+          type: integer
+          enum: [0]
+        data:
+          $ref: "#/components/schemas/ItemResponse"
+        message:
+          type: string
+          enum: [success]
+
+    PagedItemsSuccessResponse:
+      type: object
+      required: [code, data, message]
+      properties:
+        code:
+          type: integer
+          enum: [0]
+        data:
+          $ref: "#/components/schemas/PagedItemsResponse"
+        message:
+          type: string
+          enum: [success]
+
+    UploadSuccessResponse:
+      type: object
+      required: [code, data, message]
+      properties:
+        code:
+          type: integer
+          enum: [0]
+        data:
+          $ref: "#/components/schemas/UploadResponse"
+        message:
+          type: string
+          enum: [success]
+
+    EmptySuccessResponse:
+      type: object
+      required: [code, data, message]
+      properties:
+        code:
+          type: integer
+          enum: [0]
+        data:
+          nullable: true
+          description: Null for successful operations without a payload
+        message:
+          type: string
+          enum: [success]
 
 paths:
   /healthz:
@@ -208,11 +293,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/Response"
-                  - properties:
-                      data:
-                        $ref: "#/components/schemas/AuthResponse"
+                $ref: "#/components/schemas/AuthSuccessResponse"
         "400":
           description: Validation error
           content:
@@ -250,11 +331,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/Response"
-                  - properties:
-                      data:
-                        $ref: "#/components/schemas/AuthResponse"
+                $ref: "#/components/schemas/AuthSuccessResponse"
         "401":
           description: Invalid credentials
           content:
@@ -292,11 +369,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/Response"
-                  - properties:
-                      data:
-                        $ref: "#/components/schemas/AuthResponse"
+                $ref: "#/components/schemas/AuthSuccessResponse"
         "401":
           description: Invalid or expired refresh token
           content:
@@ -330,11 +403,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/Response"
-                  - properties:
-                      data:
-                        $ref: "#/components/schemas/UserResponse"
+                $ref: "#/components/schemas/UserSuccessResponse"
         "401":
           description: Unauthorized
           content:
@@ -388,11 +457,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/Response"
-                  - properties:
-                      data:
-                        $ref: "#/components/schemas/PagedItemsResponse"
+                $ref: "#/components/schemas/PagedItemsSuccessResponse"
         "500":
           description: Internal server error
           content:
@@ -418,11 +483,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/Response"
-                  - properties:
-                      data:
-                        $ref: "#/components/schemas/ItemResponse"
+                $ref: "#/components/schemas/ItemSuccessResponse"
         "400":
           description: Validation error
           content:
@@ -456,11 +517,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/Response"
-                  - properties:
-                      data:
-                        $ref: "#/components/schemas/ItemResponse"
+                $ref: "#/components/schemas/ItemSuccessResponse"
         "404":
           description: Item not found
           content:
@@ -498,11 +555,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/Response"
-                  - properties:
-                      data:
-                        $ref: "#/components/schemas/ItemResponse"
+                $ref: "#/components/schemas/ItemSuccessResponse"
         "404":
           description: Item not found
           content:
@@ -540,7 +593,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Response"
+                $ref: "#/components/schemas/EmptySuccessResponse"
         "404":
           description: Item not found
           content:
@@ -568,6 +621,7 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              required: [file]
               properties:
                 file:
                   type: string
@@ -578,11 +632,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: "#/components/schemas/Response"
-                  - properties:
-                      data:
-                        $ref: "#/components/schemas/UploadResponse"
+                $ref: "#/components/schemas/UploadSuccessResponse"
         "400":
           description: File type not allowed
           content:

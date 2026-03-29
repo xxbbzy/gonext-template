@@ -5,12 +5,16 @@ import type { components } from "@/types/api";
 
 type ApiUser = components["schemas"]["UserResponse"];
 
-export type User = {
-  id: NonNullable<ApiUser["id"]>;
-  username: NonNullable<ApiUser["username"]>;
-  email: NonNullable<ApiUser["email"]>;
-  role: NonNullable<ApiUser["role"]>;
-};
+export type User = ApiUser;
+
+export function toStoredUser(user: ApiUser): User {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+  };
+}
 
 interface AuthState {
   accessToken: string | null;

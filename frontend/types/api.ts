@@ -165,9 +165,9 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         Response: {
-            code?: number;
-            data?: Record<string, never> | null;
-            message?: string;
+            code: number;
+            data: unknown;
+            message: string;
         };
         ErrorResponse: {
             /** @description Non-zero application error code */
@@ -192,15 +192,15 @@ export interface components {
             refresh_token: string;
         };
         AuthResponse: {
-            access_token?: string;
-            refresh_token?: string;
-            user?: components["schemas"]["UserResponse"];
+            access_token: string;
+            refresh_token: string;
+            user: components["schemas"]["UserResponse"];
         };
         UserResponse: {
-            id?: number;
-            username?: string;
-            email?: string;
-            role?: string;
+            id: number;
+            username: string;
+            email: string;
+            role: string;
         };
         CreateItemRequest: {
             title: string;
@@ -215,27 +215,70 @@ export interface components {
             status?: "active" | "inactive";
         };
         ItemResponse: {
-            id?: number;
-            title?: string;
-            description?: string;
-            status?: string;
-            user_id?: number;
+            id: number;
+            title: string;
+            description: string;
+            status: string;
+            user_id: number;
             /** Format: date-time */
-            created_at?: string;
+            created_at: string;
             /** Format: date-time */
-            updated_at?: string;
+            updated_at: string;
         };
         PagedItemsResponse: {
-            items?: components["schemas"]["ItemResponse"][];
-            total?: number;
-            page?: number;
-            page_size?: number;
-            total_pages?: number;
+            items: components["schemas"]["ItemResponse"][];
+            total: number;
+            page: number;
+            page_size: number;
+            total_pages: number;
         };
         UploadResponse: {
-            url?: string;
-            filename?: string;
-            size?: number;
+            url: string;
+            filename: string;
+            size: number;
+        };
+        AuthSuccessResponse: {
+            /** @enum {integer} */
+            code: 0;
+            data: components["schemas"]["AuthResponse"];
+            /** @enum {string} */
+            message: "success";
+        };
+        UserSuccessResponse: {
+            /** @enum {integer} */
+            code: 0;
+            data: components["schemas"]["UserResponse"];
+            /** @enum {string} */
+            message: "success";
+        };
+        ItemSuccessResponse: {
+            /** @enum {integer} */
+            code: 0;
+            data: components["schemas"]["ItemResponse"];
+            /** @enum {string} */
+            message: "success";
+        };
+        PagedItemsSuccessResponse: {
+            /** @enum {integer} */
+            code: 0;
+            data: components["schemas"]["PagedItemsResponse"];
+            /** @enum {string} */
+            message: "success";
+        };
+        UploadSuccessResponse: {
+            /** @enum {integer} */
+            code: 0;
+            data: components["schemas"]["UploadResponse"];
+            /** @enum {string} */
+            message: "success";
+        };
+        EmptySuccessResponse: {
+            /** @enum {integer} */
+            code: 0;
+            /** @description Null for successful operations without a payload */
+            data: unknown;
+            /** @enum {string} */
+            message: "success";
         };
     };
     responses: never;
@@ -308,9 +351,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"] & {
-                        data?: components["schemas"]["AuthResponse"];
-                    };
+                    "application/json": components["schemas"]["AuthSuccessResponse"];
                 };
             };
             /** @description Validation error */
@@ -361,9 +402,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"] & {
-                        data?: components["schemas"]["AuthResponse"];
-                    };
+                    "application/json": components["schemas"]["AuthSuccessResponse"];
                 };
             };
             /** @description Validation error */
@@ -414,9 +453,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"] & {
-                        data?: components["schemas"]["AuthResponse"];
-                    };
+                    "application/json": components["schemas"]["AuthSuccessResponse"];
                 };
             };
             /** @description Validation error */
@@ -463,9 +500,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"] & {
-                        data?: components["schemas"]["UserResponse"];
-                    };
+                    "application/json": components["schemas"]["UserSuccessResponse"];
                 };
             };
             /** @description Unauthorized */
@@ -517,9 +552,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"] & {
-                        data?: components["schemas"]["PagedItemsResponse"];
-                    };
+                    "application/json": components["schemas"]["PagedItemsSuccessResponse"];
                 };
             };
             /** @description Internal server error */
@@ -552,9 +585,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"] & {
-                        data?: components["schemas"]["ItemResponse"];
-                    };
+                    "application/json": components["schemas"]["ItemSuccessResponse"];
                 };
             };
             /** @description Validation error */
@@ -594,9 +625,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"] & {
-                        data?: components["schemas"]["ItemResponse"];
-                    };
+                    "application/json": components["schemas"]["ItemSuccessResponse"];
                 };
             };
             /** @description Item not found */
@@ -640,9 +669,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"] & {
-                        data?: components["schemas"]["ItemResponse"];
-                    };
+                    "application/json": components["schemas"]["ItemSuccessResponse"];
                 };
             };
             /** @description Validation error */
@@ -691,7 +718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"];
+                    "application/json": components["schemas"]["EmptySuccessResponse"];
                 };
             };
             /** @description Item not found */
@@ -725,7 +752,7 @@ export interface operations {
             content: {
                 "multipart/form-data": {
                     /** Format: binary */
-                    file?: string;
+                    file: string;
                 };
             };
         };
@@ -736,9 +763,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Response"] & {
-                        data?: components["schemas"]["UploadResponse"];
-                    };
+                    "application/json": components["schemas"]["UploadSuccessResponse"];
                 };
             };
             /** @description File type not allowed */

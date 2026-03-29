@@ -1,10 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import type { components } from "@/types/api";
-import { client } from "@/lib/api-client.gen";
+import {
+  createItemMutationOptions,
+  deleteItemMutationOptions,
+  itemKeys,
+  itemsQueryOptions,
+  updateItemMutationOptions,
+} from "@/lib/api-query";
+import {
+  getApiErrorMessage,
+  type CreateItemRequest,
+  type ItemResponse,
+} from "@/lib/api-client.gen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,37 +36,19 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import {
+  ChevronLeft,
+  ChevronRight,
+  Edit,
   Plus,
   Search,
   Trash2,
-  Edit,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 
-type Item = components["schemas"]["ItemResponse"];
-type ItemFormData = components["schemas"]["CreateItemRequest"];
-type PagedItemsResponse = components["schemas"]["PagedItemsResponse"];
-
-const initialFormData: ItemFormData = {
+const initialFormData: CreateItemRequest = {
   title: "",
   description: "",
   status: "active",
 };
-
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (
-    error &&
-    typeof error === "object" &&
-    "message" in error &&
-    typeof error.message === "string" &&
-    error.message.trim() !== ""
-  ) {
-    return error.message;
-  }
-
-  return fallback;
-}
 
 export default function ItemsPage() {
   const tCommon = useTranslations("common");
@@ -67,88 +59,61 @@ export default function ItemsPage() {
   const [keyword, setKeyword] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [editItem, setEditItem] = useState<Item | null>(null);
-  const [formData, setFormData] = useState<ItemFormData>(initialFormData);
+  const [editItem, setEditItem] = useState<ItemResponse | null>(null);
+  const [formData, setFormData] = useState<CreateItemRequest>(initialFormData);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["items", page, keyword],
-    queryFn: async () => {
-      const { data: res, error: apiError } = await client.GET("/api/v1/items", {
-        params: {
-          query: { page, page_size: 10, keyword: keyword || undefined },
-        },
-      });
-      const paged: PagedItemsResponse | undefined = res?.data;
-      if (apiError || !paged) {
-        throw new Error(getApiErrorMessage(apiError, tCommon("error")));
-      }
-
-      return paged;
-    },
-  });
+  const { data, isLoading, error } = useQuery(
+    itemsQueryOptions({
+      page,
+      page_size: 10,
+      ...(keyword ? { keyword } : {}),
+    })
+  );
 
   const createMutation = useMutation({
-    mutationFn: async (data: ItemFormData) => {
-      const { data: res, error: apiError } = await client.POST(
-        "/api/v1/items",
-        {
-          body: data,
-        }
-      );
-      if (apiError || !res?.data) {
-        throw new Error(getApiErrorMessage(apiError, tItems("createFailed")));
-      }
-      return res.data;
-    },
+    ...createItemMutationOptions(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
       setShowCreate(false);
       setFormData(initialFormData);
       addToast({ title: tItems("createSuccess"), variant: "success" });
     },
-    onError: () =>
-      addToast({ title: tItems("createFailed"), variant: "error" }),
+    onError: (mutationError) =>
+      addToast({
+        title: tItems("createFailed"),
+        description: getApiErrorMessage(mutationError, tItems("createFailed")),
+        variant: "error",
+      }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: ItemFormData }) => {
-      const { data: res, error: apiError } = await client.PUT(
-        "/api/v1/items/{id}",
-        {
-          params: { path: { id } },
-          body: data,
-        }
-      );
-      if (apiError || !res?.data) {
-        throw new Error(getApiErrorMessage(apiError, tItems("updateFailed")));
-      }
-      return res.data;
-    },
+    ...updateItemMutationOptions(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
       setEditItem(null);
       setFormData(initialFormData);
       addToast({ title: tItems("updateSuccess"), variant: "success" });
     },
-    onError: () =>
-      addToast({ title: tItems("updateFailed"), variant: "error" }),
+    onError: (mutationError) =>
+      addToast({
+        title: tItems("updateFailed"),
+        description: getApiErrorMessage(mutationError, tItems("updateFailed")),
+        variant: "error",
+      }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const { error: apiError } = await client.DELETE("/api/v1/items/{id}", {
-        params: { path: { id } },
-      });
-      if (apiError) {
-        throw new Error(getApiErrorMessage(apiError, tItems("deleteFailed")));
-      }
-    },
+    ...deleteItemMutationOptions(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
+      queryClient.invalidateQueries({ queryKey: itemKeys.all });
       addToast({ title: tItems("deleteSuccess"), variant: "success" });
     },
-    onError: () =>
-      addToast({ title: tItems("deleteFailed"), variant: "error" }),
+    onError: (mutationError) =>
+      addToast({
+        title: tItems("deleteFailed"),
+        description: getApiErrorMessage(mutationError, tItems("deleteFailed")),
+        variant: "error",
+      }),
   });
 
   const handleSearch = () => {
@@ -156,11 +121,11 @@ export default function ItemsPage() {
     setPage(1);
   };
 
-  const handleEdit = (item: Item) => {
+  const handleEdit = (item: ItemResponse) => {
     setEditItem(item);
     setFormData({
-      title: item.title ?? "",
-      description: item.description ?? "",
+      title: item.title,
+      description: item.description,
       status: item.status === "inactive" ? "inactive" : "active",
     });
     setShowCreate(false);
@@ -168,8 +133,8 @@ export default function ItemsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editItem?.id) {
-      updateMutation.mutate({ id: editItem.id, data: formData });
+    if (editItem) {
+      updateMutation.mutate({ id: editItem.id, body: formData });
       return;
     }
 
@@ -290,7 +255,7 @@ export default function ItemsPage() {
         <CardContent className="p-0">
           {error ? (
             <div className="p-6 text-sm text-red-600">
-              {error instanceof Error ? error.message : tCommon("error")}
+              {getApiErrorMessage(error, tCommon("error"))}
             </div>
           ) : null}
           <Table>
@@ -315,7 +280,7 @@ export default function ItemsPage() {
                     {tCommon("loading")}
                   </TableCell>
                 </TableRow>
-              ) : (data?.items?.length ?? 0) === 0 ? (
+              ) : data && data.items.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={5}
@@ -325,8 +290,8 @@ export default function ItemsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.items?.map((item) => (
-                  <TableRow key={item.id ?? item.title}>
+                data?.items.map((item) => (
+                  <TableRow key={item.id}>
                     <TableCell className="text-gray-600">{item.id}</TableCell>
                     <TableCell className="font-medium">{item.title}</TableCell>
                     <TableCell>
@@ -343,9 +308,7 @@ export default function ItemsPage() {
                       </span>
                     </TableCell>
                     <TableCell className="text-gray-500">
-                      {item.created_at
-                        ? new Date(item.created_at).toLocaleDateString()
-                        : "-"}
+                      {new Date(item.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
@@ -359,9 +322,7 @@ export default function ItemsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() =>
-                            item.id && deleteMutation.mutate(item.id)
-                          }
+                          onClick={() => deleteMutation.mutate(item.id)}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
@@ -375,10 +336,10 @@ export default function ItemsPage() {
         </CardContent>
       </Card>
 
-      {data && (data.total_pages ?? 0) > 1 && (
+      {data && data.total_pages > 1 ? (
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500">
-            {tItems("totalRecords", { total: data.total ?? 0 })}
+            {tItems("totalRecords", { total: data.total })}
           </p>
           <div className="flex gap-1">
             <Button
@@ -395,14 +356,14 @@ export default function ItemsPage() {
             <Button
               variant="outline"
               size="sm"
-              disabled={page >= (data.total_pages ?? 0)}
+              disabled={page >= data.total_pages}
               onClick={() => setPage((prev) => prev + 1)}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

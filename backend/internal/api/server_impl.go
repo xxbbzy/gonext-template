@@ -34,11 +34,6 @@ func validate(obj any) error {
 	return binding.Validator.ValidateStruct(obj)
 }
 
-// --- helpers for the standard {code, data, message} envelope ---
-
-func intPtr(v int) *int       { return &v }
-func strPtr(v string) *string { return &v }
-
 func derefOr[T any](p *T, fallback T) T {
 	if p != nil {
 		return *p
@@ -47,41 +42,41 @@ func derefOr[T any](p *T, fallback T) T {
 }
 
 // toAPIAuthResponse converts dto.AuthResponse → generated AuthResponse.
-func toAPIAuthResponse(r *dto.AuthResponse) *AuthResponse {
+func toAPIAuthResponse(r *dto.AuthResponse) AuthResponse {
 	id := int(r.User.ID)
-	return &AuthResponse{
-		AccessToken:  &r.AccessToken,
-		RefreshToken: &r.RefreshToken,
-		User: &UserResponse{
-			Id:       &id,
-			Username: &r.User.Username,
-			Email:    &r.User.Email,
-			Role:     &r.User.Role,
+	return AuthResponse{
+		AccessToken:  r.AccessToken,
+		RefreshToken: r.RefreshToken,
+		User: UserResponse{
+			Id:       id,
+			Username: r.User.Username,
+			Email:    r.User.Email,
+			Role:     r.User.Role,
 		},
 	}
 }
 
 // toAPIItemResponse converts dto.ItemResponse → generated ItemResponse.
-func toAPIItemResponse(r *dto.ItemResponse) *ItemResponse {
+func toAPIItemResponse(r *dto.ItemResponse) ItemResponse {
 	id := int(r.ID)
 	uid := int(r.UserID)
 
-	var createdAt *time.Time
+	var createdAt time.Time
 	if t, err := time.Parse(time.RFC3339, r.CreatedAt); err == nil {
-		createdAt = &t
+		createdAt = t
 	}
 
-	var updatedAt *time.Time
+	var updatedAt time.Time
 	if t, err := time.Parse(time.RFC3339, r.UpdatedAt); err == nil {
-		updatedAt = &t
+		updatedAt = t
 	}
 
-	return &ItemResponse{
-		Id:          &id,
-		Title:       &r.Title,
-		Description: &r.Description,
-		Status:      &r.Status,
-		UserId:      &uid,
+	return ItemResponse{
+		Id:          id,
+		Title:       r.Title,
+		Description: r.Description,
+		Status:      r.Status,
+		UserId:      uid,
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 	}
@@ -200,9 +195,9 @@ func (s *Server) RegisterUser(_ context.Context, request RegisterUserRequestObje
 	}
 
 	return RegisterUser201JSONResponse{
-		Code:    intPtr(0),
+		Code:    AuthSuccessResponseCodeN0,
 		Data:    toAPIAuthResponse(result),
-		Message: strPtr("success"),
+		Message: AuthSuccessResponseMessageSuccess,
 	}, nil
 }
 
@@ -222,9 +217,9 @@ func (s *Server) LoginUser(_ context.Context, request LoginUserRequestObject) (L
 	}
 
 	return LoginUser200JSONResponse{
-		Code:    intPtr(0),
+		Code:    AuthSuccessResponseCodeN0,
 		Data:    toAPIAuthResponse(result),
-		Message: strPtr("success"),
+		Message: AuthSuccessResponseMessageSuccess,
 	}, nil
 }
 
@@ -243,9 +238,9 @@ func (s *Server) RefreshToken(_ context.Context, request RefreshTokenRequestObje
 	}
 
 	return RefreshToken200JSONResponse{
-		Code:    intPtr(0),
+		Code:    AuthSuccessResponseCodeN0,
 		Data:    toAPIAuthResponse(result),
-		Message: strPtr("success"),
+		Message: AuthSuccessResponseMessageSuccess,
 	}, nil
 }
 
@@ -275,14 +270,14 @@ func (s *Server) GetProfile(ctx context.Context, _ GetProfileRequestObject) (Get
 
 	id := int(profile.ID)
 	return GetProfile200JSONResponse{
-		Code: intPtr(0),
-		Data: &UserResponse{
-			Id:       &id,
-			Username: &profile.Username,
-			Email:    &profile.Email,
-			Role:     &profile.Role,
+		Code: UserSuccessResponseCode(0),
+		Data: UserResponse{
+			Id:       id,
+			Username: profile.Username,
+			Email:    profile.Email,
+			Role:     profile.Role,
 		},
-		Message: strPtr("success"),
+		Message: UserSuccessResponseMessage("success"),
 	}, nil
 }
 
@@ -309,7 +304,7 @@ func (s *Server) ListItems(_ context.Context, request ListItemsRequestObject) (L
 	// Convert dto items to API items
 	apiItems := make([]ItemResponse, len(items))
 	for i, item := range items {
-		apiItems[i] = *toAPIItemResponse(&item)
+		apiItems[i] = toAPIItemResponse(&item)
 	}
 
 	totalInt := int(total)
@@ -319,15 +314,15 @@ func (s *Server) ListItems(_ context.Context, request ListItemsRequestObject) (L
 	}
 
 	return ListItems200JSONResponse{
-		Code: intPtr(0),
-		Data: &PagedItemsResponse{
-			Items:      &apiItems,
-			Total:      &totalInt,
-			Page:       &p.Page,
-			PageSize:   &p.PageSize,
-			TotalPages: &totalPages,
+		Code: PagedItemsSuccessResponseCodeN0,
+		Data: PagedItemsResponse{
+			Items:      apiItems,
+			Total:      totalInt,
+			Page:       p.Page,
+			PageSize:   p.PageSize,
+			TotalPages: totalPages,
 		},
-		Message: strPtr("success"),
+		Message: PagedItemsSuccessResponseMessageSuccess,
 	}, nil
 }
 
@@ -361,9 +356,9 @@ func (s *Server) CreateItem(ctx context.Context, request CreateItemRequestObject
 	}
 
 	return CreateItem201JSONResponse{
-		Code:    intPtr(0),
+		Code:    ItemSuccessResponseCodeN0,
 		Data:    toAPIItemResponse(result),
-		Message: strPtr("success"),
+		Message: ItemSuccessResponseMessageSuccess,
 	}, nil
 }
 
@@ -375,9 +370,9 @@ func (s *Server) GetItem(_ context.Context, request GetItemRequestObject) (GetIt
 	}
 
 	return GetItem200JSONResponse{
-		Code:    intPtr(0),
+		Code:    ItemSuccessResponseCodeN0,
 		Data:    toAPIItemResponse(result),
-		Message: strPtr("success"),
+		Message: ItemSuccessResponseMessageSuccess,
 	}, nil
 }
 
@@ -401,9 +396,9 @@ func (s *Server) UpdateItem(_ context.Context, request UpdateItemRequestObject) 
 	}
 
 	return UpdateItem200JSONResponse{
-		Code:    intPtr(0),
+		Code:    ItemSuccessResponseCodeN0,
 		Data:    toAPIItemResponse(result),
-		Message: strPtr("success"),
+		Message: ItemSuccessResponseMessageSuccess,
 	}, nil
 }
 
@@ -414,7 +409,8 @@ func (s *Server) DeleteItem(_ context.Context, request DeleteItemRequestObject) 
 	}
 
 	return DeleteItem200JSONResponse{
-		Code:    intPtr(0),
-		Message: strPtr("success"),
+		Code:    EmptySuccessResponseCodeN0,
+		Data:    nil,
+		Message: EmptySuccessResponseMessageSuccess,
 	}, nil
 }

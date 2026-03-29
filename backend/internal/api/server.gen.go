@@ -27,6 +27,36 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// Defines values for AuthSuccessResponseCode.
+const (
+	AuthSuccessResponseCodeN0 AuthSuccessResponseCode = 0
+)
+
+// Valid indicates whether the value is a known member of the AuthSuccessResponseCode enum.
+func (e AuthSuccessResponseCode) Valid() bool {
+	switch e {
+	case AuthSuccessResponseCodeN0:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AuthSuccessResponseMessage.
+const (
+	AuthSuccessResponseMessageSuccess AuthSuccessResponseMessage = "success"
+)
+
+// Valid indicates whether the value is a known member of the AuthSuccessResponseMessage enum.
+func (e AuthSuccessResponseMessage) Valid() bool {
+	switch e {
+	case AuthSuccessResponseMessageSuccess:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreateItemRequestStatus.
 const (
 	CreateItemRequestStatusActive   CreateItemRequestStatus = "active"
@@ -45,6 +75,96 @@ func (e CreateItemRequestStatus) Valid() bool {
 	}
 }
 
+// Defines values for EmptySuccessResponseCode.
+const (
+	EmptySuccessResponseCodeN0 EmptySuccessResponseCode = 0
+)
+
+// Valid indicates whether the value is a known member of the EmptySuccessResponseCode enum.
+func (e EmptySuccessResponseCode) Valid() bool {
+	switch e {
+	case EmptySuccessResponseCodeN0:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EmptySuccessResponseMessage.
+const (
+	EmptySuccessResponseMessageSuccess EmptySuccessResponseMessage = "success"
+)
+
+// Valid indicates whether the value is a known member of the EmptySuccessResponseMessage enum.
+func (e EmptySuccessResponseMessage) Valid() bool {
+	switch e {
+	case EmptySuccessResponseMessageSuccess:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ItemSuccessResponseCode.
+const (
+	ItemSuccessResponseCodeN0 ItemSuccessResponseCode = 0
+)
+
+// Valid indicates whether the value is a known member of the ItemSuccessResponseCode enum.
+func (e ItemSuccessResponseCode) Valid() bool {
+	switch e {
+	case ItemSuccessResponseCodeN0:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ItemSuccessResponseMessage.
+const (
+	ItemSuccessResponseMessageSuccess ItemSuccessResponseMessage = "success"
+)
+
+// Valid indicates whether the value is a known member of the ItemSuccessResponseMessage enum.
+func (e ItemSuccessResponseMessage) Valid() bool {
+	switch e {
+	case ItemSuccessResponseMessageSuccess:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PagedItemsSuccessResponseCode.
+const (
+	PagedItemsSuccessResponseCodeN0 PagedItemsSuccessResponseCode = 0
+)
+
+// Valid indicates whether the value is a known member of the PagedItemsSuccessResponseCode enum.
+func (e PagedItemsSuccessResponseCode) Valid() bool {
+	switch e {
+	case PagedItemsSuccessResponseCodeN0:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PagedItemsSuccessResponseMessage.
+const (
+	PagedItemsSuccessResponseMessageSuccess PagedItemsSuccessResponseMessage = "success"
+)
+
+// Valid indicates whether the value is a known member of the PagedItemsSuccessResponseMessage enum.
+func (e PagedItemsSuccessResponseMessage) Valid() bool {
+	switch e {
+	case PagedItemsSuccessResponseMessageSuccess:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for UpdateItemRequestStatus.
 const (
 	UpdateItemRequestStatusActive   UpdateItemRequestStatus = "active"
@@ -57,6 +177,36 @@ func (e UpdateItemRequestStatus) Valid() bool {
 	case UpdateItemRequestStatusActive:
 		return true
 	case UpdateItemRequestStatusInactive:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UserSuccessResponseCode.
+const (
+	N0 UserSuccessResponseCode = 0
+)
+
+// Valid indicates whether the value is a known member of the UserSuccessResponseCode enum.
+func (e UserSuccessResponseCode) Valid() bool {
+	switch e {
+	case N0:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UserSuccessResponseMessage.
+const (
+	Success UserSuccessResponseMessage = "success"
+)
+
+// Valid indicates whether the value is a known member of the UserSuccessResponseMessage enum.
+func (e UserSuccessResponseMessage) Valid() bool {
+	switch e {
+	case Success:
 		return true
 	default:
 		return false
@@ -83,10 +233,23 @@ func (e ListItemsParamsStatus) Valid() bool {
 
 // AuthResponse defines model for AuthResponse.
 type AuthResponse struct {
-	AccessToken  *string       `json:"access_token,omitempty"`
-	RefreshToken *string       `json:"refresh_token,omitempty"`
-	User         *UserResponse `json:"user,omitempty"`
+	AccessToken  string       `json:"access_token"`
+	RefreshToken string       `json:"refresh_token"`
+	User         UserResponse `json:"user"`
 }
+
+// AuthSuccessResponse defines model for AuthSuccessResponse.
+type AuthSuccessResponse struct {
+	Code    AuthSuccessResponseCode    `json:"code"`
+	Data    AuthResponse               `json:"data"`
+	Message AuthSuccessResponseMessage `json:"message"`
+}
+
+// AuthSuccessResponseCode defines model for AuthSuccessResponse.Code.
+type AuthSuccessResponseCode int
+
+// AuthSuccessResponseMessage defines model for AuthSuccessResponse.Message.
+type AuthSuccessResponseMessage string
 
 // CreateItemRequest defines model for CreateItemRequest.
 type CreateItemRequest struct {
@@ -97,6 +260,21 @@ type CreateItemRequest struct {
 
 // CreateItemRequestStatus defines model for CreateItemRequest.Status.
 type CreateItemRequestStatus string
+
+// EmptySuccessResponse defines model for EmptySuccessResponse.
+type EmptySuccessResponse struct {
+	Code EmptySuccessResponseCode `json:"code"`
+
+	// Data Null for successful operations without a payload
+	Data    interface{}                 `json:"data"`
+	Message EmptySuccessResponseMessage `json:"message"`
+}
+
+// EmptySuccessResponseCode defines model for EmptySuccessResponse.Code.
+type EmptySuccessResponseCode int
+
+// EmptySuccessResponseMessage defines model for EmptySuccessResponse.Message.
+type EmptySuccessResponseMessage string
 
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
@@ -112,14 +290,27 @@ type ErrorResponse struct {
 
 // ItemResponse defines model for ItemResponse.
 type ItemResponse struct {
-	CreatedAt   *time.Time `json:"created_at,omitempty"`
-	Description *string    `json:"description,omitempty"`
-	Id          *int       `json:"id,omitempty"`
-	Status      *string    `json:"status,omitempty"`
-	Title       *string    `json:"title,omitempty"`
-	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
-	UserId      *int       `json:"user_id,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	Description string    `json:"description"`
+	Id          int       `json:"id"`
+	Status      string    `json:"status"`
+	Title       string    `json:"title"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	UserId      int       `json:"user_id"`
 }
+
+// ItemSuccessResponse defines model for ItemSuccessResponse.
+type ItemSuccessResponse struct {
+	Code    ItemSuccessResponseCode    `json:"code"`
+	Data    ItemResponse               `json:"data"`
+	Message ItemSuccessResponseMessage `json:"message"`
+}
+
+// ItemSuccessResponseCode defines model for ItemSuccessResponse.Code.
+type ItemSuccessResponseCode int
+
+// ItemSuccessResponseMessage defines model for ItemSuccessResponse.Message.
+type ItemSuccessResponseMessage string
 
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
@@ -129,12 +320,25 @@ type LoginRequest struct {
 
 // PagedItemsResponse defines model for PagedItemsResponse.
 type PagedItemsResponse struct {
-	Items      *[]ItemResponse `json:"items,omitempty"`
-	Page       *int            `json:"page,omitempty"`
-	PageSize   *int            `json:"page_size,omitempty"`
-	Total      *int            `json:"total,omitempty"`
-	TotalPages *int            `json:"total_pages,omitempty"`
+	Items      []ItemResponse `json:"items"`
+	Page       int            `json:"page"`
+	PageSize   int            `json:"page_size"`
+	Total      int            `json:"total"`
+	TotalPages int            `json:"total_pages"`
 }
+
+// PagedItemsSuccessResponse defines model for PagedItemsSuccessResponse.
+type PagedItemsSuccessResponse struct {
+	Code    PagedItemsSuccessResponseCode    `json:"code"`
+	Data    PagedItemsResponse               `json:"data"`
+	Message PagedItemsSuccessResponseMessage `json:"message"`
+}
+
+// PagedItemsSuccessResponseCode defines model for PagedItemsSuccessResponse.Code.
+type PagedItemsSuccessResponseCode int
+
+// PagedItemsSuccessResponseMessage defines model for PagedItemsSuccessResponse.Message.
+type PagedItemsSuccessResponseMessage string
 
 // RefreshRequest defines model for RefreshRequest.
 type RefreshRequest struct {
@@ -146,13 +350,6 @@ type RegisterRequest struct {
 	Email    openapi_types.Email `json:"email"`
 	Password string              `json:"password"`
 	Username string              `json:"username"`
-}
-
-// Response defines model for Response.
-type Response struct {
-	Code    *int                    `json:"code,omitempty"`
-	Data    *map[string]interface{} `json:"data,omitempty"`
-	Message *string                 `json:"message,omitempty"`
 }
 
 // UpdateItemRequest defines model for UpdateItemRequest.
@@ -167,11 +364,24 @@ type UpdateItemRequestStatus string
 
 // UserResponse defines model for UserResponse.
 type UserResponse struct {
-	Email    *string `json:"email,omitempty"`
-	Id       *int    `json:"id,omitempty"`
-	Role     *string `json:"role,omitempty"`
-	Username *string `json:"username,omitempty"`
+	Email    string `json:"email"`
+	Id       int    `json:"id"`
+	Role     string `json:"role"`
+	Username string `json:"username"`
 }
+
+// UserSuccessResponse defines model for UserSuccessResponse.
+type UserSuccessResponse struct {
+	Code    UserSuccessResponseCode    `json:"code"`
+	Data    UserResponse               `json:"data"`
+	Message UserSuccessResponseMessage `json:"message"`
+}
+
+// UserSuccessResponseCode defines model for UserSuccessResponse.Code.
+type UserSuccessResponseCode int
+
+// UserSuccessResponseMessage defines model for UserSuccessResponse.Message.
+type UserSuccessResponseMessage string
 
 // ListItemsParams defines parameters for ListItems.
 type ListItemsParams struct {
@@ -484,11 +694,7 @@ type LoginUserResponseObject interface {
 	VisitLoginUserResponse(w http.ResponseWriter) error
 }
 
-type LoginUser200JSONResponse struct {
-	Code    *int          `json:"code,omitempty"`
-	Data    *AuthResponse `json:"data,omitempty"`
-	Message *string       `json:"message,omitempty"`
-}
+type LoginUser200JSONResponse AuthSuccessResponse
 
 func (response LoginUser200JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -531,11 +737,7 @@ type GetProfileResponseObject interface {
 	VisitGetProfileResponse(w http.ResponseWriter) error
 }
 
-type GetProfile200JSONResponse struct {
-	Code    *int          `json:"code,omitempty"`
-	Data    *UserResponse `json:"data,omitempty"`
-	Message *string       `json:"message,omitempty"`
-}
+type GetProfile200JSONResponse UserSuccessResponse
 
 func (response GetProfile200JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -579,11 +781,7 @@ type RefreshTokenResponseObject interface {
 	VisitRefreshTokenResponse(w http.ResponseWriter) error
 }
 
-type RefreshToken200JSONResponse struct {
-	Code    *int          `json:"code,omitempty"`
-	Data    *AuthResponse `json:"data,omitempty"`
-	Message *string       `json:"message,omitempty"`
-}
+type RefreshToken200JSONResponse AuthSuccessResponse
 
 func (response RefreshToken200JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -627,11 +825,7 @@ type RegisterUserResponseObject interface {
 	VisitRegisterUserResponse(w http.ResponseWriter) error
 }
 
-type RegisterUser201JSONResponse struct {
-	Code    *int          `json:"code,omitempty"`
-	Data    *AuthResponse `json:"data,omitempty"`
-	Message *string       `json:"message,omitempty"`
-}
+type RegisterUser201JSONResponse AuthSuccessResponse
 
 func (response RegisterUser201JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -675,11 +869,7 @@ type ListItemsResponseObject interface {
 	VisitListItemsResponse(w http.ResponseWriter) error
 }
 
-type ListItems200JSONResponse struct {
-	Code    *int                `json:"code,omitempty"`
-	Data    *PagedItemsResponse `json:"data,omitempty"`
-	Message *string             `json:"message,omitempty"`
-}
+type ListItems200JSONResponse PagedItemsSuccessResponse
 
 func (response ListItems200JSONResponse) VisitListItemsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -705,11 +895,7 @@ type CreateItemResponseObject interface {
 	VisitCreateItemResponse(w http.ResponseWriter) error
 }
 
-type CreateItem201JSONResponse struct {
-	Code    *int          `json:"code,omitempty"`
-	Data    *ItemResponse `json:"data,omitempty"`
-	Message *string       `json:"message,omitempty"`
-}
+type CreateItem201JSONResponse ItemSuccessResponse
 
 func (response CreateItem201JSONResponse) VisitCreateItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -744,7 +930,7 @@ type DeleteItemResponseObject interface {
 	VisitDeleteItemResponse(w http.ResponseWriter) error
 }
 
-type DeleteItem200JSONResponse Response
+type DeleteItem200JSONResponse EmptySuccessResponse
 
 func (response DeleteItem200JSONResponse) VisitDeleteItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -779,11 +965,7 @@ type GetItemResponseObject interface {
 	VisitGetItemResponse(w http.ResponseWriter) error
 }
 
-type GetItem200JSONResponse struct {
-	Code    *int          `json:"code,omitempty"`
-	Data    *ItemResponse `json:"data,omitempty"`
-	Message *string       `json:"message,omitempty"`
-}
+type GetItem200JSONResponse ItemSuccessResponse
 
 func (response GetItem200JSONResponse) VisitGetItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -819,11 +1001,7 @@ type UpdateItemResponseObject interface {
 	VisitUpdateItemResponse(w http.ResponseWriter) error
 }
 
-type UpdateItem200JSONResponse struct {
-	Code    *int          `json:"code,omitempty"`
-	Data    *ItemResponse `json:"data,omitempty"`
-	Message *string       `json:"message,omitempty"`
-}
+type UpdateItem200JSONResponse ItemSuccessResponse
 
 func (response UpdateItem200JSONResponse) VisitUpdateItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1178,32 +1356,33 @@ func (sh *strictHandler) UpdateItem(ctx *gin.Context, id int) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"pD/5JwAA//8y2Eup+CYAAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
