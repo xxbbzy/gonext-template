@@ -5,8 +5,11 @@ on:
     branches: [main, develop]
     paths:
       - "api/openapi.yaml"
+      - "backend/internal/api/**"
+      - "backend/docs/**"
       - "backend/go.mod"
       - "backend/go.sum"
+      - "frontend/types/**"
       - "frontend/package.json"
       - "frontend/package-lock.json"
       - "scripts/swagger/**"
@@ -17,8 +20,11 @@ on:
     branches: [main, develop]
     paths:
       - "api/openapi.yaml"
+      - "backend/internal/api/**"
+      - "backend/docs/**"
       - "backend/go.mod"
       - "backend/go.sum"
+      - "frontend/types/**"
       - "frontend/package.json"
       - "frontend/package-lock.json"
       - "scripts/swagger/**"

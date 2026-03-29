@@ -140,7 +140,8 @@ gen-client: gen-types ## Alias for gen-types (legacy)
 
 check-codegen-drift: ## Regenerate and fail if repository state drifts
 	@echo "==> Checking codegen drift..."
-	@before_file=$$(mktemp); \
+	@set -eu; \
+	before_file=$$(mktemp); \
 	after_file=$$(mktemp); \
 	trap 'rm -f "$$before_file" "$$after_file"' EXIT; \
 	git status --porcelain=v1 --untracked-files=all > "$$before_file"; \

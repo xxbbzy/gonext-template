@@ -43,7 +43,7 @@
 
 执行阶段：
 
-1. 运行运行时版本策略检查：`./scripts/check-versions.sh`
+1. 运行时版本策略检查：`./scripts/check-versions.sh`
 2. 安装后端与前端依赖
 3. 执行共享漂移检查命令：`make check-codegen-drift`
 4. 若失败，执行 `make gen`、提交生成产物后重试
