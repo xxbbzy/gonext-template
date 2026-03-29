@@ -81,6 +81,24 @@ func TestConfigValidateAcceptsAllAllowedAppEnvs(t *testing.T) {
 	}
 }
 
+func TestConfigValidateNormalizesEnvAndDriver(t *testing.T) {
+	cfg := newValidConfig()
+	cfg.App.Env = " Production "
+	cfg.Database.Driver = " SQLITE "
+	cfg.JWT.Secret = "strong-secret"
+
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+
+	if cfg.App.Env != "production" {
+		t.Fatalf("expected normalized APP_ENV to be %q, got %q", "production", cfg.App.Env)
+	}
+	if cfg.Database.Driver != "sqlite" {
+		t.Fatalf("expected normalized DB_DRIVER to be %q, got %q", "sqlite", cfg.Database.Driver)
+	}
+}
+
 func TestConfigValidateRejectsInvalidValues(t *testing.T) {
 	tests := []struct {
 		name       string

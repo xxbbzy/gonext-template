@@ -204,6 +204,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("config validation failed: %s", strings.Join(validationErrors, "; "))
 	}
 
+	c.App.Env = env
+	c.Database.Driver = driver
+
 	return nil
 }
 
