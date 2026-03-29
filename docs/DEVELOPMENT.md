@@ -10,6 +10,7 @@ This page is the concise workflow summary for human contributors; repository-wid
 3. 进行改动 / Implement changes in the existing layer structure
 4. 本地检查 / Run practical checks: `make check`
 5. 生成产物（如需要）/ Refresh generated artifacts when needed:
+   - `make gen-types`
    - `make swagger`
    - `make gen`
 6. 更新必要文档 / Update the minimal docs affected by the change
@@ -18,10 +19,12 @@ This page is the concise workflow summary for human contributors; repository-wid
 
 - 先改 `api/openapi.yaml`，它是契约真相源。
 - Update `api/openapi.yaml` first because it is the contract source of truth.
-- 后端实现后，如果契约或 Swagger 输出受影响，执行 `make swagger`。
-- After backend API changes, run `make swagger` when contract-derived backend docs must be refreshed.
-- 前端类型依赖 OpenAPI，契约变更后执行 `make gen`。
-- Frontend types depend on OpenAPI, so run `make gen` after contract changes.
+- 契约变更后，默认先执行 `make gen-types` 刷新前端类型（输出 `frontend/types/api.ts`）。
+- After contract changes, run `make gen-types` as the default step to refresh frontend types (writes `frontend/types/api.ts`).
+- 准备提交/合并包含契约变更的 PR 时，确保后端派生文件也已同步：推荐执行 `make gen`；或至少执行 `make gen-server`（并在需要更新 Swagger 输出时执行 `make swagger`）。
+- Before committing/merging a PR that includes contract changes, keep committed backend-derived artifacts in sync: prefer `make gen`; or at minimum `make gen-server` (and run `make swagger` when Swagger output must be refreshed).
+- 仅需刷新 Swagger 文档输出时，执行 `make swagger`。
+- If you only need to refresh Swagger docs output, run `make swagger`.
 - 相关背景见 `docs/adr/001-openapi-as-contract.md`。
 - For rationale, see `docs/adr/001-openapi-as-contract.md`.
 

@@ -1,6 +1,6 @@
 # 前端概览
 
-本仓库前端由 Next.js App Router 驱动，负责渲染用户界面，并通过 `frontend/lib/api-client.gen.ts` 对接后端 API；接口类型以 `frontend/types/api.ts`（OpenAPI 生成）为准。
+本仓库前端由 Next.js App Router 驱动，负责渲染用户界面。所有请求通过 `frontend/lib/api-client.gen.ts` 统一发出，请求/响应类型则来自 `frontend/types/api.ts`，该文件由 OpenAPI 契约生成，并在契约变更后通过 `make gen-types` 刷新。
 
 ## 启动方式
 
@@ -20,6 +20,7 @@
 - `npm run lint`：检查 lint 规则。
 - `npm run typecheck`：执行 TypeScript 类型检查（`tsc --noEmit`）。
 - `npm run test`：运行 Vitest 单元测试。
+- `make gen-types`：刷新由 OpenAPI 驱动的 `frontend/types/api.ts`，在契约变更后执行；若需要同时刷新 Go 服务 stub 和 Swagger 文档，可使用 `make gen`。
 
 ## 目录说明
 

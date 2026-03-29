@@ -93,10 +93,26 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 当接口契约变更时：
 
 ```bash
-make gen
+make gen-types
+# 准备提交/合并含契约变更的 PR 时，推荐全量刷新派生产物：
+# make gen
+# 或至少：
+# make gen-server
+# make swagger
 ```
 
-会生成：`frontend/types/api.ts`
+When the API contract changes:
+
+```bash
+make gen-types
+# To prepare for PRs that change the contract, refresh generated artifacts:
+# make gen
+# or at least:
+# make gen-server
+# make swagger
+```
+
+默认会生成：`frontend/types/api.ts`
 
 ## 8. 当前实现与契约差异
 
