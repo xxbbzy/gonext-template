@@ -30,6 +30,7 @@ make init
 5. 创建 `data/` 与 `uploads/` 目录
 6. 初始化数据库（`go run ./cmd/bootstrap`）
 7. 生成代码与文档（`make gen`，包含 `gen-server`、`gen-types`、`swagger`）
+7. Generate code and documentation (`make gen`, includes `gen-server`, `gen-types`, `swagger`)
 
 ## 3. 启动开发环境
 
@@ -69,11 +70,13 @@ make check
 ## 6. 常用命令速查
 
 ```bash
-make help            # 查看所有命令
+make help            # 查看所有命令 / View all commands
 make gen-types        # 基于 OpenAPI 生成前端 TypeScript 类型（frontend/types/api.ts，适合联调迭代）
+                     # Generate frontend TypeScript types from OpenAPI (frontend/types/api.ts, suitable for iteration)
 make gen              # 全量生成：Go server stub + 前端类型 + Swagger（gen-server + gen-types + swagger，提交/合并前推荐）
+                     # Full regeneration: Go server stub + frontend types + Swagger (gen-server + gen-types + swagger, recommended before commit/merge)
 make new-module name=product
 make new-migration name=add_xxx
-make docker-up       # 用 docker compose 启动
+make docker-up       # 用 docker compose 启动 / Start with docker compose
 make docker-down
 ```

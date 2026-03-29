@@ -101,6 +101,17 @@ make gen-types
 # make swagger
 ```
 
+When the API contract changes:
+
+```bash
+make gen-types
+# To prepare for PRs that change the contract, refresh generated artifacts:
+# make gen
+# or at least:
+# make gen-server
+# make swagger
+```
+
 默认会生成：`frontend/types/api.ts`
 
 ## 8. 当前实现与契约差异

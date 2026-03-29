@@ -76,6 +76,7 @@
 
 - [ ] `api/openapi.yaml` 与实现一致
 - [ ] 若改 API 契约：已执行 `make gen-types` 刷新前端类型，并在提交/发版前确保后端生成文件与 Swagger 同步（推荐 `make gen`，或至少 `make gen-server` + `make swagger`）
+- [ ] If the API contract changes: run `make gen-types` to refresh frontend types, and ensure backend generated files are synced with Swagger before commit/release (prefer `make gen`, or at minimum `make gen-server` + `make swagger`)
 - [ ] 若改 DB schema，已提供 migration 与回滚 SQL
 - [ ] `docs/` 已同步更新（至少含 API/配置/流程）
 - [ ] `CHANGELOG.md` 已从 `Unreleased` 切出对应版本

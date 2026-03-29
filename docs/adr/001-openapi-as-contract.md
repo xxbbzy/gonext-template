@@ -33,6 +33,7 @@ that file to generate frontend types.
   type information.
 - Contract changes that are merged must keep committed backend-derived outputs
   in sync (Go server stubs and Swagger), not only frontend types.
+- 合并的契约变更必须保持已提交的后端派生产物（Go server stubs 和 Swagger）同步，而不仅仅是前端类型。
 
 ## Alternatives Considered
 
@@ -47,3 +48,4 @@ that file to generate frontend types.
 - `backend/docs/swagger.yaml`
 - `frontend/types/api.ts`
 - `Makefile` targets: `gen-types` (frontend TypeScript types) and `gen` (full regen: `gen-server`, `gen-types`, `swagger`). Older docs may refer to `gen-client`; treat it as `gen-types`.
+- `Makefile` 目标：`gen-types`（前端 TypeScript 类型）和 `gen`（完整重新生成：`gen-server`、`gen-types`、`swagger`）。旧文档可能引用 `gen-client`；将其视为 `gen-types`。

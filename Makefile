@@ -1,9 +1,11 @@
-.PHONY: help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend test-frontend build build-backend build-frontend seed swagger gen gen-server gen-client gen-types migrate-up migrate-down new-migration new-module e2e docker-up docker-down docker-build clean
+.PHONY: all help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend test-frontend build build-backend build-frontend seed swagger gen gen-server gen-client gen-types migrate-up migrate-down new-migration new-module e2e docker-up docker-down docker-build clean
 
 BACKEND_GO_CACHE := $(CURDIR)/backend/.cache/go-build
 BACKEND_LINT_CACHE := $(CURDIR)/backend/.cache/golangci-lint
 
 # Default target
+all: check ## Run full validation pipeline
+
 help: ## Show this help message
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
