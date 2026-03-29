@@ -13,14 +13,27 @@ api/openapi.yaml
 -> frontend/stores/auth.ts
 -> frontend/lib/query-provider.tsx
 -> backend/cmd/server/main.go
--> global and route-group middleware
+-> global middleware + generated per-operation middleware
 -> backend/internal/api/server_impl.go -> services
    backend/internal/handler/ (manual Gin routes)
 -> repositories
 -> models (with `*gorm.DB` bootstrapped at startup via `backend/internal/config/database.go`)
 ```
 
-The OpenAPI contract feeds the generated client in `frontend/lib/api-client.gen.ts`, which injects tokens from `frontend/stores/auth.ts`, handles 401 refresh, and is consumed by routes under `frontend/app/` that bootstrap TanStack Query through `frontend/lib/query-provider.tsx`. Gin starts in `backend/cmd/server/main.go`, applies middleware, and either dispatches through the generated strict handler implemented in `backend/internal/api/server_impl.go` (auth/item routes) or hits manual Gin endpoints in `backend/internal/handler/`. Services orchestrate use cases after middleware unwinds, repositories talk to models, and the shared `*gorm.DB` connection comes from `backend/internal/config/database.go` during startup.
+The OpenAPI contract feeds the generated client in `frontend/lib/api-client.gen.ts`, which injects tokens from `frontend/stores/auth.ts`, handles 401 refresh, and is consumed by routes under `frontend/app/` that bootstrap TanStack Query through `frontend/lib/query-provider.tsx`. Gin starts in `backend/cmd/server/main.go`, applies global middleware, then registers generated strict handlers via `genapi.RegisterHandlersWithOptions(...)` with a per-operation middleware switch for auth/item routes. Manual Gin endpoints (like upload) stay in `backend/internal/handler/` with their own routing. Services orchestrate use cases after middleware unwinds, repositories talk to models, and the shared `*gorm.DB` connection comes from `backend/internal/config/database.go` during startup.
+
+## Frontend And Runtime Integration Points
+
+Start cross-stack integration work at these anchors; they are the stable entry points for wiring, not full implementation guides:
+
+- `frontend/app/` is the route tree that calls the API layer and hosts page-level composition.
+- `frontend/lib/api-client.gen.ts` is the active generated OpenAPI client with auth + refresh middleware.
+- `frontend/lib/api-client.ts` is a deprecated compatibility wrapper that re-exports the generated client and legacy types.
+- `frontend/lib/query-provider.tsx` configures TanStack Query defaults for frontend data access.
+- `frontend/stores/auth.ts` owns token persistence and user state for client auth.
+- `backend/cmd/server/main.go` mounts global middleware, registers generated handlers via `genapi.RegisterHandlersWithOptions(...)`, applies per-operation middleware for generated routes, and wires manual Gin routes like upload separately.
+- `backend/cmd/server/wire.go` + `backend/cmd/server/providers.go` declare constructors; `backend/cmd/server/wire_gen.go` is generated output.
+- `backend/internal/config/database.go` initializes the shared `*gorm.DB` used by repositories.
 
 ## Backend Layer Responsibilities
 
@@ -64,8 +77,46 @@ The OpenAPI contract feeds the generated client in `frontend/lib/api-client.gen.
 - Lives in `backend/internal/dto/`.
 - When adding a module, add the request/response DTOs, update the OpenAPI contract if needed, and regenerate frontend types so the client and handlers stay in sync.
 
+## Dependency Direction And Boundaries
+
+Intended dependency flow: `handler -> service -> repository -> model`.
+
+- DTOs stay on the transport side (handlers + services) and map to OpenAPI-defined shapes.
+- Middleware owns HTTP cross-cutting concerns (auth, rate limits, recovery, logging).
+- `backend/pkg/response` and `backend/pkg/errcode` are shared support packages for envelopes and error cataloging.
+- Wire files assemble dependencies (`backend/cmd/server/wire.go`, `backend/cmd/server/providers.go`, generated `backend/cmd/server/wire_gen.go`) but do not own business behavior.
+
+Anti-patterns to avoid:
+
+- Handlers querying GORM directly.
+- Services returning HTTP payload semantics.
+- Repositories owning business policy.
+- Models acting as default API response structs.
+
 ## Extension Points
 
 - Add new modules through `backend/cmd/server/wire.go`, supplement helper constructors in `backend/cmd/server/providers.go`, and register their routes/middleware in `backend/cmd/server/main.go`.
-- Middleware belongs in `backend/internal/middleware/`, with Gin global middleware on the router and route-group middleware scoped in `backend/cmd/server/main.go`, keeping context keys and auth expectations stable.
+- Middleware belongs in `backend/internal/middleware/`, with Gin global middleware on the router and per-operation middleware switched inside the generated handler registration in `backend/cmd/server/main.go`, keeping context keys and auth expectations stable.
 - Database wiring stays in `backend/internal/config/database.go`, so any persistence change must feed through that initializer before services and repositories use the connection.
+
+## Recommended Flow For Adding A New Module
+
+- [ ] Update `api/openapi.yaml` when API behavior changes.
+- [ ] Add or update DTOs in `backend/internal/dto/`.
+- [ ] Implement handler/service/repository/model changes in their respective layers.
+- [ ] Register providers/constructors in `backend/cmd/server/providers.go` and `backend/cmd/server/wire.go`.
+- [ ] Regenerate `backend/cmd/server/wire_gen.go` through the existing Wire workflow.
+- [ ] Register routes in `backend/cmd/server/main.go`.
+- [ ] Update development AutoMigrate coverage and add SQL migrations under `backend/migrations/` when persistence changes.
+- [ ] Run `make gen` when the contract changed.
+- [ ] Run `make check`.
+- [ ] Run `make e2e` for API/runtime behavior changes.
+
+## Links
+
+- `AGENTS.md`
+- `CONVENTIONS.md`
+- `docs/README.md`
+- `docs/adr/001-openapi-as-contract.md`
+- `docs/adr/002-sqlite-dev-postgres-prod.md`
+- `docs/adr/003-wire-for-di.md`
