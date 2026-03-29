@@ -56,14 +56,17 @@ This page is the concise workflow summary for human contributors; repository-wid
 
 ## 文档一致性检查清单 / Documentation Consistency Checklist
 
-- 修改 `Makefile` 命令行为时，同步检查并更新 `README.md`、`docs/QUICK_START.md`、`docs/DEPLOYMENT.md` 中对应描述。
-- When `Makefile` command behavior changes, update matching descriptions in `README.md`, `docs/QUICK_START.md`, and `docs/DEPLOYMENT.md`.
-- 修改 `docker-compose.yml` 服务、端口或环境变量约定时，同步更新部署与运行相关文档。
-- When `docker-compose.yml` service/port/environment conventions change, update deployment/runtime docs in the same change.
-- 修改 DI 策略或运行时装配方式（如 Wire provider/wiring）时，同步更新 README 和相关架构/ADR 引用说明。
-- When DI strategy or runtime wiring changes (for example Wire providers/wiring), update README plus relevant architecture/ADR references.
-- 不要提交默认脚手架 README 文案（例如 create-next-app 默认文本）；模块 README 必须写明仓库实际用法。
-- Do not commit default scaffold README text (for example create-next-app defaults); module READMEs must describe real repository usage.
+- 修改 `Makefile` 命令行为时，同步检查并更新 `README.md`、`docs/QUICK_START.md`、`docs/DEPLOYMENT.md` 中的相关说明。
+- When `Makefile` command behavior changes, update the matching descriptions in `README.md`, `docs/QUICK_START.md`, and `docs/DEPLOYMENT.md`.
+
+- 修改 `docker-compose.yml` 时涉及服务、端口或部署约定的更改，必须同步刷新部署/服务/端口相关文档（如部署指南或运行指标）。
+- When `docker-compose.yml` changes involve services, ports, or deployment conventions, sync the corresponding deployment/service/port docs.
+
+- 修改依赖注入策略或运行时装配（例如 Wire provider/wiring）时，同步更新 `README.md` 中的概要说明以及相关架构章节或 ADR 引用。
+- When the DI strategy or runtime wiring (e.g., Wire providers/wiring) changes, refresh the README guidance plus the linked architecture/ADR references.
+
+- 模块目录内的 README 不应保留默认脚手架模板内容（例如 create-next-app 默认文本），必须描述本仓库的实际使用方式。
+- Do not commit default scaffold README templates in module directories; every README must describe how this repository actually works.
 
 ## 参考入口 / Recommended References
 
