@@ -61,8 +61,8 @@ func TestRequestLoggerIncludesRoutePathAndUserID(t *testing.T) {
 	if !ok {
 		t.Fatalf("query_safe type = %T, want map[string]interface{}", fields["query_safe"])
 	}
-	if got := querySafe["page"]; got != "2" {
-		t.Fatalf("query_safe.page = %v, want %q", got, "2")
+	if got := intFromAny(t, querySafe["page"]); got != 2 {
+		t.Fatalf("query_safe.page = %v, want %d", got, 2)
 	}
 	if got := querySafe["status"]; got != "active" {
 		t.Fatalf("query_safe.status = %v, want %q", got, "active")
@@ -147,6 +147,14 @@ func TestRequestLoggerIncludesErrorCodeForManualAndRateLimitErrors(t *testing.T)
 			req.RemoteAddr = "198.51.100.99:1234"
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
+
+			wantStatus := http.StatusOK
+			if i == 1 {
+				wantStatus = http.StatusTooManyRequests
+			}
+			if got := resp.Code; got != wantStatus {
+				t.Fatalf("request %d status = %d, want %d", i+1, got, wantStatus)
+			}
 		}
 
 		entries := recorded.FilterMessage("HTTP Request").All()

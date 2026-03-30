@@ -3,7 +3,9 @@ package requestlog
 import (
 	"context"
 	"net/url"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,13 +16,25 @@ const (
 	ErrorCodeContextKey = "request_log_error_code"
 )
 
-var queryValueAllowlist = map[string]struct{}{
-	"page":      {},
-	"page_size": {},
-	"status":    {},
-	"sort":      {},
-	"order":     {},
+var queryValueAllowlist = map[string]func(string) (interface{}, bool){
+	"page":      normalizeIntQueryValue,
+	"page_size": normalizeIntQueryValue,
+	"status":    normalizeStatusQueryValue,
+	"sort":      normalizeSortQueryValue,
+	"order":     normalizeOrderQueryValue,
 }
+
+var (
+	allowedStatusValues = map[string]struct{}{
+		"active":   {},
+		"inactive": {},
+	}
+	allowedOrderValues = map[string]struct{}{
+		"asc":  {},
+		"desc": {},
+	}
+	sortValuePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]{0,63}$`)
+)
 
 // QuerySummary is a safe query representation for request logs.
 type QuerySummary struct {
@@ -118,12 +132,8 @@ func SummarizeQuery(values url.Values) QuerySummary {
 			continue
 		}
 
-		if _, allowlisted := queryValueAllowlist[key]; allowlisted {
-			if len(vals) == 1 {
-				safe[key] = vals[0]
-			} else {
-				safe[key] = vals
-			}
+		if normalizer, allowlisted := queryValueAllowlist[key]; allowlisted {
+			summarizeAllowlistedQueryValue(safe, key, vals, normalizer)
 			continue
 		}
 
@@ -139,4 +149,56 @@ func SummarizeQuery(values url.Values) QuerySummary {
 		Keys: keys,
 		Safe: safe,
 	}
+}
+
+func summarizeAllowlistedQueryValue(
+	safe map[string]interface{},
+	key string,
+	vals []string,
+	normalizer func(string) (interface{}, bool),
+) {
+	if len(vals) != 1 {
+		safe[key+"_len"] = len(vals)
+		return
+	}
+
+	normalized, ok := normalizer(vals[0])
+	if ok {
+		safe[key] = normalized
+		return
+	}
+
+	safe[key+"_present"] = true
+	safe[key+"_len"] = len(vals[0])
+}
+
+func normalizeIntQueryValue(value string) (interface{}, bool) {
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return nil, false
+	}
+	return parsed, true
+}
+
+func normalizeStatusQueryValue(value string) (interface{}, bool) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if _, ok := allowedStatusValues[value]; !ok {
+		return nil, false
+	}
+	return value, true
+}
+
+func normalizeOrderQueryValue(value string) (interface{}, bool) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if _, ok := allowedOrderValues[value]; !ok {
+		return nil, false
+	}
+	return value, true
+}
+
+func normalizeSortQueryValue(value string) (interface{}, bool) {
+	if !sortValuePattern.MatchString(value) {
+		return nil, false
+	}
+	return value, true
 }
