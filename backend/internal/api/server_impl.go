@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/dto"
+	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	"github.com/xxbbzy/gonext-template/backend/pkg/pagination"
@@ -90,157 +91,283 @@ func handleServiceError(err error) (code int, httpStatus int, message string) {
 	return 500, http.StatusInternalServerError, "internal server error"
 }
 
-func loginUserErrorResponse(httpStatus, code int, message string) LoginUserResponseObject {
-	switch httpStatus {
-	case http.StatusBadRequest:
-		return LoginUser400JSONResponse{Code: code, Message: message}
-	case http.StatusUnauthorized:
-		return LoginUser401JSONResponse{Code: code, Message: message}
-	default:
-		return LoginUser500JSONResponse{Code: code, Message: message}
+func requestIDFromContext(ctx context.Context) string {
+	ginCtx, ok := ctx.(*gin.Context)
+	if !ok {
+		return ""
+	}
+
+	requestID, exists := ginCtx.Get(middleware.RequestIDKey)
+	if !exists {
+		return ""
+	}
+
+	value, ok := requestID.(string)
+	if !ok {
+		return ""
+	}
+
+	return value
+}
+
+func errorResponseBody(code int, message string) ErrorResponse {
+	return ErrorResponse{
+		Code:    code,
+		Data:    nil,
+		Message: message,
 	}
 }
 
-func getProfileErrorResponse(httpStatus, code int, message string) GetProfileResponseObject {
+func loginUserErrorResponse(ctx context.Context, httpStatus, code int, message string) LoginUserResponseObject {
+	body := errorResponseBody(code, message)
+	requestID := requestIDFromContext(ctx)
+
+	switch httpStatus {
+	case http.StatusBadRequest:
+		return LoginUser400JSONResponse{
+			Body:    body,
+			Headers: LoginUser400ResponseHeaders{XRequestID: requestID},
+		}
+	case http.StatusUnauthorized:
+		return LoginUser401JSONResponse{
+			Body:    body,
+			Headers: LoginUser401ResponseHeaders{XRequestID: requestID},
+		}
+	default:
+		return LoginUser500JSONResponse{
+			Body:    body,
+			Headers: LoginUser500ResponseHeaders{XRequestID: requestID},
+		}
+	}
+}
+
+func getProfileErrorResponse(ctx context.Context, httpStatus, code int, message string) GetProfileResponseObject {
+	body := errorResponseBody(code, message)
+	requestID := requestIDFromContext(ctx)
+
 	switch httpStatus {
 	case http.StatusUnauthorized:
-		return GetProfile401JSONResponse{Code: code, Message: message}
+		return GetProfile401JSONResponse{
+			Body:    body,
+			Headers: GetProfile401ResponseHeaders{XRequestID: requestID},
+		}
 	case http.StatusNotFound:
-		return GetProfile404JSONResponse{Code: code, Message: message}
+		return GetProfile404JSONResponse{
+			Body:    body,
+			Headers: GetProfile404ResponseHeaders{XRequestID: requestID},
+		}
 	default:
-		return GetProfile500JSONResponse{Code: code, Message: message}
+		return GetProfile500JSONResponse{
+			Body:    body,
+			Headers: GetProfile500ResponseHeaders{XRequestID: requestID},
+		}
 	}
 }
 
-func refreshTokenErrorResponse(httpStatus, code int, message string) RefreshTokenResponseObject {
+func refreshTokenErrorResponse(ctx context.Context, httpStatus, code int, message string) RefreshTokenResponseObject {
+	body := errorResponseBody(code, message)
+	requestID := requestIDFromContext(ctx)
+
 	switch httpStatus {
 	case http.StatusBadRequest:
-		return RefreshToken400JSONResponse{Code: code, Message: message}
+		return RefreshToken400JSONResponse{
+			Body:    body,
+			Headers: RefreshToken400ResponseHeaders{XRequestID: requestID},
+		}
 	case http.StatusUnauthorized:
-		return RefreshToken401JSONResponse{Code: code, Message: message}
+		return RefreshToken401JSONResponse{
+			Body:    body,
+			Headers: RefreshToken401ResponseHeaders{XRequestID: requestID},
+		}
 	default:
-		return RefreshToken500JSONResponse{Code: code, Message: message}
+		return RefreshToken500JSONResponse{
+			Body:    body,
+			Headers: RefreshToken500ResponseHeaders{XRequestID: requestID},
+		}
 	}
 }
 
-func registerUserErrorResponse(httpStatus, code int, message string) RegisterUserResponseObject {
+func registerUserErrorResponse(ctx context.Context, httpStatus, code int, message string) RegisterUserResponseObject {
+	body := errorResponseBody(code, message)
+	requestID := requestIDFromContext(ctx)
+
 	switch httpStatus {
 	case http.StatusConflict:
-		return RegisterUser409JSONResponse{Code: code, Message: message}
+		return RegisterUser409JSONResponse{
+			Body:    body,
+			Headers: RegisterUser409ResponseHeaders{XRequestID: requestID},
+		}
 	case http.StatusBadRequest:
-		return RegisterUser400JSONResponse{Code: code, Message: message}
+		return RegisterUser400JSONResponse{
+			Body:    body,
+			Headers: RegisterUser400ResponseHeaders{XRequestID: requestID},
+		}
 	default:
-		return RegisterUser500JSONResponse{Code: code, Message: message}
+		return RegisterUser500JSONResponse{
+			Body:    body,
+			Headers: RegisterUser500ResponseHeaders{XRequestID: requestID},
+		}
 	}
 }
 
-func listItemsErrorResponse(httpStatus, code int, message string) ListItemsResponseObject {
-	return ListItems500JSONResponse{Code: code, Message: message}
-}
-
-func createItemErrorResponse(httpStatus, code int, message string) CreateItemResponseObject {
-	switch httpStatus {
-	case http.StatusBadRequest:
-		return CreateItem400JSONResponse{Code: code, Message: message}
-	default:
-		return CreateItem500JSONResponse{Code: code, Message: message}
+func listItemsErrorResponse(ctx context.Context, code int, message string) ListItemsResponseObject {
+	return ListItems500JSONResponse{
+		Body:    errorResponseBody(code, message),
+		Headers: ListItems500ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}
 }
 
-func deleteItemErrorResponse(httpStatus, code int, message string) DeleteItemResponseObject {
-	switch httpStatus {
-	case http.StatusNotFound:
-		return DeleteItem404JSONResponse{Code: code, Message: message}
-	default:
-		return DeleteItem500JSONResponse{Code: code, Message: message}
-	}
-}
+func createItemErrorResponse(ctx context.Context, httpStatus, code int, message string) CreateItemResponseObject {
+	body := errorResponseBody(code, message)
+	requestID := requestIDFromContext(ctx)
 
-func getItemErrorResponse(httpStatus, code int, message string) GetItemResponseObject {
-	switch httpStatus {
-	case http.StatusNotFound:
-		return GetItem404JSONResponse{Code: code, Message: message}
-	default:
-		return GetItem500JSONResponse{Code: code, Message: message}
-	}
-}
-
-func updateItemErrorResponse(httpStatus, code int, message string) UpdateItemResponseObject {
 	switch httpStatus {
 	case http.StatusBadRequest:
-		return UpdateItem400JSONResponse{Code: code, Message: message}
-	case http.StatusNotFound:
-		return UpdateItem404JSONResponse{Code: code, Message: message}
+		return CreateItem400JSONResponse{
+			Body:    body,
+			Headers: CreateItem400ResponseHeaders{XRequestID: requestID},
+		}
 	default:
-		return UpdateItem500JSONResponse{Code: code, Message: message}
+		return CreateItem500JSONResponse{
+			Body:    body,
+			Headers: CreateItem500ResponseHeaders{XRequestID: requestID},
+		}
+	}
+}
+
+func deleteItemErrorResponse(ctx context.Context, httpStatus, code int, message string) DeleteItemResponseObject {
+	body := errorResponseBody(code, message)
+	requestID := requestIDFromContext(ctx)
+
+	switch httpStatus {
+	case http.StatusNotFound:
+		return DeleteItem404JSONResponse{
+			Body:    body,
+			Headers: DeleteItem404ResponseHeaders{XRequestID: requestID},
+		}
+	default:
+		return DeleteItem500JSONResponse{
+			Body:    body,
+			Headers: DeleteItem500ResponseHeaders{XRequestID: requestID},
+		}
+	}
+}
+
+func getItemErrorResponse(ctx context.Context, httpStatus, code int, message string) GetItemResponseObject {
+	body := errorResponseBody(code, message)
+	requestID := requestIDFromContext(ctx)
+
+	switch httpStatus {
+	case http.StatusNotFound:
+		return GetItem404JSONResponse{
+			Body:    body,
+			Headers: GetItem404ResponseHeaders{XRequestID: requestID},
+		}
+	default:
+		return GetItem500JSONResponse{
+			Body:    body,
+			Headers: GetItem500ResponseHeaders{XRequestID: requestID},
+		}
+	}
+}
+
+func updateItemErrorResponse(ctx context.Context, httpStatus, code int, message string) UpdateItemResponseObject {
+	body := errorResponseBody(code, message)
+	requestID := requestIDFromContext(ctx)
+
+	switch httpStatus {
+	case http.StatusBadRequest:
+		return UpdateItem400JSONResponse{
+			Body:    body,
+			Headers: UpdateItem400ResponseHeaders{XRequestID: requestID},
+		}
+	case http.StatusNotFound:
+		return UpdateItem404JSONResponse{
+			Body:    body,
+			Headers: UpdateItem404ResponseHeaders{XRequestID: requestID},
+		}
+	default:
+		return UpdateItem500JSONResponse{
+			Body:    body,
+			Headers: UpdateItem500ResponseHeaders{XRequestID: requestID},
+		}
 	}
 }
 
 // ==================== Auth ====================
 
-func (s *Server) RegisterUser(_ context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error) {
+func (s *Server) RegisterUser(ctx context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error) {
 	dtoReq := dto.RegisterRequest{
 		Username: request.Body.Username,
 		Email:    string(request.Body.Email),
 		Password: request.Body.Password,
 	}
 	if err := validate(dtoReq); err != nil {
-		return registerUserErrorResponse(http.StatusBadRequest, 400, err.Error()), nil
+		return registerUserErrorResponse(ctx, http.StatusBadRequest, 400, err.Error()), nil
 	}
 
 	result, err := s.authService.Register(&dtoReq)
 	if err != nil {
 		code, httpStatus, msg := handleServiceError(err)
-		return registerUserErrorResponse(httpStatus, code, msg), nil
+		return registerUserErrorResponse(ctx, httpStatus, code, msg), nil
 	}
 
 	return RegisterUser201JSONResponse{
-		Code:    AuthSuccessResponseCodeN0,
-		Data:    toAPIAuthResponse(result),
-		Message: AuthSuccessResponseMessageSuccess,
+		Body: AuthSuccessResponse{
+			Code:    AuthSuccessResponseCodeN0,
+			Data:    toAPIAuthResponse(result),
+			Message: AuthSuccessResponseMessageSuccess,
+		},
+		Headers: RegisterUser201ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}, nil
 }
 
-func (s *Server) LoginUser(_ context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error) {
+func (s *Server) LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error) {
 	dtoReq := dto.LoginRequest{
 		Email:    string(request.Body.Email),
 		Password: request.Body.Password,
 	}
 	if err := validate(dtoReq); err != nil {
-		return loginUserErrorResponse(http.StatusBadRequest, 400, err.Error()), nil
+		return loginUserErrorResponse(ctx, http.StatusBadRequest, 400, err.Error()), nil
 	}
 
 	result, err := s.authService.Login(&dtoReq)
 	if err != nil {
 		code, httpStatus, msg := handleServiceError(err)
-		return loginUserErrorResponse(httpStatus, code, msg), nil
+		return loginUserErrorResponse(ctx, httpStatus, code, msg), nil
 	}
 
 	return LoginUser200JSONResponse{
-		Code:    AuthSuccessResponseCodeN0,
-		Data:    toAPIAuthResponse(result),
-		Message: AuthSuccessResponseMessageSuccess,
+		Body: AuthSuccessResponse{
+			Code:    AuthSuccessResponseCodeN0,
+			Data:    toAPIAuthResponse(result),
+			Message: AuthSuccessResponseMessageSuccess,
+		},
+		Headers: LoginUser200ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}, nil
 }
 
-func (s *Server) RefreshToken(_ context.Context, request RefreshTokenRequestObject) (RefreshTokenResponseObject, error) {
+func (s *Server) RefreshToken(ctx context.Context, request RefreshTokenRequestObject) (RefreshTokenResponseObject, error) {
 	dtoReq := dto.RefreshRequest{
 		RefreshToken: request.Body.RefreshToken,
 	}
 	if err := validate(dtoReq); err != nil {
-		return refreshTokenErrorResponse(http.StatusBadRequest, 400, err.Error()), nil
+		return refreshTokenErrorResponse(ctx, http.StatusBadRequest, 400, err.Error()), nil
 	}
 
 	result, err := s.authService.RefreshToken(dtoReq.RefreshToken)
 	if err != nil {
 		code, httpStatus, msg := handleServiceError(err)
-		return refreshTokenErrorResponse(httpStatus, code, msg), nil
+		return refreshTokenErrorResponse(ctx, httpStatus, code, msg), nil
 	}
 
 	return RefreshToken200JSONResponse{
-		Code:    AuthSuccessResponseCodeN0,
-		Data:    toAPIAuthResponse(result),
-		Message: AuthSuccessResponseMessageSuccess,
+		Body: AuthSuccessResponse{
+			Code:    AuthSuccessResponseCodeN0,
+			Data:    toAPIAuthResponse(result),
+			Message: AuthSuccessResponseMessageSuccess,
+		},
+		Headers: RefreshToken200ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}, nil
 }
 
@@ -250,40 +377,43 @@ func (s *Server) GetProfile(ctx context.Context, _ GetProfileRequestObject) (Get
 	if !ok {
 		// When using strict server, the context is stdlib context.
 		// We need to reach into gin.Context which the strict handler passes as the Go context.
-		return getProfileErrorResponse(http.StatusUnauthorized, 401, "unauthorized"), nil
+		return getProfileErrorResponse(ctx, http.StatusUnauthorized, 401, "unauthorized"), nil
 	}
 
 	userIDVal, exists := ginCtx.Get("user_id")
 	if !exists {
-		return getProfileErrorResponse(http.StatusUnauthorized, 401, "unauthorized"), nil
+		return getProfileErrorResponse(ctx, http.StatusUnauthorized, 401, "unauthorized"), nil
 	}
 	uid, ok := userIDVal.(uint)
 	if !ok {
-		return getProfileErrorResponse(http.StatusUnauthorized, 401, "unauthorized"), nil
+		return getProfileErrorResponse(ctx, http.StatusUnauthorized, 401, "unauthorized"), nil
 	}
 
 	profile, err := s.authService.GetProfile(uid)
 	if err != nil {
 		code, httpStatus, msg := handleServiceError(err)
-		return getProfileErrorResponse(httpStatus, code, msg), nil
+		return getProfileErrorResponse(ctx, httpStatus, code, msg), nil
 	}
 
 	id := int(profile.ID)
 	return GetProfile200JSONResponse{
-		Code: UserSuccessResponseCode(0),
-		Data: UserResponse{
-			Id:       id,
-			Username: profile.Username,
-			Email:    profile.Email,
-			Role:     profile.Role,
+		Body: UserSuccessResponse{
+			Code: UserSuccessResponseCode(0),
+			Data: UserResponse{
+				Id:       id,
+				Username: profile.Username,
+				Email:    profile.Email,
+				Role:     profile.Role,
+			},
+			Message: UserSuccessResponseMessage("success"),
 		},
-		Message: UserSuccessResponseMessage("success"),
+		Headers: GetProfile200ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}, nil
 }
 
 // ==================== Items ====================
 
-func (s *Server) ListItems(_ context.Context, request ListItemsRequestObject) (ListItemsResponseObject, error) {
+func (s *Server) ListItems(ctx context.Context, request ListItemsRequestObject) (ListItemsResponseObject, error) {
 	p := pagination.NewParams(
 		derefOr(request.Params.Page, 1),
 		derefOr(request.Params.PageSize, 10),
@@ -297,8 +427,8 @@ func (s *Server) ListItems(_ context.Context, request ListItemsRequestObject) (L
 
 	items, total, err := s.itemService.List(p.Offset, p.PageSize, keyword, status)
 	if err != nil {
-		code, httpStatus, msg := handleServiceError(err)
-		return listItemsErrorResponse(httpStatus, code, msg), nil
+		code, _, msg := handleServiceError(err)
+		return listItemsErrorResponse(ctx, code, msg), nil
 	}
 
 	// Convert dto items to API items
@@ -314,15 +444,18 @@ func (s *Server) ListItems(_ context.Context, request ListItemsRequestObject) (L
 	}
 
 	return ListItems200JSONResponse{
-		Code: PagedItemsSuccessResponseCodeN0,
-		Data: PagedItemsResponse{
-			Items:      apiItems,
-			Total:      totalInt,
-			Page:       p.Page,
-			PageSize:   p.PageSize,
-			TotalPages: totalPages,
+		Body: PagedItemsSuccessResponse{
+			Code: PagedItemsSuccessResponseCodeN0,
+			Data: PagedItemsResponse{
+				Items:      apiItems,
+				Total:      totalInt,
+				Page:       p.Page,
+				PageSize:   p.PageSize,
+				TotalPages: totalPages,
+			},
+			Message: PagedItemsSuccessResponseMessageSuccess,
 		},
-		Message: PagedItemsSuccessResponseMessageSuccess,
+		Headers: ListItems200ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}, nil
 }
 
@@ -336,7 +469,7 @@ func (s *Server) CreateItem(ctx context.Context, request CreateItemRequestObject
 	}
 
 	if err := validate(dtoReq); err != nil {
-		return createItemErrorResponse(http.StatusBadRequest, 400, err.Error()), nil
+		return createItemErrorResponse(ctx, http.StatusBadRequest, 400, err.Error()), nil
 	}
 
 	// Get user_id from gin context
@@ -352,31 +485,37 @@ func (s *Server) CreateItem(ctx context.Context, request CreateItemRequestObject
 	result, err := s.itemService.Create(&dtoReq, userID)
 	if err != nil {
 		code, httpStatus, msg := handleServiceError(err)
-		return createItemErrorResponse(httpStatus, code, msg), nil
+		return createItemErrorResponse(ctx, httpStatus, code, msg), nil
 	}
 
 	return CreateItem201JSONResponse{
-		Code:    ItemSuccessResponseCodeN0,
-		Data:    toAPIItemResponse(result),
-		Message: ItemSuccessResponseMessageSuccess,
+		Body: ItemSuccessResponse{
+			Code:    ItemSuccessResponseCodeN0,
+			Data:    toAPIItemResponse(result),
+			Message: ItemSuccessResponseMessageSuccess,
+		},
+		Headers: CreateItem201ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}, nil
 }
 
-func (s *Server) GetItem(_ context.Context, request GetItemRequestObject) (GetItemResponseObject, error) {
+func (s *Server) GetItem(ctx context.Context, request GetItemRequestObject) (GetItemResponseObject, error) {
 	result, err := s.itemService.GetByID(uint(request.Id))
 	if err != nil {
 		code, httpStatus, msg := handleServiceError(err)
-		return getItemErrorResponse(httpStatus, code, msg), nil
+		return getItemErrorResponse(ctx, httpStatus, code, msg), nil
 	}
 
 	return GetItem200JSONResponse{
-		Code:    ItemSuccessResponseCodeN0,
-		Data:    toAPIItemResponse(result),
-		Message: ItemSuccessResponseMessageSuccess,
+		Body: ItemSuccessResponse{
+			Code:    ItemSuccessResponseCodeN0,
+			Data:    toAPIItemResponse(result),
+			Message: ItemSuccessResponseMessageSuccess,
+		},
+		Headers: GetItem200ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}, nil
 }
 
-func (s *Server) UpdateItem(_ context.Context, request UpdateItemRequestObject) (UpdateItemResponseObject, error) {
+func (s *Server) UpdateItem(ctx context.Context, request UpdateItemRequestObject) (UpdateItemResponseObject, error) {
 	dtoReq := dto.UpdateItemRequest{
 		Title:       derefOr(request.Body.Title, ""),
 		Description: derefOr(request.Body.Description, ""),
@@ -386,31 +525,37 @@ func (s *Server) UpdateItem(_ context.Context, request UpdateItemRequestObject) 
 	}
 
 	if err := validate(dtoReq); err != nil {
-		return updateItemErrorResponse(http.StatusBadRequest, 400, err.Error()), nil
+		return updateItemErrorResponse(ctx, http.StatusBadRequest, 400, err.Error()), nil
 	}
 
 	result, err := s.itemService.Update(uint(request.Id), &dtoReq)
 	if err != nil {
 		code, httpStatus, msg := handleServiceError(err)
-		return updateItemErrorResponse(httpStatus, code, msg), nil
+		return updateItemErrorResponse(ctx, httpStatus, code, msg), nil
 	}
 
 	return UpdateItem200JSONResponse{
-		Code:    ItemSuccessResponseCodeN0,
-		Data:    toAPIItemResponse(result),
-		Message: ItemSuccessResponseMessageSuccess,
+		Body: ItemSuccessResponse{
+			Code:    ItemSuccessResponseCodeN0,
+			Data:    toAPIItemResponse(result),
+			Message: ItemSuccessResponseMessageSuccess,
+		},
+		Headers: UpdateItem200ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}, nil
 }
 
-func (s *Server) DeleteItem(_ context.Context, request DeleteItemRequestObject) (DeleteItemResponseObject, error) {
+func (s *Server) DeleteItem(ctx context.Context, request DeleteItemRequestObject) (DeleteItemResponseObject, error) {
 	if err := s.itemService.Delete(uint(request.Id)); err != nil {
 		code, httpStatus, msg := handleServiceError(err)
-		return deleteItemErrorResponse(httpStatus, code, msg), nil
+		return deleteItemErrorResponse(ctx, httpStatus, code, msg), nil
 	}
 
 	return DeleteItem200JSONResponse{
-		Code:    EmptySuccessResponseCodeN0,
-		Data:    nil,
-		Message: EmptySuccessResponseMessageSuccess,
+		Body: EmptySuccessResponse{
+			Code:    EmptySuccessResponseCodeN0,
+			Data:    nil,
+			Message: EmptySuccessResponseMessageSuccess,
+		},
+		Headers: DeleteItem200ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}, nil
 }

@@ -18,6 +18,7 @@ func Recovery(logger *zap.Logger) gin.HandlerFunc {
 			if err := recover(); err != nil {
 				logger.Error("Panic recovered",
 					zap.Any("error", err),
+					zap.String("request_id", GetRequestID(c)),
 					zap.String("stack", string(debug.Stack())),
 				)
 				response.Error(c, http.StatusInternalServerError,
