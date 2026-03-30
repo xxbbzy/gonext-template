@@ -2,12 +2,14 @@ package handler
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/pkg/response"
@@ -15,7 +17,7 @@ import (
 
 // Storage defines the file storage interface.
 type Storage interface {
-	Upload(filename string, data []byte) (string, error)
+	Upload(filename string, src io.Reader) (string, error)
 	Delete(filename string) error
 	GetURL(filename string) string
 }
@@ -37,11 +39,25 @@ func NewLocalStorage(uploadDir, baseURL string) *LocalStorage {
 }
 
 // Upload saves a file to the local filesystem.
-func (s *LocalStorage) Upload(filename string, data []byte) (string, error) {
+func (s *LocalStorage) Upload(filename string, src io.Reader) (string, error) {
 	path := filepath.Join(s.uploadDir, filename)
-	if err := os.WriteFile(path, data, 0644); err != nil {
+
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return "", fmt.Errorf("failed to create file: %w", err)
+	}
+
+	if _, err := io.Copy(file, src); err != nil {
+		_ = file.Close()
+		_ = os.Remove(path)
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
+
+	if err := file.Close(); err != nil {
+		_ = os.Remove(path)
+		return "", fmt.Errorf("failed to close file: %w", err)
+	}
+
 	return s.GetURL(filename), nil
 }
 
@@ -116,16 +132,8 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	}
 	defer func() { _ = f.Close() }()
 
-	data := make([]byte, file.Size)
-	if _, err := f.Read(data); err != nil {
-		response.InternalServerError(c, "failed to read file")
-		return
-	}
-
-	// Generate unique filename
-	filename := fmt.Sprintf("%d_%s", file.Size, file.Filename)
-
-	url, err := h.storage.Upload(filename, data)
+	storedFilename := generateStoredFilename(file.Filename)
+	url, err := h.storage.Upload(storedFilename, f)
 	if err != nil {
 		response.InternalServerError(c, "failed to upload file")
 		return
@@ -136,6 +144,11 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 		"filename": file.Filename,
 		"size":     file.Size,
 	})
+}
+
+func generateStoredFilename(originalFilename string) string {
+	ext := strings.ToLower(filepath.Ext(originalFilename))
+	return uuid.NewString() + ext
 }
 
 // RegisterRoutes registers upload routes.
