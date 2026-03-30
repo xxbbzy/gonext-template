@@ -38,6 +38,8 @@ summaries live under `docs/`, but repository-wide operational rules belong here.
 
 - Use Zap for application logging.
 - Keep request-level access logging in `backend/internal/middleware/logger.go`.
+- Request logs should include `request_id`, `method`, `route`, `path`, `status`, `duration`, `body_size`, safe query summaries (`query_keys`, `query_safe`), optional `user_id`, and `error_code` when an API error response is returned.
+- Do not log raw query strings or sensitive headers (for example `Authorization`, `Cookie`).
 - Prefer structured fields over interpolated strings.
 - Avoid introducing parallel logging frameworks or per-handler logging patterns unless the change has a clear operational need.
 - Startup and shutdown logging belongs in the runtime entry points, not scattered across feature handlers.

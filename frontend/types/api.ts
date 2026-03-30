@@ -543,6 +543,16 @@ export interface operations {
                     "application/json": components["schemas"]["UserSuccessResponse"];
                 };
             };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description Unauthorized */
             401: {
                 headers: {
@@ -600,6 +610,16 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedItemsSuccessResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Internal server error */
@@ -684,6 +704,16 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ItemSuccessResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Item not found */
@@ -790,6 +820,16 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EmptySuccessResponse"];
+                };
+            };
+            /** @description Invalid request */
+            400: {
+                headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Item not found */

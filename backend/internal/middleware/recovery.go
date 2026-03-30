@@ -42,6 +42,13 @@ func ErrorHandler() gin.HandlerFunc {
 				response.Error(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
 				return
 			}
+
+			status := c.Writer.Status()
+			if status >= http.StatusBadRequest && status < http.StatusInternalServerError {
+				response.Error(c, status, errcode.FromHTTPStatus(status), err.Error())
+				return
+			}
+
 			response.Error(c, http.StatusInternalServerError,
 				errcode.ErrInternal, "internal server error")
 		}

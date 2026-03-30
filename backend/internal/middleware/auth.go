@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	pkgjwt "github.com/xxbbzy/gonext-template/backend/pkg/jwt"
 	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
@@ -29,9 +30,9 @@ func Auth(jwtManager *pkgjwt.Manager) gin.HandlerFunc {
 		claims, err := jwtManager.ParseToken(parts[1])
 		if err != nil {
 			if err.Error() == "token expired" {
-				response.Unauthorized(c, "token expired")
+				response.Error(c, 401, errcode.ErrTokenExpired, "token expired")
 			} else {
-				response.Unauthorized(c, "invalid token")
+				response.Error(c, 401, errcode.ErrTokenInvalid, "invalid token")
 			}
 			c.Abort()
 			return

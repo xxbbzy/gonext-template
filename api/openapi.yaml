@@ -479,6 +479,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserSuccessResponse"
+        "400":
+          description: Invalid request
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: Unauthorized
           headers:
@@ -546,6 +555,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PagedItemsSuccessResponse"
+        "400":
+          description: Invalid request
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
           headers:
@@ -624,6 +642,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemSuccessResponse"
+        "400":
+          description: Invalid request
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Item not found
           headers:
@@ -723,6 +750,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/EmptySuccessResponse"
+        "400":
+          description: Invalid request
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Item not found
           headers:

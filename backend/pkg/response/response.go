@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/xxbbzy/gonext-template/backend/pkg/requestlog"
 )
 
 // Response is the standard API response structure.
@@ -62,6 +64,7 @@ func PagedSuccess(c *gin.Context, items interface{}, total int64, page, pageSize
 
 // Error returns an error response.
 func Error(c *gin.Context, httpStatus int, code int, message string) {
+	requestlog.SetErrorCode(c, code)
 	c.JSON(httpStatus, Response{
 		Code:    code,
 		Data:    nil,

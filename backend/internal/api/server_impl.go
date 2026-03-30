@@ -13,6 +13,7 @@ import (
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	"github.com/xxbbzy/gonext-template/backend/pkg/pagination"
+	"github.com/xxbbzy/gonext-template/backend/pkg/requestlog"
 )
 
 // Server implements StrictServerInterface, bridging generated types to existing services.
@@ -110,7 +111,8 @@ func requestIDFromContext(ctx context.Context) string {
 	return value
 }
 
-func errorResponseBody(code int, message string) ErrorResponse {
+func errorResponseBody(ctx context.Context, code int, message string) ErrorResponse {
+	requestlog.SetErrorCodeFromContext(ctx, code)
 	return ErrorResponse{
 		Code:    code,
 		Data:    nil,
@@ -119,7 +121,7 @@ func errorResponseBody(code int, message string) ErrorResponse {
 }
 
 func loginUserErrorResponse(ctx context.Context, httpStatus, code int, message string) LoginUserResponseObject {
-	body := errorResponseBody(code, message)
+	body := errorResponseBody(ctx, code, message)
 	requestID := requestIDFromContext(ctx)
 
 	switch httpStatus {
@@ -142,7 +144,7 @@ func loginUserErrorResponse(ctx context.Context, httpStatus, code int, message s
 }
 
 func getProfileErrorResponse(ctx context.Context, httpStatus, code int, message string) GetProfileResponseObject {
-	body := errorResponseBody(code, message)
+	body := errorResponseBody(ctx, code, message)
 	requestID := requestIDFromContext(ctx)
 
 	switch httpStatus {
@@ -165,7 +167,7 @@ func getProfileErrorResponse(ctx context.Context, httpStatus, code int, message 
 }
 
 func refreshTokenErrorResponse(ctx context.Context, httpStatus, code int, message string) RefreshTokenResponseObject {
-	body := errorResponseBody(code, message)
+	body := errorResponseBody(ctx, code, message)
 	requestID := requestIDFromContext(ctx)
 
 	switch httpStatus {
@@ -188,7 +190,7 @@ func refreshTokenErrorResponse(ctx context.Context, httpStatus, code int, messag
 }
 
 func registerUserErrorResponse(ctx context.Context, httpStatus, code int, message string) RegisterUserResponseObject {
-	body := errorResponseBody(code, message)
+	body := errorResponseBody(ctx, code, message)
 	requestID := requestIDFromContext(ctx)
 
 	switch httpStatus {
@@ -212,13 +214,13 @@ func registerUserErrorResponse(ctx context.Context, httpStatus, code int, messag
 
 func listItemsErrorResponse(ctx context.Context, code int, message string) ListItemsResponseObject {
 	return ListItems500JSONResponse{
-		Body:    errorResponseBody(code, message),
+		Body:    errorResponseBody(ctx, code, message),
 		Headers: ListItems500ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
 	}
 }
 
 func createItemErrorResponse(ctx context.Context, httpStatus, code int, message string) CreateItemResponseObject {
-	body := errorResponseBody(code, message)
+	body := errorResponseBody(ctx, code, message)
 	requestID := requestIDFromContext(ctx)
 
 	switch httpStatus {
@@ -236,7 +238,7 @@ func createItemErrorResponse(ctx context.Context, httpStatus, code int, message 
 }
 
 func deleteItemErrorResponse(ctx context.Context, httpStatus, code int, message string) DeleteItemResponseObject {
-	body := errorResponseBody(code, message)
+	body := errorResponseBody(ctx, code, message)
 	requestID := requestIDFromContext(ctx)
 
 	switch httpStatus {
@@ -254,7 +256,7 @@ func deleteItemErrorResponse(ctx context.Context, httpStatus, code int, message 
 }
 
 func getItemErrorResponse(ctx context.Context, httpStatus, code int, message string) GetItemResponseObject {
-	body := errorResponseBody(code, message)
+	body := errorResponseBody(ctx, code, message)
 	requestID := requestIDFromContext(ctx)
 
 	switch httpStatus {
@@ -272,7 +274,7 @@ func getItemErrorResponse(ctx context.Context, httpStatus, code int, message str
 }
 
 func updateItemErrorResponse(ctx context.Context, httpStatus, code int, message string) UpdateItemResponseObject {
-	body := errorResponseBody(code, message)
+	body := errorResponseBody(ctx, code, message)
 	requestID := requestIDFromContext(ctx)
 
 	switch httpStatus {

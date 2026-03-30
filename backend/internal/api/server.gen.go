@@ -1065,6 +1065,23 @@ func (response GetProfile200JSONResponse) VisitGetProfileResponse(w http.Respons
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type GetProfile400ResponseHeaders struct {
+	XRequestID string
+}
+
+type GetProfile400JSONResponse struct {
+	Body    ErrorResponse
+	Headers GetProfile400ResponseHeaders
+}
+
+func (response GetProfile400JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type GetProfile401ResponseHeaders struct {
 	XRequestID string
 }
@@ -1295,6 +1312,23 @@ func (response ListItems200JSONResponse) VisitListItemsResponse(w http.ResponseW
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type ListItems400ResponseHeaders struct {
+	XRequestID string
+}
+
+type ListItems400JSONResponse struct {
+	Body    ErrorResponse
+	Headers ListItems400ResponseHeaders
+}
+
+func (response ListItems400JSONResponse) VisitListItemsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type ListItems500ResponseHeaders struct {
 	XRequestID string
 }
@@ -1398,6 +1432,23 @@ func (response DeleteItem200JSONResponse) VisitDeleteItemResponse(w http.Respons
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type DeleteItem400ResponseHeaders struct {
+	XRequestID string
+}
+
+type DeleteItem400JSONResponse struct {
+	Body    ErrorResponse
+	Headers DeleteItem400ResponseHeaders
+}
+
+func (response DeleteItem400JSONResponse) VisitDeleteItemResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type DeleteItem404ResponseHeaders struct {
 	XRequestID string
 }
@@ -1454,6 +1505,23 @@ func (response GetItem200JSONResponse) VisitGetItemResponse(w http.ResponseWrite
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetItem400ResponseHeaders struct {
+	XRequestID string
+}
+
+type GetItem400JSONResponse struct {
+	Body    ErrorResponse
+	Headers GetItem400ResponseHeaders
+}
+
+func (response GetItem400JSONResponse) VisitGetItemResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
+	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response.Body)
 }
@@ -1902,36 +1970,36 @@ func (sh *strictHandler) UpdateItem(ctx *gin.Context, id int, params UpdateItemP
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xb227btht/FYL//6UcOz0Mne7SJe08FF3Qw1YgCAJG+myzpUiVpJI4ge82YMPeYAOG",
-	"7W5XuxywB1q3vcXAgywppmwncY10850lUh+/0+87kPQFTkSWCw5cKxxf4BGQFKT9+eoZvC1A6f6ueUpB",
-	"JZLmmgqOY7w3GECi6Qkg6Sah/i4iSomEEg0pOqV6hPSIKiRB5YIr2MIRVskIMmKo6XEOOMZKS8qHeDKZ",
-	"RDgnkmSgl1j8c/uDMJQQxkB2VJHnjEJa56VQkKKBkOW7bskHYmKIEiElMGLIGL6ooeokxxHmJDO8vep4",
-	"Fjr93UW8u0HL+E6hR8/8WuY5lyIHqSnYUZIkoNSRFm+AB2hFWMJAghrNmVEokGbg/xIGOMb/61YG7Ho+",
-	"ui8VyCkTE0v2bUElpDg+aPJweUVP/zAqFxbHryHRZmEj2fPCftwuYCJS+xZ4keH4oFcRolzDEKShlBJN",
-	"FonQ0OMkwhkoRYZ12lg5ZmrMTm3SlNgy5ZetKIVk/EQC0dDXkHnjz0rY8MWAfZQmulB1PolFivUz/3OW",
-	"4whrqpkVLyNnT4AP9QjHd3q9RbK5z0Ky7GW5Hq/WYE0cPi0YsxjzhhgUDBnSFlfKxgBRaERQTsZMkNRg",
-	"q2CMHBs5tSxgbWbdk1LIxTq4JJ7gnXOQAhETXhIrFQJDCfmVl1XUDjslY4V4qS9HpIxIaoFemrQ+LTLC",
-	"OxJIauZ7UuXs1WnMQaBVYRYm6RGx+BgImZlfhi50NM0CjEQLcUPT2uuaSis8tUNmNkjm6ZUZNIHvKMzF",
-	"JTVS48pu8aZcU24ralFdWQ3G2tS+vhjbMPLawPhEDClvDa+QEcoaRnNvAgbLiVKnQqahpNxkriQx/SLE",
-	"1z4ZQmpUMkf11Aw3flxFv35JIiUZOwGGEHZ6M3Kk6HnLsBaasDlDR+Z7tYwnWzFKgp6j+vJNgvPVtj7H",
-	"DZhqbe77zNVLrQ68qIK7tHBzenjBIVXaFHSrhUytztg2dUZGefn8UUt4dKVx49P7zS/vLlL0lEy0HCpf",
-	"2oB52yuyWbbrFXi7xZbOglK0ZbqaWeZr3iajgPot6cMWGdaH6WbPsh40G+eApJBUj58bNpxID4FIkKYB",
-	"MU/H9ulRCa3PvnxRdoOGkhutoDbSOnc9IeUD4RTENUms2/rO8rF4CmcavYAsZ0TDTHGEd/qdR5ICT9kY",
-	"/fH1L+9++ubvn3//84df//rq+3fffvfux9/Qzn5/WoLMEPSjJyCVo7e91dvqmWVEDpzkFMf47lZv667F",
-	"nh5Zobskp92T7S4p9KjLTIq2thYOcNOyvp/i2GVwYy/cbNsPwhaupnRrbf3k0NkMlH4o0nGpKuB2wVrN",
-	"3X2tHLCrFnyeHzXKi0nTM3xxXVXe8QW+0+utbO1Qi2xZaNrXsljrmnDU2Hepbzy0LOinN/Rp1rm3QmGa",
-	"TVNAjC8Io2mtLVqlGNvrE6PPT4wgKJGQAteUMLU6Se6v0yB9rk10Z0iBPAG5WquYWFlkGZHjqQfbXb6m",
-	"2jQZmkBgN4tMwD3rZDRNGZwSCZ2hFEWOY5wXx4wmNvw2wk4uxYC6PDeEQNx5DHrfT7lx4HlPESCUMwOW",
-	"MtNQPpXlQ4TNS25sJiQ9h3SVItxbowjGClxoNBAFTzegD4PeF0gWZfXS6ODQIKmKCY9Bo6SQErhGRdO/",
-	"l4oKxp1MIEmIhnQ2OPhGqb0q8Y3ZC7+PfesKk0uN4+0sTaz2kNf1aoG9qUyuW5kIieAsN35SWgaVpzWb",
-	"iDWvTPGQQ+7Ia6q0GxUp0m/HzAtEbsZt7ZAubygtFYm21x2JHJdOrZteaZ4YH69PjL2MUIYIk0DSMSqh",
-	"AJvaaXEkcqpCBHE4tfXRDQLR9PQh2CY9oUr3/cb+9YNPdOHuRbwtQI6raxH+hKAyQAoDUjCN4+0ocNrQ",
-	"TqQ8XwhR6i1P6g2M7d7xvBsaLZ9Oz+qqL6+yQfxe+8j2U5WAG++TIeX23k15nrMB4w0aGYMfp0m3w5E7",
-	"9boD3hKyDmBL9jJRS6VQXTe5jXXC7GWYNVcKodPwkONoyJA/Zd+UBxsIT4Hlky11+LoWci8n3e4FTScu",
-	"WTHQMAvpXfv+xpAuU1ZO9KjKWPYIr4m/QN6rcub7zFDB62Vt6HTa+lD3Ca0Im33CFWHzuRho7xCI8Buh",
-	"M2o9J/gPAPAq2TEFTegqz7U2+Pug9+kN6NDxGNmr7dctaYsA9KrrOrcFfauvi2evJK15L/8qyPcXTjd1",
-	"8SaA/VsCmMPfTWuHWmVf5PbvCfGFeTcCwvTo3D/ZjU77YDk0grtg1tTNLpwAE3kGXHv14AgXkvkbYXG3",
-	"y0RC2EgoHT/oPejhyeHknwAAAP//Rn5AT3s1AAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

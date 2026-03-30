@@ -18,6 +18,8 @@ import (
 	"github.com/xxbbzy/gonext-template/backend/internal/handler"
 	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/internal/model"
+	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
+	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
 
 func main() {
@@ -106,6 +108,7 @@ func main() {
 				}
 			},
 		},
+		ErrorHandler: generatedRequestErrorHandler,
 	})
 
 	// Manual routes — upload (gin.Context-dependent, excluded from codegen)
@@ -174,4 +177,16 @@ func isAuthenticatedRoute(path string) bool {
 		return true
 	}
 	return false
+}
+
+func generatedRequestErrorHandler(c *gin.Context, err error, statusCode int) {
+	message := http.StatusText(statusCode)
+	if err != nil {
+		message = err.Error()
+	}
+	response.Error(c, statusCode, requestErrorCode(statusCode), message)
+}
+
+func requestErrorCode(statusCode int) int {
+	return errcode.FromHTTPStatus(statusCode)
 }
