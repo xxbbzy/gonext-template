@@ -12,7 +12,10 @@ import (
 
 func TestLocalFileStorageRepositoryRejectsExistingFilename(t *testing.T) {
 	tempDir := t.TempDir()
-	storage := NewLocalFileStorageRepository(tempDir, "http://localhost:8080")
+	storage, err := NewLocalFileStorageRepository(tempDir, "http://localhost:8080")
+	if err != nil {
+		t.Fatalf("NewLocalFileStorageRepository() error = %v", err)
+	}
 
 	if err := storage.SaveFile(context.Background(), "existing.txt", strings.NewReader("first")); err != nil {
 		t.Fatalf("first SaveFile() error = %v", err)
@@ -32,10 +35,13 @@ func TestLocalFileStorageRepositoryRejectsExistingFilename(t *testing.T) {
 
 func TestLocalFileStorageRepositoryRemovesPartialFileOnReaderError(t *testing.T) {
 	tempDir := t.TempDir()
-	storage := NewLocalFileStorageRepository(tempDir, "http://localhost:8080")
+	storage, err := NewLocalFileStorageRepository(tempDir, "http://localhost:8080")
+	if err != nil {
+		t.Fatalf("NewLocalFileStorageRepository() error = %v", err)
+	}
 
 	storedName := "partial.txt"
-	err := storage.SaveFile(context.Background(), storedName, &failingReader{
+	err = storage.SaveFile(context.Background(), storedName, &failingReader{
 		firstChunk: []byte("partial data"),
 		err:        errors.New("injected read failure"),
 	})
@@ -46,6 +52,31 @@ func TestLocalFileStorageRepositoryRemovesPartialFileOnReaderError(t *testing.T)
 	_, statErr := os.Stat(filepath.Join(tempDir, storedName))
 	if !os.IsNotExist(statErr) {
 		t.Fatalf("os.Stat() error = %v, want not-exist error", statErr)
+	}
+}
+
+func TestNewLocalFileStorageRepositoryReturnsErrorWhenDirCreationFails(t *testing.T) {
+	tempDir := t.TempDir()
+	blockingPath := filepath.Join(tempDir, "not-a-directory")
+	if err := os.WriteFile(blockingPath, []byte("x"), 0644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	_, err := NewLocalFileStorageRepository(filepath.Join(blockingPath, "uploads"), "http://localhost:8080")
+	if err == nil {
+		t.Fatal("NewLocalFileStorageRepository() error = nil, want error")
+	}
+}
+
+func TestLocalFileStorageRepositoryDeleteFileRejectsPathTraversal(t *testing.T) {
+	tempDir := t.TempDir()
+	storage, err := NewLocalFileStorageRepository(tempDir, "http://localhost:8080")
+	if err != nil {
+		t.Fatalf("NewLocalFileStorageRepository() error = %v", err)
+	}
+
+	if err := storage.DeleteFile(context.Background(), "../escape.txt"); err == nil {
+		t.Fatal("DeleteFile() error = nil, want error")
 	}
 }
 

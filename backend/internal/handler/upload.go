@@ -107,10 +107,7 @@ func (h *UploadHandler) maxUploadRequestBytes() int64 {
 
 func isMultipartBodyTooLarge(err error) bool {
 	var maxBytesErr *http.MaxBytesError
-	if errors.As(err, &maxBytesErr) {
-		return true
-	}
-	return strings.Contains(err.Error(), "request body too large")
+	return errors.As(err, &maxBytesErr)
 }
 
 // RegisterRoutes registers upload routes.

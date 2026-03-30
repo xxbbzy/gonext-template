@@ -38,7 +38,7 @@ func newJWTManager(cfg *config.Config) (*pkgjwt.Manager, error) {
 	)
 }
 
-func newUploadStorageRepository(cfg *config.Config) repository.FileStorageRepository {
+func newUploadStorageRepository(cfg *config.Config) (repository.FileStorageRepository, error) {
 	return repository.NewLocalFileStorageRepository(cfg.Upload.Dir, cfg.App.BaseURL)
 }
 
@@ -66,8 +66,8 @@ func newItemService(itemRepo *repository.ItemRepository) *service.ItemService {
 	return service.NewItemService(itemRepo)
 }
 
-func newUploadService(fileStorage repository.FileStorageRepository) *service.UploadService {
-	return service.NewUploadService(fileStorage)
+func newUploadService(fileStorage repository.FileStorageRepository, logger *zap.Logger) *service.UploadService {
+	return service.NewUploadService(fileStorage, logger)
 }
 
 func newApplication(

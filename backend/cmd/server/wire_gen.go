@@ -33,8 +33,11 @@ func InitializeApplication() (*Application, error) {
 	itemRepository := repository.NewItemRepository(db)
 	authService := newAuthService(userRepository, jwtManager)
 	itemService := newItemService(itemRepository)
-	fileStorageRepository := newUploadStorageRepository(cfg)
-	uploadService := newUploadService(fileStorageRepository)
+	fileStorageRepository, err := newUploadStorageRepository(cfg)
+	if err != nil {
+		return nil, err
+	}
+	uploadService := newUploadService(fileStorageRepository, logger)
 	authHandler := handler.NewAuthHandler(authService)
 	itemHandler := handler.NewItemHandler(itemService)
 	uploadHandler := handler.NewUploadHandler(uploadService, cfg)

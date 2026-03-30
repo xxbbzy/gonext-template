@@ -16,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"
@@ -56,7 +57,7 @@ func TestUploadPersistsFullContentAndOriginalFilename(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
-	uploadHandler := newTestUploadHandler(tempDir, ".png,.jpg,.txt", 1024*1024)
+	uploadHandler := newTestUploadHandler(t, tempDir, ".png,.jpg,.txt", 1024*1024)
 	content := bytes.Repeat([]byte("GoNext upload test payload."), 64)
 
 	resp := performUploadRequest(t, uploadHandler, "report.txt", content)
@@ -103,7 +104,7 @@ func TestUploadSameNameTwiceCreatesDistinctFiles(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
-	uploadHandler := newTestUploadHandler(tempDir, ".png,.jpg,.txt", 1024*1024)
+	uploadHandler := newTestUploadHandler(t, tempDir, ".png,.jpg,.txt", 1024*1024)
 
 	firstContent := []byte("alpha")
 	secondContent := []byte("omega")
@@ -163,7 +164,7 @@ func TestUploadRejectsDisallowedFileType(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
-	uploadHandler := newTestUploadHandler(tempDir, ".png,.jpg", 1024)
+	uploadHandler := newTestUploadHandler(t, tempDir, ".png,.jpg", 1024)
 
 	resp := performUploadRequest(t, uploadHandler, "payload.exe", []byte("malware"))
 
@@ -184,7 +185,7 @@ func TestUploadReturnsInternalServerErrorWhenStorageFails(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
-	uploadService := service.NewUploadService(failingFileStorageRepository{err: errors.New("storage down")})
+	uploadService := service.NewUploadService(failingFileStorageRepository{err: errors.New("storage down")}, zap.NewNop())
 	uploadHandler := newTestUploadHandlerWithService(uploadService, tempDir, ".txt", 1024)
 
 	resp := performUploadRequest(t, uploadHandler, "report.txt", []byte("payload"))
@@ -198,7 +199,7 @@ func TestUploadRejectsOversizedRequestBodyBeforeMultipartParsing(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
-	uploadHandler := newTestUploadHandler(tempDir, ".txt", 1)
+	uploadHandler := newTestUploadHandler(t, tempDir, ".txt", 1)
 	largeContent := bytes.Repeat([]byte("A"), int(2*(1<<20)))
 
 	resp := performUploadRequest(t, uploadHandler, "oversize.txt", largeContent)
@@ -207,9 +208,14 @@ func TestUploadRejectsOversizedRequestBodyBeforeMultipartParsing(t *testing.T) {
 	}
 }
 
-func newTestUploadHandler(tempDir, allowedTypes string, maxSize int64) *UploadHandler {
-	fileStorage := repository.NewLocalFileStorageRepository(tempDir, testUploadBaseURL)
-	uploadService := service.NewUploadService(fileStorage)
+func newTestUploadHandler(t *testing.T, tempDir, allowedTypes string, maxSize int64) *UploadHandler {
+	t.Helper()
+
+	fileStorage, err := repository.NewLocalFileStorageRepository(tempDir, testUploadBaseURL)
+	if err != nil {
+		t.Fatalf("NewLocalFileStorageRepository() error = %v", err)
+	}
+	uploadService := service.NewUploadService(fileStorage, zap.NewNop())
 	return newTestUploadHandlerWithService(uploadService, tempDir, allowedTypes, maxSize)
 }
 
