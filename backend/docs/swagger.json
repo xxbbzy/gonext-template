@@ -1,5 +1,24 @@
 {
   "components": {
+    "headers": {
+      "XRequestID": {
+        "description": "Effective request ID associated with this response.",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "parameters": {
+      "XRequestID": {
+        "description": "Optional caller-supplied request ID used for request/response log correlation.",
+        "in": "header",
+        "name": "X-Request-ID",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
     "schemas": {
       "AuthResponse": {
         "properties": {
@@ -435,6 +454,11 @@
     "/api/v1/auth/login": {
       "post": {
         "operationId": "loginUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -454,7 +478,12 @@
                 }
               }
             },
-            "description": "Login successful"
+            "description": "Login successful",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "400": {
             "content": {
@@ -464,7 +493,12 @@
                 }
               }
             },
-            "description": "Validation error"
+            "description": "Validation error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "401": {
             "content": {
@@ -474,7 +508,12 @@
                 }
               }
             },
-            "description": "Invalid credentials"
+            "description": "Invalid credentials",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "500": {
             "content": {
@@ -484,7 +523,12 @@
                 }
               }
             },
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "summary": "Login with credentials",
@@ -497,6 +541,11 @@
     "/api/v1/auth/profile": {
       "get": {
         "operationId": "getProfile",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -506,7 +555,12 @@
                 }
               }
             },
-            "description": "User profile"
+            "description": "User profile",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "401": {
             "content": {
@@ -516,7 +570,12 @@
                 }
               }
             },
-            "description": "Unauthorized"
+            "description": "Unauthorized",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "404": {
             "content": {
@@ -526,7 +585,12 @@
                 }
               }
             },
-            "description": "User not found"
+            "description": "User not found",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "500": {
             "content": {
@@ -536,7 +600,12 @@
                 }
               }
             },
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "security": [
@@ -554,6 +623,11 @@
     "/api/v1/auth/refresh": {
       "post": {
         "operationId": "refreshToken",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -573,7 +647,12 @@
                 }
               }
             },
-            "description": "Token refreshed"
+            "description": "Token refreshed",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "400": {
             "content": {
@@ -583,7 +662,12 @@
                 }
               }
             },
-            "description": "Validation error"
+            "description": "Validation error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "401": {
             "content": {
@@ -593,7 +677,12 @@
                 }
               }
             },
-            "description": "Invalid or expired refresh token"
+            "description": "Invalid or expired refresh token",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "500": {
             "content": {
@@ -603,7 +692,12 @@
                 }
               }
             },
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "summary": "Refresh access token",
@@ -616,6 +710,11 @@
     "/api/v1/auth/register": {
       "post": {
         "operationId": "registerUser",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -635,7 +734,12 @@
                 }
               }
             },
-            "description": "Registration successful"
+            "description": "Registration successful",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "400": {
             "content": {
@@ -645,7 +749,12 @@
                 }
               }
             },
-            "description": "Validation error"
+            "description": "Validation error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "409": {
             "content": {
@@ -655,7 +764,12 @@
                 }
               }
             },
-            "description": "Email already registered"
+            "description": "Email already registered",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "500": {
             "content": {
@@ -665,7 +779,12 @@
                 }
               }
             },
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "summary": "Register a new user",
@@ -679,6 +798,9 @@
       "get": {
         "operationId": "listItems",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          },
           {
             "in": "query",
             "name": "page",
@@ -723,7 +845,12 @@
                 }
               }
             },
-            "description": "Paginated items"
+            "description": "Paginated items",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "500": {
             "content": {
@@ -733,7 +860,12 @@
                 }
               }
             },
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "security": [
@@ -749,6 +881,11 @@
       },
       "post": {
         "operationId": "createItem",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -768,7 +905,12 @@
                 }
               }
             },
-            "description": "Item created"
+            "description": "Item created",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "400": {
             "content": {
@@ -778,7 +920,12 @@
                 }
               }
             },
-            "description": "Validation error"
+            "description": "Validation error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "500": {
             "content": {
@@ -788,7 +935,12 @@
                 }
               }
             },
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "security": [
@@ -808,6 +960,9 @@
         "operationId": "deleteItem",
         "parameters": [
           {
+            "$ref": "#/components/parameters/XRequestID"
+          },
+          {
             "in": "path",
             "name": "id",
             "required": true,
@@ -825,7 +980,12 @@
                 }
               }
             },
-            "description": "Item deleted"
+            "description": "Item deleted",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "404": {
             "content": {
@@ -835,7 +995,12 @@
                 }
               }
             },
-            "description": "Item not found"
+            "description": "Item not found",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "500": {
             "content": {
@@ -845,7 +1010,12 @@
                 }
               }
             },
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "security": [
@@ -862,6 +1032,9 @@
       "get": {
         "operationId": "getItem",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          },
           {
             "in": "path",
             "name": "id",
@@ -880,7 +1053,12 @@
                 }
               }
             },
-            "description": "Item details"
+            "description": "Item details",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "404": {
             "content": {
@@ -890,7 +1068,12 @@
                 }
               }
             },
-            "description": "Item not found"
+            "description": "Item not found",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "500": {
             "content": {
@@ -900,7 +1083,12 @@
                 }
               }
             },
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "security": [
@@ -917,6 +1105,9 @@
       "put": {
         "operationId": "updateItem",
         "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          },
           {
             "in": "path",
             "name": "id",
@@ -945,7 +1136,12 @@
                 }
               }
             },
-            "description": "Item updated"
+            "description": "Item updated",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "400": {
             "content": {
@@ -955,7 +1151,12 @@
                 }
               }
             },
-            "description": "Validation error"
+            "description": "Validation error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "404": {
             "content": {
@@ -965,7 +1166,12 @@
                 }
               }
             },
-            "description": "Item not found"
+            "description": "Item not found",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "500": {
             "content": {
@@ -975,7 +1181,12 @@
                 }
               }
             },
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "security": [
@@ -993,6 +1204,11 @@
     "/api/v1/upload": {
       "post": {
         "operationId": "uploadFile",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          }
+        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -1021,7 +1237,12 @@
                 }
               }
             },
-            "description": "File uploaded"
+            "description": "File uploaded",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "400": {
             "content": {
@@ -1031,7 +1252,12 @@
                 }
               }
             },
-            "description": "File type not allowed"
+            "description": "File type not allowed",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "413": {
             "content": {
@@ -1041,7 +1267,12 @@
                 }
               }
             },
-            "description": "File too large"
+            "description": "File too large",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "security": [
@@ -1059,9 +1290,19 @@
     "/healthz": {
       "get": {
         "operationId": "livenessCheck",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Service is alive"
+            "description": "Service is alive",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "summary": "Liveness check",
@@ -1073,12 +1314,27 @@
     "/readyz": {
       "get": {
         "operationId": "readinessCheck",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/XRequestID"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Service is ready"
+            "description": "Service is ready",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           },
           "503": {
-            "description": "Service is not ready"
+            "description": "Service is not ready",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              }
+            }
           }
         },
         "summary": "Readiness check",

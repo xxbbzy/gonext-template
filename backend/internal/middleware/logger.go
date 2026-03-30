@@ -23,6 +23,7 @@ func RequestLogger(logger *zap.Logger) gin.HandlerFunc {
 			zap.String("method", c.Request.Method),
 			zap.String("path", path),
 			zap.String("query", query),
+			zap.String("request_id", GetRequestID(c)),
 			zap.Int("status", status),
 			zap.Duration("duration", duration),
 			zap.String("client_ip", c.ClientIP()),

@@ -31,10 +31,14 @@ Next.js App Router
 当前后端全局中间件顺序：
 Current global middleware order:
 
-1. `Recovery`
-2. `RequestLogger`
-3. `ErrorHandler`
-4. `CORS`
+1. `RequestID`
+2. `Recovery`
+3. `RequestLogger`
+4. `ErrorHandler`
+5. `CORS`
+
+- `RequestID` 会透传或生成 `X-Request-ID`，写入 Gin context，并回写到响应头。
+- `RequestID` preserves or generates `X-Request-ID`, stores it in Gin context, and writes it back to the response header.
 
 认证与限流挂在路由组上，而不是所有请求全局生效。
 Authentication and rate limiting are attached to route groups rather than applied globally.

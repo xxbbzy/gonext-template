@@ -383,16 +383,70 @@ type UserSuccessResponseCode int
 // UserSuccessResponseMessage defines model for UserSuccessResponse.Message.
 type UserSuccessResponseMessage string
 
+// XRequestID defines model for XRequestID.
+type XRequestID = string
+
+// LoginUserParams defines parameters for LoginUser.
+type LoginUserParams struct {
+	// XRequestID Optional caller-supplied request ID used for request/response log correlation.
+	XRequestID *XRequestID `json:"X-Request-ID,omitempty"`
+}
+
+// GetProfileParams defines parameters for GetProfile.
+type GetProfileParams struct {
+	// XRequestID Optional caller-supplied request ID used for request/response log correlation.
+	XRequestID *XRequestID `json:"X-Request-ID,omitempty"`
+}
+
+// RefreshTokenParams defines parameters for RefreshToken.
+type RefreshTokenParams struct {
+	// XRequestID Optional caller-supplied request ID used for request/response log correlation.
+	XRequestID *XRequestID `json:"X-Request-ID,omitempty"`
+}
+
+// RegisterUserParams defines parameters for RegisterUser.
+type RegisterUserParams struct {
+	// XRequestID Optional caller-supplied request ID used for request/response log correlation.
+	XRequestID *XRequestID `json:"X-Request-ID,omitempty"`
+}
+
 // ListItemsParams defines parameters for ListItems.
 type ListItemsParams struct {
 	Page     *int                   `form:"page,omitempty" json:"page,omitempty"`
 	PageSize *int                   `form:"page_size,omitempty" json:"page_size,omitempty"`
 	Keyword  *string                `form:"keyword,omitempty" json:"keyword,omitempty"`
 	Status   *ListItemsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+
+	// XRequestID Optional caller-supplied request ID used for request/response log correlation.
+	XRequestID *XRequestID `json:"X-Request-ID,omitempty"`
 }
 
 // ListItemsParamsStatus defines parameters for ListItems.
 type ListItemsParamsStatus string
+
+// CreateItemParams defines parameters for CreateItem.
+type CreateItemParams struct {
+	// XRequestID Optional caller-supplied request ID used for request/response log correlation.
+	XRequestID *XRequestID `json:"X-Request-ID,omitempty"`
+}
+
+// DeleteItemParams defines parameters for DeleteItem.
+type DeleteItemParams struct {
+	// XRequestID Optional caller-supplied request ID used for request/response log correlation.
+	XRequestID *XRequestID `json:"X-Request-ID,omitempty"`
+}
+
+// GetItemParams defines parameters for GetItem.
+type GetItemParams struct {
+	// XRequestID Optional caller-supplied request ID used for request/response log correlation.
+	XRequestID *XRequestID `json:"X-Request-ID,omitempty"`
+}
+
+// UpdateItemParams defines parameters for UpdateItem.
+type UpdateItemParams struct {
+	// XRequestID Optional caller-supplied request ID used for request/response log correlation.
+	XRequestID *XRequestID `json:"X-Request-ID,omitempty"`
+}
 
 // LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
 type LoginUserJSONRequestBody = LoginRequest
@@ -413,31 +467,31 @@ type UpdateItemJSONRequestBody = UpdateItemRequest
 type ServerInterface interface {
 	// Login with credentials
 	// (POST /api/v1/auth/login)
-	LoginUser(c *gin.Context)
+	LoginUser(c *gin.Context, params LoginUserParams)
 	// Get current user profile
 	// (GET /api/v1/auth/profile)
-	GetProfile(c *gin.Context)
+	GetProfile(c *gin.Context, params GetProfileParams)
 	// Refresh access token
 	// (POST /api/v1/auth/refresh)
-	RefreshToken(c *gin.Context)
+	RefreshToken(c *gin.Context, params RefreshTokenParams)
 	// Register a new user
 	// (POST /api/v1/auth/register)
-	RegisterUser(c *gin.Context)
+	RegisterUser(c *gin.Context, params RegisterUserParams)
 	// List items with pagination
 	// (GET /api/v1/items)
 	ListItems(c *gin.Context, params ListItemsParams)
 	// Create a new item
 	// (POST /api/v1/items)
-	CreateItem(c *gin.Context)
+	CreateItem(c *gin.Context, params CreateItemParams)
 	// Soft delete an item
 	// (DELETE /api/v1/items/{id})
-	DeleteItem(c *gin.Context, id int)
+	DeleteItem(c *gin.Context, id int, params DeleteItemParams)
 	// Get item by ID
 	// (GET /api/v1/items/{id})
-	GetItem(c *gin.Context, id int)
+	GetItem(c *gin.Context, id int, params GetItemParams)
 	// Update an item
 	// (PUT /api/v1/items/{id})
-	UpdateItem(c *gin.Context, id int)
+	UpdateItem(c *gin.Context, id int, params UpdateItemParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -452,6 +506,32 @@ type MiddlewareFunc func(c *gin.Context)
 // LoginUser operation middleware
 func (siw *ServerInterfaceWrapper) LoginUser(c *gin.Context) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LoginUserParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Request-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-ID")]; found {
+		var XRequestID XRequestID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Request-ID, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-ID", valueList[0], &XRequestID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Request-ID: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XRequestID = &XRequestID
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -459,13 +539,39 @@ func (siw *ServerInterfaceWrapper) LoginUser(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.LoginUser(c)
+	siw.Handler.LoginUser(c, params)
 }
 
 // GetProfile operation middleware
 func (siw *ServerInterfaceWrapper) GetProfile(c *gin.Context) {
 
+	var err error
+
 	c.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetProfileParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Request-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-ID")]; found {
+		var XRequestID XRequestID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Request-ID, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-ID", valueList[0], &XRequestID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Request-ID: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XRequestID = &XRequestID
+
+	}
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -474,12 +580,38 @@ func (siw *ServerInterfaceWrapper) GetProfile(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.GetProfile(c)
+	siw.Handler.GetProfile(c, params)
 }
 
 // RefreshToken operation middleware
 func (siw *ServerInterfaceWrapper) RefreshToken(c *gin.Context) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RefreshTokenParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Request-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-ID")]; found {
+		var XRequestID XRequestID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Request-ID, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-ID", valueList[0], &XRequestID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Request-ID: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XRequestID = &XRequestID
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -487,12 +619,38 @@ func (siw *ServerInterfaceWrapper) RefreshToken(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.RefreshToken(c)
+	siw.Handler.RefreshToken(c, params)
 }
 
 // RegisterUser operation middleware
 func (siw *ServerInterfaceWrapper) RegisterUser(c *gin.Context) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RegisterUserParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Request-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-ID")]; found {
+		var XRequestID XRequestID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Request-ID, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-ID", valueList[0], &XRequestID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Request-ID: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XRequestID = &XRequestID
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -500,7 +658,7 @@ func (siw *ServerInterfaceWrapper) RegisterUser(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.RegisterUser(c)
+	siw.Handler.RegisterUser(c, params)
 }
 
 // ListItems operation middleware
@@ -545,6 +703,27 @@ func (siw *ServerInterfaceWrapper) ListItems(c *gin.Context) {
 		return
 	}
 
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Request-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-ID")]; found {
+		var XRequestID XRequestID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Request-ID, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-ID", valueList[0], &XRequestID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Request-ID: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XRequestID = &XRequestID
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -558,7 +737,33 @@ func (siw *ServerInterfaceWrapper) ListItems(c *gin.Context) {
 // CreateItem operation middleware
 func (siw *ServerInterfaceWrapper) CreateItem(c *gin.Context) {
 
+	var err error
+
 	c.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateItemParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Request-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-ID")]; found {
+		var XRequestID XRequestID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Request-ID, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-ID", valueList[0], &XRequestID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Request-ID: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XRequestID = &XRequestID
+
+	}
 
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
@@ -567,7 +772,7 @@ func (siw *ServerInterfaceWrapper) CreateItem(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.CreateItem(c)
+	siw.Handler.CreateItem(c, params)
 }
 
 // DeleteItem operation middleware
@@ -586,6 +791,30 @@ func (siw *ServerInterfaceWrapper) DeleteItem(c *gin.Context) {
 
 	c.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteItemParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Request-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-ID")]; found {
+		var XRequestID XRequestID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Request-ID, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-ID", valueList[0], &XRequestID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Request-ID: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XRequestID = &XRequestID
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -593,7 +822,7 @@ func (siw *ServerInterfaceWrapper) DeleteItem(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.DeleteItem(c, id)
+	siw.Handler.DeleteItem(c, id, params)
 }
 
 // GetItem operation middleware
@@ -612,6 +841,30 @@ func (siw *ServerInterfaceWrapper) GetItem(c *gin.Context) {
 
 	c.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetItemParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Request-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-ID")]; found {
+		var XRequestID XRequestID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Request-ID, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-ID", valueList[0], &XRequestID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Request-ID: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XRequestID = &XRequestID
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -619,7 +872,7 @@ func (siw *ServerInterfaceWrapper) GetItem(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.GetItem(c, id)
+	siw.Handler.GetItem(c, id, params)
 }
 
 // UpdateItem operation middleware
@@ -638,6 +891,30 @@ func (siw *ServerInterfaceWrapper) UpdateItem(c *gin.Context) {
 
 	c.Set(BearerAuthScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateItemParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Request-ID" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Request-ID")]; found {
+		var XRequestID XRequestID
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Request-ID, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Request-ID", valueList[0], &XRequestID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Request-ID: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XRequestID = &XRequestID
+
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -645,7 +922,7 @@ func (siw *ServerInterfaceWrapper) UpdateItem(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.UpdateItem(c, id)
+	siw.Handler.UpdateItem(c, id, params)
 }
 
 // GinServerOptions provides options for the Gin server.
@@ -687,178 +964,310 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 }
 
 type LoginUserRequestObject struct {
-	Body *LoginUserJSONRequestBody
+	Params LoginUserParams
+	Body   *LoginUserJSONRequestBody
 }
 
 type LoginUserResponseObject interface {
 	VisitLoginUserResponse(w http.ResponseWriter) error
 }
 
-type LoginUser200JSONResponse AuthSuccessResponse
+type LoginUser200ResponseHeaders struct {
+	XRequestID string
+}
+
+type LoginUser200JSONResponse struct {
+	Body    AuthSuccessResponse
+	Headers LoginUser200ResponseHeaders
+}
 
 func (response LoginUser200JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type LoginUser400JSONResponse ErrorResponse
+type LoginUser400ResponseHeaders struct {
+	XRequestID string
+}
+
+type LoginUser400JSONResponse struct {
+	Body    ErrorResponse
+	Headers LoginUser400ResponseHeaders
+}
 
 func (response LoginUser400JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(400)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type LoginUser401JSONResponse ErrorResponse
+type LoginUser401ResponseHeaders struct {
+	XRequestID string
+}
+
+type LoginUser401JSONResponse struct {
+	Body    ErrorResponse
+	Headers LoginUser401ResponseHeaders
+}
 
 func (response LoginUser401JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(401)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type LoginUser500JSONResponse ErrorResponse
+type LoginUser500ResponseHeaders struct {
+	XRequestID string
+}
+
+type LoginUser500JSONResponse struct {
+	Body    ErrorResponse
+	Headers LoginUser500ResponseHeaders
+}
 
 func (response LoginUser500JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type GetProfileRequestObject struct {
+	Params GetProfileParams
 }
 
 type GetProfileResponseObject interface {
 	VisitGetProfileResponse(w http.ResponseWriter) error
 }
 
-type GetProfile200JSONResponse UserSuccessResponse
+type GetProfile200ResponseHeaders struct {
+	XRequestID string
+}
+
+type GetProfile200JSONResponse struct {
+	Body    UserSuccessResponse
+	Headers GetProfile200ResponseHeaders
+}
 
 func (response GetProfile200JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type GetProfile401JSONResponse ErrorResponse
+type GetProfile401ResponseHeaders struct {
+	XRequestID string
+}
+
+type GetProfile401JSONResponse struct {
+	Body    ErrorResponse
+	Headers GetProfile401ResponseHeaders
+}
 
 func (response GetProfile401JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(401)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type GetProfile404JSONResponse ErrorResponse
+type GetProfile404ResponseHeaders struct {
+	XRequestID string
+}
+
+type GetProfile404JSONResponse struct {
+	Body    ErrorResponse
+	Headers GetProfile404ResponseHeaders
+}
 
 func (response GetProfile404JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(404)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type GetProfile500JSONResponse ErrorResponse
+type GetProfile500ResponseHeaders struct {
+	XRequestID string
+}
+
+type GetProfile500JSONResponse struct {
+	Body    ErrorResponse
+	Headers GetProfile500ResponseHeaders
+}
 
 func (response GetProfile500JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type RefreshTokenRequestObject struct {
-	Body *RefreshTokenJSONRequestBody
+	Params RefreshTokenParams
+	Body   *RefreshTokenJSONRequestBody
 }
 
 type RefreshTokenResponseObject interface {
 	VisitRefreshTokenResponse(w http.ResponseWriter) error
 }
 
-type RefreshToken200JSONResponse AuthSuccessResponse
+type RefreshToken200ResponseHeaders struct {
+	XRequestID string
+}
+
+type RefreshToken200JSONResponse struct {
+	Body    AuthSuccessResponse
+	Headers RefreshToken200ResponseHeaders
+}
 
 func (response RefreshToken200JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type RefreshToken400JSONResponse ErrorResponse
+type RefreshToken400ResponseHeaders struct {
+	XRequestID string
+}
+
+type RefreshToken400JSONResponse struct {
+	Body    ErrorResponse
+	Headers RefreshToken400ResponseHeaders
+}
 
 func (response RefreshToken400JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(400)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type RefreshToken401JSONResponse ErrorResponse
+type RefreshToken401ResponseHeaders struct {
+	XRequestID string
+}
+
+type RefreshToken401JSONResponse struct {
+	Body    ErrorResponse
+	Headers RefreshToken401ResponseHeaders
+}
 
 func (response RefreshToken401JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(401)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type RefreshToken500JSONResponse ErrorResponse
+type RefreshToken500ResponseHeaders struct {
+	XRequestID string
+}
+
+type RefreshToken500JSONResponse struct {
+	Body    ErrorResponse
+	Headers RefreshToken500ResponseHeaders
+}
 
 func (response RefreshToken500JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type RegisterUserRequestObject struct {
-	Body *RegisterUserJSONRequestBody
+	Params RegisterUserParams
+	Body   *RegisterUserJSONRequestBody
 }
 
 type RegisterUserResponseObject interface {
 	VisitRegisterUserResponse(w http.ResponseWriter) error
 }
 
-type RegisterUser201JSONResponse AuthSuccessResponse
+type RegisterUser201ResponseHeaders struct {
+	XRequestID string
+}
+
+type RegisterUser201JSONResponse struct {
+	Body    AuthSuccessResponse
+	Headers RegisterUser201ResponseHeaders
+}
 
 func (response RegisterUser201JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(201)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type RegisterUser400JSONResponse ErrorResponse
+type RegisterUser400ResponseHeaders struct {
+	XRequestID string
+}
+
+type RegisterUser400JSONResponse struct {
+	Body    ErrorResponse
+	Headers RegisterUser400ResponseHeaders
+}
 
 func (response RegisterUser400JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(400)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type RegisterUser409JSONResponse ErrorResponse
+type RegisterUser409ResponseHeaders struct {
+	XRequestID string
+}
+
+type RegisterUser409JSONResponse struct {
+	Body    ErrorResponse
+	Headers RegisterUser409ResponseHeaders
+}
 
 func (response RegisterUser409JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(409)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type RegisterUser500JSONResponse ErrorResponse
+type RegisterUser500ResponseHeaders struct {
+	XRequestID string
+}
+
+type RegisterUser500JSONResponse struct {
+	Body    ErrorResponse
+	Headers RegisterUser500ResponseHeaders
+}
 
 func (response RegisterUser500JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type ListItemsRequestObject struct {
@@ -869,172 +1278,296 @@ type ListItemsResponseObject interface {
 	VisitListItemsResponse(w http.ResponseWriter) error
 }
 
-type ListItems200JSONResponse PagedItemsSuccessResponse
+type ListItems200ResponseHeaders struct {
+	XRequestID string
+}
+
+type ListItems200JSONResponse struct {
+	Body    PagedItemsSuccessResponse
+	Headers ListItems200ResponseHeaders
+}
 
 func (response ListItems200JSONResponse) VisitListItemsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type ListItems500JSONResponse ErrorResponse
+type ListItems500ResponseHeaders struct {
+	XRequestID string
+}
+
+type ListItems500JSONResponse struct {
+	Body    ErrorResponse
+	Headers ListItems500ResponseHeaders
+}
 
 func (response ListItems500JSONResponse) VisitListItemsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type CreateItemRequestObject struct {
-	Body *CreateItemJSONRequestBody
+	Params CreateItemParams
+	Body   *CreateItemJSONRequestBody
 }
 
 type CreateItemResponseObject interface {
 	VisitCreateItemResponse(w http.ResponseWriter) error
 }
 
-type CreateItem201JSONResponse ItemSuccessResponse
+type CreateItem201ResponseHeaders struct {
+	XRequestID string
+}
+
+type CreateItem201JSONResponse struct {
+	Body    ItemSuccessResponse
+	Headers CreateItem201ResponseHeaders
+}
 
 func (response CreateItem201JSONResponse) VisitCreateItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(201)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type CreateItem400JSONResponse ErrorResponse
+type CreateItem400ResponseHeaders struct {
+	XRequestID string
+}
+
+type CreateItem400JSONResponse struct {
+	Body    ErrorResponse
+	Headers CreateItem400ResponseHeaders
+}
 
 func (response CreateItem400JSONResponse) VisitCreateItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(400)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type CreateItem500JSONResponse ErrorResponse
+type CreateItem500ResponseHeaders struct {
+	XRequestID string
+}
+
+type CreateItem500JSONResponse struct {
+	Body    ErrorResponse
+	Headers CreateItem500ResponseHeaders
+}
 
 func (response CreateItem500JSONResponse) VisitCreateItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type DeleteItemRequestObject struct {
-	Id int `json:"id"`
+	Id     int `json:"id"`
+	Params DeleteItemParams
 }
 
 type DeleteItemResponseObject interface {
 	VisitDeleteItemResponse(w http.ResponseWriter) error
 }
 
-type DeleteItem200JSONResponse EmptySuccessResponse
+type DeleteItem200ResponseHeaders struct {
+	XRequestID string
+}
+
+type DeleteItem200JSONResponse struct {
+	Body    EmptySuccessResponse
+	Headers DeleteItem200ResponseHeaders
+}
 
 func (response DeleteItem200JSONResponse) VisitDeleteItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type DeleteItem404JSONResponse ErrorResponse
+type DeleteItem404ResponseHeaders struct {
+	XRequestID string
+}
+
+type DeleteItem404JSONResponse struct {
+	Body    ErrorResponse
+	Headers DeleteItem404ResponseHeaders
+}
 
 func (response DeleteItem404JSONResponse) VisitDeleteItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(404)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type DeleteItem500JSONResponse ErrorResponse
+type DeleteItem500ResponseHeaders struct {
+	XRequestID string
+}
+
+type DeleteItem500JSONResponse struct {
+	Body    ErrorResponse
+	Headers DeleteItem500ResponseHeaders
+}
 
 func (response DeleteItem500JSONResponse) VisitDeleteItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type GetItemRequestObject struct {
-	Id int `json:"id"`
+	Id     int `json:"id"`
+	Params GetItemParams
 }
 
 type GetItemResponseObject interface {
 	VisitGetItemResponse(w http.ResponseWriter) error
 }
 
-type GetItem200JSONResponse ItemSuccessResponse
+type GetItem200ResponseHeaders struct {
+	XRequestID string
+}
+
+type GetItem200JSONResponse struct {
+	Body    ItemSuccessResponse
+	Headers GetItem200ResponseHeaders
+}
 
 func (response GetItem200JSONResponse) VisitGetItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type GetItem404JSONResponse ErrorResponse
+type GetItem404ResponseHeaders struct {
+	XRequestID string
+}
+
+type GetItem404JSONResponse struct {
+	Body    ErrorResponse
+	Headers GetItem404ResponseHeaders
+}
 
 func (response GetItem404JSONResponse) VisitGetItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(404)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type GetItem500JSONResponse ErrorResponse
+type GetItem500ResponseHeaders struct {
+	XRequestID string
+}
+
+type GetItem500JSONResponse struct {
+	Body    ErrorResponse
+	Headers GetItem500ResponseHeaders
+}
 
 func (response GetItem500JSONResponse) VisitGetItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type UpdateItemRequestObject struct {
-	Id   int `json:"id"`
-	Body *UpdateItemJSONRequestBody
+	Id     int `json:"id"`
+	Params UpdateItemParams
+	Body   *UpdateItemJSONRequestBody
 }
 
 type UpdateItemResponseObject interface {
 	VisitUpdateItemResponse(w http.ResponseWriter) error
 }
 
-type UpdateItem200JSONResponse ItemSuccessResponse
+type UpdateItem200ResponseHeaders struct {
+	XRequestID string
+}
+
+type UpdateItem200JSONResponse struct {
+	Body    ItemSuccessResponse
+	Headers UpdateItem200ResponseHeaders
+}
 
 func (response UpdateItem200JSONResponse) VisitUpdateItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type UpdateItem400JSONResponse ErrorResponse
+type UpdateItem400ResponseHeaders struct {
+	XRequestID string
+}
+
+type UpdateItem400JSONResponse struct {
+	Body    ErrorResponse
+	Headers UpdateItem400ResponseHeaders
+}
 
 func (response UpdateItem400JSONResponse) VisitUpdateItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(400)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type UpdateItem404JSONResponse ErrorResponse
+type UpdateItem404ResponseHeaders struct {
+	XRequestID string
+}
+
+type UpdateItem404JSONResponse struct {
+	Body    ErrorResponse
+	Headers UpdateItem404ResponseHeaders
+}
 
 func (response UpdateItem404JSONResponse) VisitUpdateItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(404)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type UpdateItem500JSONResponse ErrorResponse
+type UpdateItem500ResponseHeaders struct {
+	XRequestID string
+}
+
+type UpdateItem500JSONResponse struct {
+	Body    ErrorResponse
+	Headers UpdateItem500ResponseHeaders
+}
 
 func (response UpdateItem500JSONResponse) VisitUpdateItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Request-ID", fmt.Sprint(response.Headers.XRequestID))
 	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 // StrictServerInterface represents all server handlers.
@@ -1081,8 +1614,10 @@ type strictHandler struct {
 }
 
 // LoginUser operation middleware
-func (sh *strictHandler) LoginUser(ctx *gin.Context) {
+func (sh *strictHandler) LoginUser(ctx *gin.Context, params LoginUserParams) {
 	var request LoginUserRequestObject
+
+	request.Params = params
 
 	var body LoginUserJSONRequestBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -1114,8 +1649,10 @@ func (sh *strictHandler) LoginUser(ctx *gin.Context) {
 }
 
 // GetProfile operation middleware
-func (sh *strictHandler) GetProfile(ctx *gin.Context) {
+func (sh *strictHandler) GetProfile(ctx *gin.Context, params GetProfileParams) {
 	var request GetProfileRequestObject
+
+	request.Params = params
 
 	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetProfile(ctx, request.(GetProfileRequestObject))
@@ -1139,8 +1676,10 @@ func (sh *strictHandler) GetProfile(ctx *gin.Context) {
 }
 
 // RefreshToken operation middleware
-func (sh *strictHandler) RefreshToken(ctx *gin.Context) {
+func (sh *strictHandler) RefreshToken(ctx *gin.Context, params RefreshTokenParams) {
 	var request RefreshTokenRequestObject
+
+	request.Params = params
 
 	var body RefreshTokenJSONRequestBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -1172,8 +1711,10 @@ func (sh *strictHandler) RefreshToken(ctx *gin.Context) {
 }
 
 // RegisterUser operation middleware
-func (sh *strictHandler) RegisterUser(ctx *gin.Context) {
+func (sh *strictHandler) RegisterUser(ctx *gin.Context, params RegisterUserParams) {
 	var request RegisterUserRequestObject
+
+	request.Params = params
 
 	var body RegisterUserJSONRequestBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -1232,8 +1773,10 @@ func (sh *strictHandler) ListItems(ctx *gin.Context, params ListItemsParams) {
 }
 
 // CreateItem operation middleware
-func (sh *strictHandler) CreateItem(ctx *gin.Context) {
+func (sh *strictHandler) CreateItem(ctx *gin.Context, params CreateItemParams) {
 	var request CreateItemRequestObject
+
+	request.Params = params
 
 	var body CreateItemJSONRequestBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -1265,10 +1808,11 @@ func (sh *strictHandler) CreateItem(ctx *gin.Context) {
 }
 
 // DeleteItem operation middleware
-func (sh *strictHandler) DeleteItem(ctx *gin.Context, id int) {
+func (sh *strictHandler) DeleteItem(ctx *gin.Context, id int, params DeleteItemParams) {
 	var request DeleteItemRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteItem(ctx, request.(DeleteItemRequestObject))
@@ -1292,10 +1836,11 @@ func (sh *strictHandler) DeleteItem(ctx *gin.Context, id int) {
 }
 
 // GetItem operation middleware
-func (sh *strictHandler) GetItem(ctx *gin.Context, id int) {
+func (sh *strictHandler) GetItem(ctx *gin.Context, id int, params GetItemParams) {
 	var request GetItemRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.GetItem(ctx, request.(GetItemRequestObject))
@@ -1319,10 +1864,11 @@ func (sh *strictHandler) GetItem(ctx *gin.Context, id int) {
 }
 
 // UpdateItem operation middleware
-func (sh *strictHandler) UpdateItem(ctx *gin.Context, id int) {
+func (sh *strictHandler) UpdateItem(ctx *gin.Context, id int, params UpdateItemParams) {
 	var request UpdateItemRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	var body UpdateItemJSONRequestBody
 	if err := ctx.ShouldBindJSON(&body); err != nil {
@@ -1356,33 +1902,36 @@ func (sh *strictHandler) UpdateItem(ctx *gin.Context, id int) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"y0RC2EgoHT/oPejhyeHknwAAAP//Rn5AT3s1AAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -17,6 +17,21 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  parameters:
+    XRequestID:
+      name: X-Request-ID
+      in: header
+      required: false
+      description: Optional caller-supplied request ID used for request/response log correlation.
+      schema:
+        type: string
+
+  headers:
+    XRequestID:
+      description: Effective request ID associated with this response.
+      schema:
+        type: string
+
   schemas:
     Response:
       type: object
@@ -260,20 +275,33 @@ paths:
       operationId: livenessCheck
       summary: Liveness check
       tags: [Health]
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
       responses:
         "200":
           description: Service is alive
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
 
   /readyz:
     get:
       operationId: readinessCheck
       summary: Readiness check
       tags: [Health]
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
       responses:
         "200":
           description: Service is ready
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
         "503":
           description: Service is not ready
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
 
   /api/v1/auth/register:
     post:
@@ -281,6 +309,8 @@ paths:
       x-middleware-group: public
       summary: Register a new user
       tags: [Auth]
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
       requestBody:
         required: true
         content:
@@ -290,24 +320,36 @@ paths:
       responses:
         "201":
           description: Registration successful
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthSuccessResponse"
         "400":
           description: Validation error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: Email already registered
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
@@ -319,6 +361,8 @@ paths:
       x-middleware-group: public
       summary: Login with credentials
       tags: [Auth]
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
       requestBody:
         required: true
         content:
@@ -328,24 +372,36 @@ paths:
       responses:
         "200":
           description: Login successful
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthSuccessResponse"
         "401":
           description: Invalid credentials
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "400":
           description: Validation error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
@@ -357,6 +413,8 @@ paths:
       x-middleware-group: public
       summary: Refresh access token
       tags: [Auth]
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
       requestBody:
         required: true
         content:
@@ -366,24 +424,36 @@ paths:
       responses:
         "200":
           description: Token refreshed
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthSuccessResponse"
         "401":
           description: Invalid or expired refresh token
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "400":
           description: Validation error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
@@ -397,27 +467,41 @@ paths:
       tags: [Auth]
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
       responses:
         "200":
           description: User profile
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserSuccessResponse"
         "401":
           description: Unauthorized
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: User not found
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
@@ -432,6 +516,7 @@ paths:
       security:
         - BearerAuth: []
       parameters:
+        - $ref: "#/components/parameters/XRequestID"
         - name: page
           in: query
           schema:
@@ -454,12 +539,18 @@ paths:
       responses:
         "200":
           description: Paginated items
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/PagedItemsSuccessResponse"
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
@@ -471,6 +562,8 @@ paths:
       tags: [Items]
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
       requestBody:
         required: true
         content:
@@ -480,18 +573,27 @@ paths:
       responses:
         "201":
           description: Item created
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemSuccessResponse"
         "400":
           description: Validation error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
@@ -506,6 +608,7 @@ paths:
       security:
         - BearerAuth: []
       parameters:
+        - $ref: "#/components/parameters/XRequestID"
         - name: id
           in: path
           required: true
@@ -514,18 +617,27 @@ paths:
       responses:
         "200":
           description: Item details
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemSuccessResponse"
         "404":
           description: Item not found
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
@@ -538,6 +650,7 @@ paths:
       security:
         - BearerAuth: []
       parameters:
+        - $ref: "#/components/parameters/XRequestID"
         - name: id
           in: path
           required: true
@@ -552,24 +665,36 @@ paths:
       responses:
         "200":
           description: Item updated
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ItemSuccessResponse"
         "404":
           description: Item not found
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "400":
           description: Validation error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
@@ -582,6 +707,7 @@ paths:
       security:
         - BearerAuth: []
       parameters:
+        - $ref: "#/components/parameters/XRequestID"
         - name: id
           in: path
           required: true
@@ -590,18 +716,27 @@ paths:
       responses:
         "200":
           description: Item deleted
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/EmptySuccessResponse"
         "404":
           description: Item not found
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
@@ -615,6 +750,8 @@ paths:
       tags: [Upload]
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestID"
       requestBody:
         required: true
         content:
@@ -629,18 +766,27 @@ paths:
       responses:
         "200":
           description: File uploaded
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/UploadSuccessResponse"
         "400":
           description: File type not allowed
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "413":
           description: File too large
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/XRequestID"
           content:
             application/json:
               schema:

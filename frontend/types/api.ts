@@ -282,9 +282,15 @@ export interface components {
         };
     };
     responses: never;
-    parameters: never;
+    parameters: {
+        /** @description Optional caller-supplied request ID used for request/response log correlation. */
+        XRequestID: string;
+    };
     requestBodies: never;
-    headers: never;
+    headers: {
+        /** @description Effective request ID associated with this response. */
+        XRequestID: string;
+    };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
@@ -292,7 +298,10 @@ export interface operations {
     livenessCheck: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -301,6 +310,7 @@ export interface operations {
             /** @description Service is alive */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -310,7 +320,10 @@ export interface operations {
     readinessCheck: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -319,6 +332,7 @@ export interface operations {
             /** @description Service is ready */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -326,6 +340,7 @@ export interface operations {
             /** @description Service is not ready */
             503: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -335,7 +350,10 @@ export interface operations {
     registerUser: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -348,6 +366,7 @@ export interface operations {
             /** @description Registration successful */
             201: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -357,6 +376,7 @@ export interface operations {
             /** @description Validation error */
             400: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -366,6 +386,7 @@ export interface operations {
             /** @description Email already registered */
             409: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -375,6 +396,7 @@ export interface operations {
             /** @description Internal server error */
             500: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -386,7 +408,10 @@ export interface operations {
     loginUser: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -399,6 +424,7 @@ export interface operations {
             /** @description Login successful */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -408,6 +434,7 @@ export interface operations {
             /** @description Validation error */
             400: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -417,6 +444,7 @@ export interface operations {
             /** @description Invalid credentials */
             401: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -426,6 +454,7 @@ export interface operations {
             /** @description Internal server error */
             500: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -437,7 +466,10 @@ export interface operations {
     refreshToken: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -450,6 +482,7 @@ export interface operations {
             /** @description Token refreshed */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -459,6 +492,7 @@ export interface operations {
             /** @description Validation error */
             400: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -468,6 +502,7 @@ export interface operations {
             /** @description Invalid or expired refresh token */
             401: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -477,6 +512,7 @@ export interface operations {
             /** @description Internal server error */
             500: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -488,7 +524,10 @@ export interface operations {
     getProfile: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -497,6 +536,7 @@ export interface operations {
             /** @description User profile */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -506,6 +546,7 @@ export interface operations {
             /** @description Unauthorized */
             401: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -515,6 +556,7 @@ export interface operations {
             /** @description User not found */
             404: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -524,6 +566,7 @@ export interface operations {
             /** @description Internal server error */
             500: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -540,7 +583,10 @@ export interface operations {
                 keyword?: string;
                 status?: "active" | "inactive";
             };
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -549,6 +595,7 @@ export interface operations {
             /** @description Paginated items */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -558,6 +605,7 @@ export interface operations {
             /** @description Internal server error */
             500: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -569,7 +617,10 @@ export interface operations {
     createItem: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -582,6 +633,7 @@ export interface operations {
             /** @description Item created */
             201: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -591,6 +643,7 @@ export interface operations {
             /** @description Validation error */
             400: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -600,6 +653,7 @@ export interface operations {
             /** @description Internal server error */
             500: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -611,7 +665,10 @@ export interface operations {
     getItem: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path: {
                 id: number;
             };
@@ -622,6 +679,7 @@ export interface operations {
             /** @description Item details */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -631,6 +689,7 @@ export interface operations {
             /** @description Item not found */
             404: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -640,6 +699,7 @@ export interface operations {
             /** @description Internal server error */
             500: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -651,7 +711,10 @@ export interface operations {
     updateItem: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path: {
                 id: number;
             };
@@ -666,6 +729,7 @@ export interface operations {
             /** @description Item updated */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -675,6 +739,7 @@ export interface operations {
             /** @description Validation error */
             400: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -684,6 +749,7 @@ export interface operations {
             /** @description Item not found */
             404: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -693,6 +759,7 @@ export interface operations {
             /** @description Internal server error */
             500: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -704,7 +771,10 @@ export interface operations {
     deleteItem: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path: {
                 id: number;
             };
@@ -715,6 +785,7 @@ export interface operations {
             /** @description Item deleted */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -724,6 +795,7 @@ export interface operations {
             /** @description Item not found */
             404: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -733,6 +805,7 @@ export interface operations {
             /** @description Internal server error */
             500: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -744,7 +817,10 @@ export interface operations {
     uploadFile: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional caller-supplied request ID used for request/response log correlation. */
+                "X-Request-ID"?: components["parameters"]["XRequestID"];
+            };
             path?: never;
             cookie?: never;
         };
@@ -760,6 +836,7 @@ export interface operations {
             /** @description File uploaded */
             200: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -769,6 +846,7 @@ export interface operations {
             /** @description File type not allowed */
             400: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -778,6 +856,7 @@ export interface operations {
             /** @description File too large */
             413: {
                 headers: {
+                    "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
                 content: {

@@ -50,14 +50,15 @@ func main() {
 	r := gin.New()
 
 	// Global middleware
+	r.Use(middleware.RequestID())
 	r.Use(middleware.Recovery(app.Logger))
 	r.Use(middleware.RequestLogger(app.Logger))
 	r.Use(middleware.ErrorHandler())
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     app.Config.GetAllowedOrigins(),
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", middleware.RequestIDHeader},
+		ExposeHeaders:    []string{"Content-Length", middleware.RequestIDHeader},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
