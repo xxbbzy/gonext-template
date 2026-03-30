@@ -33,10 +33,14 @@ func InitializeApplication() (*Application, error) {
 	itemRepository := repository.NewItemRepository(db)
 	authService := newAuthService(userRepository, jwtManager)
 	itemService := newItemService(itemRepository)
+	fileStorageRepository, err := newUploadStorageRepository(cfg)
+	if err != nil {
+		return nil, err
+	}
+	uploadService := newUploadService(fileStorageRepository, logger)
 	authHandler := handler.NewAuthHandler(authService)
 	itemHandler := handler.NewItemHandler(itemService)
-	storage := newUploadStorage(cfg)
-	uploadHandler := handler.NewUploadHandler(storage, cfg)
+	uploadHandler := handler.NewUploadHandler(uploadService, cfg)
 	publicRateLimiter := newPublicRateLimiter(cfg)
 	userRateLimiter := newUserRateLimiter(cfg)
 
@@ -47,6 +51,7 @@ func InitializeApplication() (*Application, error) {
 		jwtManager,
 		authService,
 		itemService,
+		uploadService,
 		authHandler,
 		itemHandler,
 		uploadHandler,

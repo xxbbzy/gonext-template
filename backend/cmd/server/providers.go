@@ -22,6 +22,7 @@ type Application struct {
 	JWTManager        *pkgjwt.Manager
 	AuthService       *service.AuthService
 	ItemService       *service.ItemService
+	UploadService     *service.UploadService
 	AuthHandler       *handler.AuthHandler
 	ItemHandler       *handler.ItemHandler
 	UploadHandler     *handler.UploadHandler
@@ -37,8 +38,8 @@ func newJWTManager(cfg *config.Config) (*pkgjwt.Manager, error) {
 	)
 }
 
-func newUploadStorage(cfg *config.Config) handler.Storage {
-	return handler.NewLocalStorage(cfg.Upload.Dir, cfg.App.BaseURL)
+func newUploadStorageRepository(cfg *config.Config) (repository.FileStorageRepository, error) {
+	return repository.NewLocalFileStorageRepository(cfg.Upload.Dir, cfg.App.BaseURL)
 }
 
 func newPublicRateLimiter(cfg *config.Config) *middleware.RateLimiter {
@@ -65,6 +66,10 @@ func newItemService(itemRepo *repository.ItemRepository) *service.ItemService {
 	return service.NewItemService(itemRepo)
 }
 
+func newUploadService(fileStorage repository.FileStorageRepository, logger *zap.Logger) *service.UploadService {
+	return service.NewUploadService(fileStorage, logger)
+}
+
 func newApplication(
 	cfg *config.Config,
 	logger *zap.Logger,
@@ -72,6 +77,7 @@ func newApplication(
 	jwtManager *pkgjwt.Manager,
 	authService *service.AuthService,
 	itemService *service.ItemService,
+	uploadService *service.UploadService,
 	authHandler *handler.AuthHandler,
 	itemHandler *handler.ItemHandler,
 	uploadHandler *handler.UploadHandler,
@@ -85,6 +91,7 @@ func newApplication(
 		JWTManager:        jwtManager,
 		AuthService:       authService,
 		ItemService:       itemService,
+		UploadService:     uploadService,
 		AuthHandler:       authHandler,
 		ItemHandler:       itemHandler,
 		UploadHandler:     uploadHandler,

@@ -1,72 +1,33 @@
 package handler
 
 import (
-	"fmt"
+	"errors"
+	"math"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
+	"github.com/xxbbzy/gonext-template/backend/internal/service"
+	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
 
-// Storage defines the file storage interface.
-type Storage interface {
-	Upload(filename string, data []byte) (string, error)
-	Delete(filename string) error
-	GetURL(filename string) string
-}
-
-// LocalStorage implements Storage using the local filesystem.
-type LocalStorage struct {
-	uploadDir string
-	baseURL   string
-}
-
-// NewLocalStorage creates a new LocalStorage.
-func NewLocalStorage(uploadDir, baseURL string) *LocalStorage {
-	// Ensure upload directory exists
-	_ = os.MkdirAll(uploadDir, 0755)
-	return &LocalStorage{
-		uploadDir: uploadDir,
-		baseURL:   baseURL,
-	}
-}
-
-// Upload saves a file to the local filesystem.
-func (s *LocalStorage) Upload(filename string, data []byte) (string, error) {
-	path := filepath.Join(s.uploadDir, filename)
-	if err := os.WriteFile(path, data, 0644); err != nil {
-		return "", fmt.Errorf("failed to write file: %w", err)
-	}
-	return s.GetURL(filename), nil
-}
-
-// Delete removes a file from the local filesystem.
-func (s *LocalStorage) Delete(filename string) error {
-	path := filepath.Join(s.uploadDir, filename)
-	return os.Remove(path)
-}
-
-// GetURL returns the URL for a file.
-func (s *LocalStorage) GetURL(filename string) string {
-	return s.baseURL + "/uploads/" + filename
-}
+const multipartOverheadAllowance = int64(1 << 20)
 
 // UploadHandler handles file upload requests.
 type UploadHandler struct {
-	storage Storage
-	cfg     *config.Config
+	uploadService *service.UploadService
+	cfg           *config.Config
 }
 
 // NewUploadHandler creates a new UploadHandler.
-func NewUploadHandler(storage Storage, cfg *config.Config) *UploadHandler {
+func NewUploadHandler(uploadService *service.UploadService, cfg *config.Config) *UploadHandler {
 	return &UploadHandler{
-		storage: storage,
-		cfg:     cfg,
+		uploadService: uploadService,
+		cfg:           cfg,
 	}
 }
 
@@ -82,10 +43,19 @@ func NewUploadHandler(storage Storage, cfg *config.Config) *UploadHandler {
 // @Failure 413 {object} response.Response
 // @Router /api/v1/upload [post]
 func (h *UploadHandler) Upload(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, h.maxUploadRequestBytes())
+
 	file, err := c.FormFile("file")
 	if err != nil {
+		if isMultipartBodyTooLarge(err) {
+			response.Error(c, http.StatusRequestEntityTooLarge, 413, "file too large")
+			return
+		}
 		response.BadRequest(c, "no file provided")
 		return
+	}
+	if c.Request.MultipartForm != nil {
+		defer func() { _ = c.Request.MultipartForm.RemoveAll() }()
 	}
 
 	// Check file size
@@ -116,17 +86,12 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	}
 	defer func() { _ = f.Close() }()
 
-	data := make([]byte, file.Size)
-	if _, err := f.Read(data); err != nil {
-		response.InternalServerError(c, "failed to read file")
-		return
-	}
-
-	// Generate unique filename
-	filename := fmt.Sprintf("%d_%s", file.Size, file.Filename)
-
-	url, err := h.storage.Upload(filename, data)
+	url, err := h.uploadService.UploadFile(c.Request.Context(), file.Filename, f)
 	if err != nil {
+		if appErr, ok := err.(*errcode.AppError); ok {
+			response.Error(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+			return
+		}
 		response.InternalServerError(c, "failed to upload file")
 		return
 	}
@@ -136,6 +101,18 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 		"filename": file.Filename,
 		"size":     file.Size,
 	})
+}
+
+func (h *UploadHandler) maxUploadRequestBytes() int64 {
+	if h.cfg.Upload.MaxSize > math.MaxInt64-multipartOverheadAllowance {
+		return math.MaxInt64
+	}
+	return h.cfg.Upload.MaxSize + multipartOverheadAllowance
+}
+
+func isMultipartBodyTooLarge(err error) bool {
+	var maxBytesErr *http.MaxBytesError
+	return errors.As(err, &maxBytesErr)
 }
 
 // RegisterRoutes registers upload routes.
