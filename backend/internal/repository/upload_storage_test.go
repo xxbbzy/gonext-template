@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,6 +78,33 @@ func TestLocalFileStorageRepositoryDeleteFileRejectsPathTraversal(t *testing.T) 
 
 	if err := storage.DeleteFile(context.Background(), "../escape.txt"); err == nil {
 		t.Fatal("DeleteFile() error = nil, want error")
+	}
+}
+
+func TestLocalFileStorageRepositorySaveFileRejectsPathTraversal(t *testing.T) {
+	tempDir := t.TempDir()
+	storage, err := NewLocalFileStorageRepository(tempDir, "http://localhost:8080")
+	if err != nil {
+		t.Fatalf("NewLocalFileStorageRepository() error = %v", err)
+	}
+
+	if err := storage.SaveFile(context.Background(), "../escape.txt", strings.NewReader("payload")); err == nil {
+		t.Fatal("SaveFile() error = nil, want error")
+	}
+}
+
+func TestLocalFileStorageRepositoryGetFileURLEscapesPathSegment(t *testing.T) {
+	tempDir := t.TempDir()
+	storage, err := NewLocalFileStorageRepository(tempDir, "http://localhost:8080")
+	if err != nil {
+		t.Fatalf("NewLocalFileStorageRepository() error = %v", err)
+	}
+
+	rawName := "name with space#?.txt"
+	got := storage.GetFileURL(rawName)
+	want := "http://localhost:8080/uploads/" + url.PathEscape(rawName)
+	if got != want {
+		t.Fatalf("GetFileURL() = %q, want %q", got, want)
 	}
 }
 

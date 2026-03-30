@@ -11,6 +11,7 @@ import (
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
+	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
 
@@ -87,6 +88,10 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 
 	url, err := h.uploadService.UploadFile(c.Request.Context(), file.Filename, f)
 	if err != nil {
+		if appErr, ok := err.(*errcode.AppError); ok {
+			response.Error(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
+			return
+		}
 		response.InternalServerError(c, "failed to upload file")
 		return
 	}

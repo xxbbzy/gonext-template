@@ -47,6 +47,13 @@ func (s *UploadService) UploadFile(ctx context.Context, originalName string, src
 // RemoveFile removes a stored file by its stored name.
 func (s *UploadService) RemoveFile(ctx context.Context, storedName string) error {
 	if err := s.fileStorage.DeleteFile(ctx, storedName); err != nil {
+		if s.logger != nil {
+			s.logger.Error(
+				"failed to delete uploaded file",
+				zap.String("stored_name", storedName),
+				zap.Error(err),
+			)
+		}
 		return errcode.ErrInternalServer
 	}
 	return nil

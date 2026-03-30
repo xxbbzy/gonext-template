@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,7 +36,12 @@ func NewLocalFileStorageRepository(uploadDir, baseURL string) (*LocalFileStorage
 
 // SaveFile persists file content using a precomputed stored name.
 func (r *LocalFileStorageRepository) SaveFile(_ context.Context, storedName string, src io.Reader) error {
-	path := filepath.Join(r.uploadDir, storedName)
+	safeStoredName, err := sanitizeStoredName(storedName)
+	if err != nil {
+		return err
+	}
+
+	path := filepath.Join(r.uploadDir, safeStoredName)
 
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
@@ -84,7 +90,7 @@ func (r *LocalFileStorageRepository) DeleteFile(_ context.Context, storedName st
 
 // GetFileURL returns the public URL of a stored file.
 func (r *LocalFileStorageRepository) GetFileURL(storedName string) string {
-	return r.baseURL + "/uploads/" + storedName
+	return r.baseURL + "/uploads/" + url.PathEscape(storedName)
 }
 
 func sanitizeStoredName(storedName string) (string, error) {
