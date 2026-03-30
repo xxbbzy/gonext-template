@@ -59,3 +59,31 @@ var (
 	ErrFileTooLargeMsg     = New(413, ErrFileTooLarge, "file too large")
 	ErrTooManyRequests     = New(429, ErrTooManyReqs, "too many requests")
 )
+
+// FromHTTPStatus maps an HTTP status code to the default application error code.
+func FromHTTPStatus(statusCode int) int {
+	switch statusCode {
+	case 400:
+		return ErrBadRequest
+	case 401:
+		return ErrUnauthorized
+	case 403:
+		return ErrForbidden
+	case 404:
+		return ErrNotFound
+	case 409:
+		return ErrConflict
+	case 413:
+		return ErrFileTooLarge
+	case 429:
+		return ErrTooManyReqs
+	default:
+		if statusCode >= 500 {
+			return ErrInternal
+		}
+		if statusCode >= 400 {
+			return statusCode
+		}
+		return ErrInternal
+	}
+}
