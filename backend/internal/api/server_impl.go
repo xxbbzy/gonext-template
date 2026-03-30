@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/dto"
+	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	"github.com/xxbbzy/gonext-template/backend/pkg/pagination"
@@ -96,7 +97,7 @@ func requestIDFromContext(ctx context.Context) string {
 		return ""
 	}
 
-	requestID, exists := ginCtx.Get("request_id")
+	requestID, exists := ginCtx.Get(middleware.RequestIDKey)
 	if !exists {
 		return ""
 	}
@@ -209,7 +210,7 @@ func registerUserErrorResponse(ctx context.Context, httpStatus, code int, messag
 	}
 }
 
-func listItemsErrorResponse(ctx context.Context, httpStatus, code int, message string) ListItemsResponseObject {
+func listItemsErrorResponse(ctx context.Context, code int, message string) ListItemsResponseObject {
 	return ListItems500JSONResponse{
 		Body:    errorResponseBody(code, message),
 		Headers: ListItems500ResponseHeaders{XRequestID: requestIDFromContext(ctx)},
@@ -426,8 +427,8 @@ func (s *Server) ListItems(ctx context.Context, request ListItemsRequestObject) 
 
 	items, total, err := s.itemService.List(p.Offset, p.PageSize, keyword, status)
 	if err != nil {
-		code, httpStatus, msg := handleServiceError(err)
-		return listItemsErrorResponse(ctx, httpStatus, code, msg), nil
+		code, _, msg := handleServiceError(err)
+		return listItemsErrorResponse(ctx, code, msg), nil
 	}
 
 	// Convert dto items to API items
