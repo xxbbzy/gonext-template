@@ -2,8 +2,8 @@ package requestlog
 
 import (
 	"context"
+	"math"
 	"net/url"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -20,8 +20,6 @@ var queryValueAllowlist = map[string]func(string) (interface{}, bool){
 	"page":      normalizeIntQueryValue,
 	"page_size": normalizeIntQueryValue,
 	"status":    normalizeStatusQueryValue,
-	"sort":      normalizeSortQueryValue,
-	"order":     normalizeOrderQueryValue,
 }
 
 var (
@@ -29,11 +27,6 @@ var (
 		"active":   {},
 		"inactive": {},
 	}
-	allowedOrderValues = map[string]struct{}{
-		"asc":  {},
-		"desc": {},
-	}
-	sortValuePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]{0,63}$`)
 )
 
 // QuerySummary is a safe query representation for request logs.
@@ -72,16 +65,34 @@ func GetErrorCode(c *gin.Context) (int, bool) {
 
 	switch code := value.(type) {
 	case int:
+		if code < 0 {
+			return 0, false
+		}
 		return code, true
 	case int32:
+		if code < 0 {
+			return 0, false
+		}
 		return int(code), true
 	case int64:
+		if code < 0 || code > int64(math.MaxInt) {
+			return 0, false
+		}
 		return int(code), true
 	case uint:
+		if code > uint(math.MaxInt) {
+			return 0, false
+		}
 		return int(code), true
 	case uint32:
+		if uint64(code) > uint64(math.MaxInt) {
+			return 0, false
+		}
 		return int(code), true
 	case uint64:
+		if code > uint64(math.MaxInt) {
+			return 0, false
+		}
 		return int(code), true
 	default:
 		return 0, false
@@ -183,21 +194,6 @@ func normalizeIntQueryValue(value string) (interface{}, bool) {
 func normalizeStatusQueryValue(value string) (interface{}, bool) {
 	value = strings.ToLower(strings.TrimSpace(value))
 	if _, ok := allowedStatusValues[value]; !ok {
-		return nil, false
-	}
-	return value, true
-}
-
-func normalizeOrderQueryValue(value string) (interface{}, bool) {
-	value = strings.ToLower(strings.TrimSpace(value))
-	if _, ok := allowedOrderValues[value]; !ok {
-		return nil, false
-	}
-	return value, true
-}
-
-func normalizeSortQueryValue(value string) (interface{}, bool) {
-	if !sortValuePattern.MatchString(value) {
 		return nil, false
 	}
 	return value, true

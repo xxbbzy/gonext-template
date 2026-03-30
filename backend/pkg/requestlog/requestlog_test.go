@@ -1,6 +1,8 @@
 package requestlog
 
 import (
+	"context"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -39,10 +41,9 @@ func TestSummarizeQuery(t *testing.T) {
 func TestSummarizeQueryAllowlistedFallbacks(t *testing.T) {
 	t.Run("invalid allowlisted values are summarized", func(t *testing.T) {
 		summary := SummarizeQuery(url.Values{
-			"page":   []string{"abc"},
-			"status": []string{"sensitive-status"},
-			"sort":   []string{"id desc"},
-			"order":  []string{"ascending"},
+			"page":      []string{"abc"},
+			"page_size": []string{"-"},
+			"status":    []string{"sensitive-status"},
 		})
 
 		if _, exists := summary.Safe["page"]; exists {
@@ -62,25 +63,18 @@ func TestSummarizeQueryAllowlistedFallbacks(t *testing.T) {
 			t.Fatalf("status_len = %v, want %d", got, len("sensitive-status"))
 		}
 
-		if got := summary.Safe["sort_present"]; got != true {
-			t.Fatalf("sort_present = %v, want true", got)
+		if got := summary.Safe["page_size_present"]; got != true {
+			t.Fatalf("page_size_present = %v, want true", got)
 		}
-		if got := summary.Safe["sort_len"]; got != len("id desc") {
-			t.Fatalf("sort_len = %v, want %d", got, len("id desc"))
-		}
-
-		if got := summary.Safe["order_present"]; got != true {
-			t.Fatalf("order_present = %v, want true", got)
-		}
-		if got := summary.Safe["order_len"]; got != len("ascending") {
-			t.Fatalf("order_len = %v, want %d", got, len("ascending"))
+		if got := summary.Safe["page_size_len"]; got != len("-") {
+			t.Fatalf("page_size_len = %v, want %d", got, len("-"))
 		}
 	})
 
 	t.Run("repeated allowlisted values log count only", func(t *testing.T) {
 		summary := SummarizeQuery(url.Values{
-			"page":  []string{"1", "2"},
-			"order": []string{"asc", "desc"},
+			"page":      []string{"1", "2"},
+			"page_size": []string{"20", "30"},
 		})
 
 		if _, exists := summary.Safe["page"]; exists {
@@ -93,13 +87,80 @@ func TestSummarizeQueryAllowlistedFallbacks(t *testing.T) {
 			t.Fatalf("page_present should be omitted for repeated values, got %v", summary.Safe["page_present"])
 		}
 
-		if _, exists := summary.Safe["order"]; exists {
-			t.Fatal("order raw value should not be logged when repeated")
+		if _, exists := summary.Safe["page_size"]; exists {
+			t.Fatal("page_size raw value should not be logged when repeated")
 		}
-		if got := summary.Safe["order_len"]; got != 2 {
-			t.Fatalf("order_len = %v, want %d", got, 2)
+		if got := summary.Safe["page_size_len"]; got != 2 {
+			t.Fatalf("page_size_len = %v, want %d", got, 2)
 		}
 	})
+}
+
+func TestSetAndGetErrorCode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	SetErrorCode(c, 404)
+	got, ok := GetErrorCode(c)
+	if !ok || got != 404 {
+		t.Fatalf("GetErrorCode() = (%d, %v), want (404, true)", got, ok)
+	}
+
+	SetErrorCode(c, -1)
+	got, ok = GetErrorCode(c)
+	if ok || got != 0 {
+		t.Fatalf("GetErrorCode() with negative = (%d, %v), want (0, false)", got, ok)
+	}
+}
+
+func TestSetErrorCodeFromContext(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	SetErrorCodeFromContext(c, 429)
+	got, ok := GetErrorCode(c)
+	if !ok || got != 429 {
+		t.Fatalf("GetErrorCode() = (%d, %v), want (429, true)", got, ok)
+	}
+}
+
+func TestSetErrorCodeFromContext_NilOrNonGinContext(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("SetErrorCodeFromContext panicked: %v", r)
+		}
+	}()
+
+	var nilCtx context.Context
+	SetErrorCodeFromContext(nilCtx, 400)
+	SetErrorCodeFromContext(context.Background(), 400)
+}
+
+func TestGetErrorCode_AbsentOrInvalidValues(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+
+	if got, ok := GetErrorCode(c); ok || got != 0 {
+		t.Fatalf("GetErrorCode() with missing key = (%d, %v), want (0, false)", got, ok)
+	}
+
+	c.Set(ErrorCodeContextKey, "bad")
+	if got, ok := GetErrorCode(c); ok || got != 0 {
+		t.Fatalf("GetErrorCode() with string = (%d, %v), want (0, false)", got, ok)
+	}
+
+	c.Set(ErrorCodeContextKey, int64(-1))
+	if got, ok := GetErrorCode(c); ok || got != 0 {
+		t.Fatalf("GetErrorCode() with negative int64 = (%d, %v), want (0, false)", got, ok)
+	}
+
+	c.Set(ErrorCodeContextKey, uint64(math.MaxInt)+1)
+	if got, ok := GetErrorCode(c); ok || got != 0 {
+		t.Fatalf("GetErrorCode() with overflow uint64 = (%d, %v), want (0, false)", got, ok)
+	}
 }
 
 func TestRouteAndPath(t *testing.T) {
