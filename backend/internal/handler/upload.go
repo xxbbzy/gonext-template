@@ -1,88 +1,32 @@
 package handler
 
 import (
-	"fmt"
-	"io"
+	"errors"
+	"math"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
+	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
 
-// Storage defines the file storage interface.
-type Storage interface {
-	Upload(filename string, src io.Reader) (string, error)
-	Delete(filename string) error
-	GetURL(filename string) string
-}
-
-// LocalStorage implements Storage using the local filesystem.
-type LocalStorage struct {
-	uploadDir string
-	baseURL   string
-}
-
-// NewLocalStorage creates a new LocalStorage.
-func NewLocalStorage(uploadDir, baseURL string) *LocalStorage {
-	// Ensure upload directory exists
-	_ = os.MkdirAll(uploadDir, 0755)
-	return &LocalStorage{
-		uploadDir: uploadDir,
-		baseURL:   baseURL,
-	}
-}
-
-// Upload saves a file to the local filesystem.
-func (s *LocalStorage) Upload(filename string, src io.Reader) (string, error) {
-	path := filepath.Join(s.uploadDir, filename)
-
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
-	if err != nil {
-		return "", fmt.Errorf("failed to create file: %w", err)
-	}
-
-	if _, err := io.Copy(file, src); err != nil {
-		_ = file.Close()
-		_ = os.Remove(path)
-		return "", fmt.Errorf("failed to write file: %w", err)
-	}
-
-	if err := file.Close(); err != nil {
-		_ = os.Remove(path)
-		return "", fmt.Errorf("failed to close file: %w", err)
-	}
-
-	return s.GetURL(filename), nil
-}
-
-// Delete removes a file from the local filesystem.
-func (s *LocalStorage) Delete(filename string) error {
-	path := filepath.Join(s.uploadDir, filename)
-	return os.Remove(path)
-}
-
-// GetURL returns the URL for a file.
-func (s *LocalStorage) GetURL(filename string) string {
-	return s.baseURL + "/uploads/" + filename
-}
+const multipartOverheadAllowance = int64(1 << 20)
 
 // UploadHandler handles file upload requests.
 type UploadHandler struct {
-	storage Storage
-	cfg     *config.Config
+	uploadService *service.UploadService
+	cfg           *config.Config
 }
 
 // NewUploadHandler creates a new UploadHandler.
-func NewUploadHandler(storage Storage, cfg *config.Config) *UploadHandler {
+func NewUploadHandler(uploadService *service.UploadService, cfg *config.Config) *UploadHandler {
 	return &UploadHandler{
-		storage: storage,
-		cfg:     cfg,
+		uploadService: uploadService,
+		cfg:           cfg,
 	}
 }
 
@@ -98,10 +42,19 @@ func NewUploadHandler(storage Storage, cfg *config.Config) *UploadHandler {
 // @Failure 413 {object} response.Response
 // @Router /api/v1/upload [post]
 func (h *UploadHandler) Upload(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, h.maxUploadRequestBytes())
+
 	file, err := c.FormFile("file")
 	if err != nil {
+		if isMultipartBodyTooLarge(err) {
+			response.Error(c, http.StatusRequestEntityTooLarge, 413, "file too large")
+			return
+		}
 		response.BadRequest(c, "no file provided")
 		return
+	}
+	if c.Request.MultipartForm != nil {
+		defer func() { _ = c.Request.MultipartForm.RemoveAll() }()
 	}
 
 	// Check file size
@@ -132,8 +85,7 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	}
 	defer func() { _ = f.Close() }()
 
-	storedFilename := generateStoredFilename(file.Filename)
-	url, err := h.storage.Upload(storedFilename, f)
+	url, err := h.uploadService.UploadFile(c.Request.Context(), file.Filename, f)
 	if err != nil {
 		response.InternalServerError(c, "failed to upload file")
 		return
@@ -146,9 +98,19 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	})
 }
 
-func generateStoredFilename(originalFilename string) string {
-	ext := strings.ToLower(filepath.Ext(originalFilename))
-	return uuid.NewString() + ext
+func (h *UploadHandler) maxUploadRequestBytes() int64 {
+	if h.cfg.Upload.MaxSize > math.MaxInt64-multipartOverheadAllowance {
+		return math.MaxInt64
+	}
+	return h.cfg.Upload.MaxSize + multipartOverheadAllowance
+}
+
+func isMultipartBodyTooLarge(err error) bool {
+	var maxBytesErr *http.MaxBytesError
+	if errors.As(err, &maxBytesErr) {
+		return true
+	}
+	return strings.Contains(err.Error(), "request body too large")
 }
 
 // RegisterRoutes registers upload routes.

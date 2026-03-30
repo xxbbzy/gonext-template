@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -17,6 +18,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
+	"github.com/xxbbzy/gonext-template/backend/internal/repository"
+	"github.com/xxbbzy/gonext-template/backend/internal/service"
 )
 
 const testUploadBaseURL = "http://localhost:8080"
@@ -33,27 +36,27 @@ type uploadResponseData struct {
 	Size     int64  `json:"size"`
 }
 
-type failingStorage struct {
+type failingFileStorageRepository struct {
 	err error
 }
 
-func (s failingStorage) Upload(_ string, _ io.Reader) (string, error) {
-	return "", s.err
+func (r failingFileStorageRepository) SaveFile(context.Context, string, io.Reader) error {
+	return r.err
 }
 
-func (s failingStorage) Delete(string) error {
+func (r failingFileStorageRepository) DeleteFile(context.Context, string) error {
 	return nil
 }
 
-func (s failingStorage) GetURL(string) string {
-	return ""
+func (r failingFileStorageRepository) GetFileURL(string) string {
+	return testUploadBaseURL + "/uploads/failing.txt"
 }
 
 func TestUploadPersistsFullContentAndOriginalFilename(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
-	uploadHandler := newTestUploadHandler(NewLocalStorage(tempDir, testUploadBaseURL), tempDir, ".png,.jpg,.txt", 1024*1024)
+	uploadHandler := newTestUploadHandler(tempDir, ".png,.jpg,.txt", 1024*1024)
 	content := bytes.Repeat([]byte("GoNext upload test payload."), 64)
 
 	resp := performUploadRequest(t, uploadHandler, "report.txt", content)
@@ -100,7 +103,7 @@ func TestUploadSameNameTwiceCreatesDistinctFiles(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
-	uploadHandler := newTestUploadHandler(NewLocalStorage(tempDir, testUploadBaseURL), tempDir, ".png,.jpg,.txt", 1024*1024)
+	uploadHandler := newTestUploadHandler(tempDir, ".png,.jpg,.txt", 1024*1024)
 
 	firstContent := []byte("alpha")
 	secondContent := []byte("omega")
@@ -160,7 +163,7 @@ func TestUploadRejectsDisallowedFileType(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
-	uploadHandler := newTestUploadHandler(NewLocalStorage(tempDir, testUploadBaseURL), tempDir, ".png,.jpg", 1024)
+	uploadHandler := newTestUploadHandler(tempDir, ".png,.jpg", 1024)
 
 	resp := performUploadRequest(t, uploadHandler, "payload.exe", []byte("malware"))
 
@@ -181,7 +184,8 @@ func TestUploadReturnsInternalServerErrorWhenStorageFails(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
-	uploadHandler := newTestUploadHandler(failingStorage{err: errors.New("storage down")}, tempDir, ".txt", 1024)
+	uploadService := service.NewUploadService(failingFileStorageRepository{err: errors.New("storage down")})
+	uploadHandler := newTestUploadHandlerWithService(uploadService, tempDir, ".txt", 1024)
 
 	resp := performUploadRequest(t, uploadHandler, "report.txt", []byte("payload"))
 
@@ -190,28 +194,27 @@ func TestUploadReturnsInternalServerErrorWhenStorageFails(t *testing.T) {
 	}
 }
 
-func TestLocalStorageUploadRejectsExistingFilename(t *testing.T) {
+func TestUploadRejectsOversizedRequestBodyBeforeMultipartParsing(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
 	tempDir := t.TempDir()
-	storage := NewLocalStorage(tempDir, testUploadBaseURL)
+	uploadHandler := newTestUploadHandler(tempDir, ".txt", 1)
+	largeContent := bytes.Repeat([]byte("A"), int(2*(1<<20)))
 
-	if _, err := storage.Upload("existing.txt", strings.NewReader("first")); err != nil {
-		t.Fatalf("first Upload() error = %v", err)
-	}
-	if _, err := storage.Upload("existing.txt", strings.NewReader("second")); err == nil {
-		t.Fatal("second Upload() error = nil, want error")
-	}
-
-	content, err := os.ReadFile(filepath.Join(tempDir, "existing.txt"))
-	if err != nil {
-		t.Fatalf("ReadFile() error = %v", err)
-	}
-	if string(content) != "first" {
-		t.Fatalf("content = %q, want %q", string(content), "first")
+	resp := performUploadRequest(t, uploadHandler, "oversize.txt", largeContent)
+	if resp.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("status = %d, want %d", resp.Code, http.StatusRequestEntityTooLarge)
 	}
 }
 
-func newTestUploadHandler(storage Storage, tempDir, allowedTypes string, maxSize int64) *UploadHandler {
-	return NewUploadHandler(storage, &config.Config{
+func newTestUploadHandler(tempDir, allowedTypes string, maxSize int64) *UploadHandler {
+	fileStorage := repository.NewLocalFileStorageRepository(tempDir, testUploadBaseURL)
+	uploadService := service.NewUploadService(fileStorage)
+	return newTestUploadHandlerWithService(uploadService, tempDir, allowedTypes, maxSize)
+}
+
+func newTestUploadHandlerWithService(uploadService *service.UploadService, tempDir, allowedTypes string, maxSize int64) *UploadHandler {
+	return NewUploadHandler(uploadService, &config.Config{
 		Upload: config.UploadConfig{
 			MaxSize:      maxSize,
 			Dir:          tempDir,
