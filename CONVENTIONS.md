@@ -18,6 +18,7 @@ summaries live under `docs/`, but repository-wide operational rules belong here.
 - Repositories own database access only.
 - Models describe persistence shape; DTOs describe transport shape.
 - Middleware owns cross-cutting HTTP concerns such as auth, request logging, panic recovery, and error translation.
+- `make check-architecture` is the shared repository guardrail entry point for the highest-signal backend boundary rules, and `make check` runs it automatically.
 
 ## Error Handling
 
@@ -32,7 +33,7 @@ summaries live under `docs/`, but repository-wide operational rules belong here.
 - The API envelope is defined in `backend/pkg/response/response.go`.
 - Successful responses should use `Code: 0` and the appropriate helper (`Success`, `Created`, `PagedSuccess`).
 - Error responses should keep the shared envelope shape and use the matching HTTP status and application code.
-- Do not return raw `c.JSON(...)` payloads from handlers unless you are extending `pkg/response` itself.
+- Do not return raw `c.JSON(...)` payloads from handlers unless you are extending `pkg/response` itself or intentionally keeping a compact operational payload that is marked with the guardrail allow-comment.
 
 ## Logging Rules
 
@@ -57,9 +58,9 @@ summaries live under `docs/`, but repository-wide operational rules belong here.
 - Put backend tests in the same package area as the code they exercise, using `_test.go` files.
 - Use `internal/testutil.NewTestDB(t, models...)` to get a fresh SQLite in-memory database for each test — zero external dependencies.
 - Existing backend test examples live in `backend/internal/handler/`, `backend/internal/service/`, `backend/internal/repository/`, `backend/internal/middleware/`, and `backend/internal/config/`.
-- When adding middleware, handlers, or modules, add corresponding tests. The `new-module.sh` scaffold auto-generates `_test.go` files.
+- When adding middleware, handlers, or modules, add corresponding tests. The `new-module.sh` scaffold auto-generates handler/service/repository `_test.go` files plus a follow-up checklist.
 - Frontend tests use Vitest + React Testing Library (`npm test` or `make test-frontend`).
-- `make check` is the canonical validation command — it runs lint, typecheck, test, and build in one pipeline.
+- `make check` is the canonical validation command — it runs lint, architecture guardrails, typecheck, test (including scaffold regression), and build in one pipeline.
 - `make e2e` runs a full register → login → CRUD smoke test against a real backend (SQLite, ephemeral port).
 
 ## API Contract Synchronization

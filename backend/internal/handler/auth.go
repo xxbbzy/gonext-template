@@ -162,11 +162,13 @@ func (h *AuthHandler) RegisterRoutes(
 // RegisterHealthRoutes registers liveness/readiness endpoints for orchestration.
 func RegisterHealthRoutes(r *gin.Engine, readinessCheck func() bool) {
 	r.GET("/healthz", func(c *gin.Context) {
+		// guardrail:allow raw-json compact health payload
 		c.JSON(http.StatusOK, gin.H{"status": "alive"})
 	})
 
 	r.GET("/readyz", func(c *gin.Context) {
 		if readinessCheck() {
+			// guardrail:allow raw-json compact health payload
 			c.JSON(http.StatusOK, gin.H{"status": "ready"})
 			return
 		}

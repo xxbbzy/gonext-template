@@ -21,6 +21,7 @@ jobs:
       api: ${{ steps.scope.outputs.api }}
       shared: ${{ steps.scope.outputs.shared }}
       codegen: ${{ steps.scope.outputs.codegen }}
+      runtime: ${{ steps.scope.outputs.runtime }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
@@ -52,6 +53,13 @@ jobs:
               - 'backend/docs/**'
               - 'frontend/types/**'
               - 'scripts/swagger/**'
+            runtime:
+              - 'backend/**'
+              - 'api/openapi.yaml'
+              - 'Makefile'
+              - 'scripts/e2e-smoke.sh'
+              - '.github/workflows/ci-quality-gate.yml'
+              - '.github/workflows/merge-validation.yml'
 
       - id: scope
         env:
@@ -60,6 +68,7 @@ jobs:
           FILTER_API: ${{ steps.filter.outputs.api }}
           FILTER_SHARED: ${{ steps.filter.outputs.shared }}
           FILTER_CODEGEN: ${{ steps.filter.outputs.codegen }}
+          FILTER_RUNTIME: ${{ steps.filter.outputs.runtime }}
         run: |
           set -euo pipefail
 
@@ -69,12 +78,14 @@ jobs:
             api=true
             shared=true
             codegen=true
+            runtime=true
           else
             backend="${FILTER_BACKEND:-false}"
             frontend="${FILTER_FRONTEND:-false}"
             api="${FILTER_API:-false}"
             shared="${FILTER_SHARED:-false}"
             codegen="${FILTER_CODEGEN:-false}"
+            runtime="${FILTER_RUNTIME:-false}"
           fi
 
           echo "backend=${backend:-false}" >> "$GITHUB_OUTPUT"
@@ -82,6 +93,7 @@ jobs:
           echo "api=${api:-false}" >> "$GITHUB_OUTPUT"
           echo "shared=${shared:-false}" >> "$GITHUB_OUTPUT"
           echo "codegen=${codegen:-false}" >> "$GITHUB_OUTPUT"
+          echo "runtime=${runtime:-false}" >> "$GITHUB_OUTPUT"
 
   backend-quality:
     name: backend-quality
@@ -101,6 +113,12 @@ jobs:
         with:
           version: v2.11.4
           working-directory: backend
+
+      - name: backend-architecture-guardrails
+        run: make check-architecture
+
+      - name: module-scaffold-regression
+        run: make test-tooling
 
       - name: backend-unit-tests
         working-directory: backend
@@ -179,6 +197,42 @@ jobs:
       - name: check-codegen-drift
         run: make check-codegen-drift
 
+  pr-e2e-smoke:
+    name: pr-e2e-smoke
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && needs.detect-changes.outputs.runtime == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: "1.25.x"
+          cache-dependency-path: backend/go.sum
+
+      - name: run-pr-e2e-smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          log_file="$(mktemp /tmp/pr_e2e_smoke_XXXXXX.log)"
+          if make e2e 2>&1 | tee "$log_file"; then
+            exit 0
+          fi
+
+          {
+            echo "## PR E2E smoke failed"
+            echo
+            echo "Review the \`run-pr-e2e-smoke\` step log for the full build and request trace."
+            echo
+            echo "Last 60 log lines:"
+            echo '```text'
+            tail -n 60 "$log_file"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit 1
+
   quality-gate:
     name: quality-gate
     if: ${{ always() }}
@@ -187,6 +241,7 @@ jobs:
       - backend-quality
       - frontend-quality
       - codegen-drift
+      - pr-e2e-smoke
     runs-on: ubuntu-latest
     steps:
       - name: summarize-upstream-results
@@ -195,6 +250,7 @@ jobs:
           BACKEND_RESULT: ${{ needs.backend-quality.result }}
           FRONTEND_RESULT: ${{ needs.frontend-quality.result }}
           CODEGEN_RESULT: ${{ needs.codegen-drift.result }}
+          PR_E2E_RESULT: ${{ needs.pr-e2e-smoke.result }}
         run: |
           set -euo pipefail
 
@@ -226,6 +282,7 @@ jobs:
           check_optional "backend-quality" "$BACKEND_RESULT"
           check_optional "frontend-quality" "$FRONTEND_RESULT"
           check_optional "codegen-drift" "$CODEGEN_RESULT"
+          check_optional "pr-e2e-smoke" "$PR_E2E_RESULT"
 
           if [[ "$failed" -ne 0 ]]; then
             echo "quality-gate failed because one or more required upstream jobs did not succeed."
