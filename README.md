@@ -49,6 +49,29 @@ make dev
 4. If the change touches runtime behavior or APIs, re-run `make e2e` to exercise the register → login → CRUD cycle.
 5. Repeat: edit → lint/type/test → `make check` → `make e2e` (if needed) → commit.
 
+## Upload Storage Modes
+
+- **Default (local):** keep `STORAGE_DRIVER=local` and uploaded files are saved under `UPLOAD_DIR`, served by backend `/uploads/...`.
+- **Object storage (S3-compatible):** set `STORAGE_DRIVER=s3` and configure:
+  - `S3_BUCKET`, `S3_REGION`
+  - `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`
+  - Optional: `S3_ENDPOINT` (for MinIO/custom endpoints), `S3_PREFIX`, `S3_USE_SSL`, `S3_FORCE_PATH_STYLE`
+- `UPLOAD_PUBLIC_BASE_URL` is optional in both modes. When set, upload responses use that public base URL (useful for CDN/custom domains).
+
+Example MinIO settings:
+
+```env
+STORAGE_DRIVER=s3
+S3_BUCKET=gonext-uploads
+S3_REGION=us-east-1
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+S3_PREFIX=uploads
+S3_USE_SSL=false
+S3_FORCE_PATH_STYLE=true
+```
+
 ## Docker Workflow
 
 ```bash

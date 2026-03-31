@@ -66,7 +66,7 @@ func main() {
 	}))
 
 	// Static file serving for uploads
-	r.Static("/uploads", app.Config.Upload.Dir)
+	registerUploadStaticRoute(r, app)
 	r.Static("/swagger", "./docs")
 	r.GET("/swagger", func(c *gin.Context) {
 		c.Redirect(http.StatusPermanentRedirect, "/swagger/index.html")
@@ -189,4 +189,10 @@ func generatedRequestErrorHandler(c *gin.Context, err error, statusCode int) {
 
 func requestErrorCode(statusCode int) int {
 	return errcode.FromHTTPStatus(statusCode)
+}
+
+func registerUploadStaticRoute(r *gin.Engine, app *Application) {
+	if app.Config.UsesLocalUploadStorage() {
+		r.Static("/uploads", app.Config.Upload.Dir)
+	}
 }

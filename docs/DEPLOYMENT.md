@@ -58,14 +58,40 @@ make docker-down
 3. 确认 `DB_DRIVER/DB_DSN` 与目标环境一致。
 4. 验证 `docker compose up --build` 后 `db`、`backend`、`frontend` 都进入预期健康状态。
 5. 验证 `/healthz` 与 `/readyz` 的返回码语义符合预期。
+6. 若使用对象存储，确认 `STORAGE_DRIVER=s3` 且 `S3_BUCKET/S3_REGION/S3_ACCESS_KEY_ID/S3_SECRET_ACCESS_KEY` 已设置。
+7. 若使用 MinIO，确认 `S3_ENDPOINT` 指向 MinIO 地址，并启用 `S3_FORCE_PATH_STYLE=true`（通常还需要 `S3_USE_SSL=false`）。
 
 6. Set a production-grade `JWT_SECRET`.
 7. Verify `CORS_ALLOWED_ORIGINS`.
 8. Confirm `DB_DRIVER/DB_DSN` matches the target environment.
 9. Validate that `docker compose up --build` reaches the expected healthy states for `db`, `backend`, and `frontend`.
 10. Confirm the `/healthz` and `/readyz` status-code semantics match the deployment expectation.
+11. For object storage, ensure `STORAGE_DRIVER=s3` and required S3 credentials/settings are configured.
+12. For MinIO, set `S3_ENDPOINT`, `S3_FORCE_PATH_STYLE=true`, and usually `S3_USE_SSL=false`.
 
-## 5. 镜像发布与手动构建 / Image publishing and manual builds
+## 5. 上传存储部署模式 / Upload storage deployment modes
+
+- `STORAGE_DRIVER=local`：上传文件落地到本地目录（容器中通常是 `/app/uploads`），通过后端 `/uploads/...` 暴露。
+- `STORAGE_DRIVER=s3`：上传文件写入对象存储；后端不再依赖本地 `/uploads` 静态路由，返回 URL 由 S3 配置或 `UPLOAD_PUBLIC_BASE_URL` 决定。
+
+- `STORAGE_DRIVER=local`: uploads are stored on local disk (typically `/app/uploads` in container) and served via backend `/uploads/...`.
+- `STORAGE_DRIVER=s3`: uploads are stored in object storage; backend no longer relies on local `/uploads` static serving, and response URLs come from S3 config or `UPLOAD_PUBLIC_BASE_URL`.
+
+### MinIO-compatible example
+
+```env
+STORAGE_DRIVER=s3
+S3_BUCKET=gonext-uploads
+S3_REGION=us-east-1
+S3_ENDPOINT=http://minio:9000
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+S3_PREFIX=uploads
+S3_USE_SSL=false
+S3_FORCE_PATH_STYLE=true
+```
+
+## 6. 镜像发布与手动构建 / Image publishing and manual builds
 
 - CI 在 tag（`v*`）或 Release 发布时自动构建并推送 GHCR 镜像：
   - `ghcr.io/<repo>/backend:<tag>`
