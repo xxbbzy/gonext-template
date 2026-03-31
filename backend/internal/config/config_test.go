@@ -326,6 +326,31 @@ func TestConfigValidateNormalizesS3EndpointWithoutSchemeUsingUseSSL(t *testing.T
 	}
 }
 
+func TestMetricsEnabledDefaultsToFalse(t *testing.T) {
+	cfg := newValidConfig()
+
+	if cfg.MetricsEnabled() {
+		t.Fatal("MetricsEnabled() = true, want false by default")
+	}
+}
+
+func TestMetricsEnabledReflectsObservabilityConfig(t *testing.T) {
+	cfg := newValidConfig()
+	cfg.Observability.MetricsEnabled = true
+
+	if !cfg.MetricsEnabled() {
+		t.Fatal("MetricsEnabled() = false, want true when enabled")
+	}
+}
+
+func TestMetricsEnabledNilSafe(t *testing.T) {
+	var cfg *Config
+
+	if cfg.MetricsEnabled() {
+		t.Fatal("MetricsEnabled() = true, want false for nil config")
+	}
+}
+
 func newValidConfig() *Config {
 	return &Config{
 		App: AppConfig{
@@ -358,6 +383,7 @@ func newValidConfig() *Config {
 				UseSSL:          true,
 			},
 		},
+		Observability: ObservabilityConfig{},
 	}
 }
 

@@ -43,6 +43,11 @@ func InitializeApplication() (*Application, error) {
 	uploadHandler := handler.NewUploadHandler(uploadService, cfg)
 	publicRateLimiter := newPublicRateLimiter(cfg)
 	userRateLimiter := newUserRateLimiter(cfg)
+	httpMetrics := newHTTPMetrics(cfg)
+	metricsRegistry, err := newPrometheusRegistry(cfg, httpMetrics)
+	if err != nil {
+		return nil, err
+	}
 
 	return newApplication(
 		cfg,
@@ -57,5 +62,7 @@ func InitializeApplication() (*Application, error) {
 		uploadHandler,
 		publicRateLimiter,
 		userRateLimiter,
+		httpMetrics,
+		metricsRegistry,
 	), nil
 }

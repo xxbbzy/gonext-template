@@ -74,9 +74,7 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000
 1. 必须替换 `JWT_SECRET`，禁止使用默认值。
 2. `CORS_ALLOWED_ORIGINS` 仅保留实际站点域名。
 3. 生产环境推荐 `APP_ENV=production`，避免开发行为（如自动迁移）。
-4. 若使用对象存储，设置 `STORAGE_DRIVER=s3` 并提供完整的 S3/MinIO 参数。
-
-4. For object storage, set `STORAGE_DRIVER=s3` and provide the required S3/MinIO settings.
+4. 若使用对象存储，设置 `STORAGE_DRIVER=s3` 并提供完整的 S3/MinIO 参数。 / For object storage, set `STORAGE_DRIVER=s3` and provide the required S3/MinIO settings.
 
 ## 6. 启动时校验（Fail-Fast） / Startup Validation (Fail-Fast)
 

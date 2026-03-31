@@ -1,9 +1,11 @@
 package repository
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -227,6 +229,31 @@ func TestS3FileStorageRepositoryGetFileURLUsesVirtualHostedEndpoint(t *testing.T
 	want := "https://media-bucket.s3.example.com/assets/avatar.png"
 	if got != want {
 		t.Fatalf("GetFileURL() = %q, want %q", got, want)
+	}
+}
+
+func TestS3FileStorageRepositoryGetFileURLLogsInvalidStoredName(t *testing.T) {
+	repo := newS3FileStorageRepositoryWithClient(&fakeS3Client{}, S3FileStorageConfig{
+		Bucket:          "media-bucket",
+		Region:          "us-east-1",
+		AccessKeyID:     "access",
+		SecretAccessKey: "secret",
+		UseSSL:          true,
+	})
+
+	var buf bytes.Buffer
+	originalWriter := log.Writer()
+	log.SetOutput(&buf)
+	t.Cleanup(func() {
+		log.SetOutput(originalWriter)
+	})
+
+	got := repo.GetFileURL("../avatar.png")
+	if got != "" {
+		t.Fatalf("GetFileURL() = %q, want empty string", got)
+	}
+	if !strings.Contains(buf.String(), "sanitizeStoredName failed") {
+		t.Fatalf("log output = %q, want sanitizeStoredName failure", buf.String())
 	}
 }
 

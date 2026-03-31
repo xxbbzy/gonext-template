@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -209,6 +210,7 @@ func (r *S3FileStorageRepository) DeleteFile(ctx context.Context, storedName str
 func (r *S3FileStorageRepository) GetFileURL(storedName string) string {
 	safeStoredName, err := sanitizeStoredName(storedName)
 	if err != nil {
+		log.Printf("repository: S3FileStorageRepository.GetFileURL sanitizeStoredName failed: %v", err)
 		return ""
 	}
 

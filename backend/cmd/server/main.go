@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
@@ -53,6 +54,9 @@ func main() {
 
 	// Global middleware
 	r.Use(middleware.RequestID())
+	if app.Config.MetricsEnabled() {
+		r.Use(app.HTTPMetrics.Middleware())
+	}
 	r.Use(middleware.Recovery(app.Logger))
 	r.Use(middleware.RequestLogger(app.Logger))
 	r.Use(middleware.ErrorHandler())
@@ -71,6 +75,9 @@ func main() {
 	r.GET("/swagger", func(c *gin.Context) {
 		c.Redirect(http.StatusPermanentRedirect, "/swagger/index.html")
 	})
+	if app.Config.MetricsEnabled() {
+		r.GET(middleware.MetricsEndpointPath, gin.WrapH(promhttp.HandlerFor(app.MetricsRegistry, promhttp.HandlerOpts{})))
+	}
 
 	// Health check routes
 	handler.RegisterHealthRoutes(r, func() bool {

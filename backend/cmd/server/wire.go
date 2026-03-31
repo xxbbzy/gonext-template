@@ -29,6 +29,8 @@ func InitializeApplication() (*Application, error) {
 		handler.NewUploadHandler,
 		newPublicRateLimiter,
 		newUserRateLimiter,
+		newHTTPMetrics,
+		newPrometheusRegistry,
 		newApplication,
 	)
 	return nil, nil

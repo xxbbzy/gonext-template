@@ -77,7 +77,7 @@ make docker-down
 - `STORAGE_DRIVER=local`: uploads are stored on local disk (typically `/app/uploads` in container) and served via backend `/uploads/...`.
 - `STORAGE_DRIVER=s3`: uploads are stored in object storage; backend no longer relies on local `/uploads` static serving, and response URLs come from S3 config or `UPLOAD_PUBLIC_BASE_URL`.
 
-### MinIO-compatible example
+### MinIO-compatible example / MinIO 兼容示例
 
 ```env
 STORAGE_DRIVER=s3
