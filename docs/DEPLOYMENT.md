@@ -38,6 +38,9 @@ make docker-down
 
 ## 3. 生产镜像运行时约定 / Production image expectations
 
+- 部署构建环境建议使用 Go 1.25+ 工具链，并与 `backend/go.mod` 保持一致。
+- The deployment build environment should use Go 1.25+ and stay aligned with `backend/go.mod`.
+
 - `backend/Dockerfile` 使用与 `backend/go.mod` 对齐的 Go 1.25 builder，多阶段构建，并在 Alpine 运行时镜像中以非 root 用户运行。
 - 后端运行时会预创建 `/app/data` 与 `/app/uploads`，用于 SQLite/上传等可写路径；Compose 仍将 `uploads` 挂载为命名卷。
 - `frontend/Dockerfile` 使用 Node 20，多阶段构建，并依赖 Next.js `standalone` 产物来缩小运行时镜像内容。
