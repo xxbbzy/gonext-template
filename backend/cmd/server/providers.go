@@ -39,7 +39,7 @@ func newJWTManager(cfg *config.Config) (*pkgjwt.Manager, error) {
 }
 
 func newUploadStorageRepository(cfg *config.Config) (repository.FileStorageRepository, error) {
-	return repository.NewLocalFileStorageRepository(cfg.Upload.Dir, cfg.App.BaseURL)
+	return repository.NewLocalFileStorageRepository(cfg.Upload.Dir, cfg.Upload.PublicBaseURL)
 }
 
 func newPublicRateLimiter(cfg *config.Config) *middleware.RateLimiter {

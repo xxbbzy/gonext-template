@@ -12,25 +12,26 @@
 
 ## 2. 后端环境变量
 
-| 变量 Variable          | 默认值 Default                         | 说明 Description                                                                     |
-| ---------------------- | -------------------------------------- | ------------------------------------------------------------------------------------ |
-| `APP_NAME`             | `gonext-template`                      | 服务名 / Service name                                                                |
-| `APP_ENV`              | `development`                          | 环境（影响日志、自动迁移等） / Environment (affects logging, auto-migration, etc.)   |
-| `APP_PORT`             | `8080`                                 | HTTP 监听端口 / HTTP listen port                                                     |
-| `DB_DRIVER`            | `sqlite`                               | 数据库驱动：`sqlite`/`postgres` / Database driver: `sqlite`/`postgres`               |
-| `DB_DSN`               | `./data/app.db`                        | 数据库连接串 / Database connection string                                            |
-| `JWT_SECRET`           | `change-me-in-production`              | JWT 签名密钥 / JWT signing secret                                                    |
-| `JWT_ACCESS_EXPIRY`    | `15m`                                  | Access Token 有效期 / Access token expiry                                            |
-| `JWT_REFRESH_EXPIRY`   | `168h`                                 | Refresh Token 有效期 / Refresh token expiry                                          |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000`                | 允许来源，逗号分隔 / Allowed origins, comma-separated                                |
-| `RATE_LIMIT_REQUESTS`  | `100`                                  | 单窗口内允许请求数 / Allowed requests per window                                     |
-| `RATE_LIMIT_DURATION`  | `1m`                                   | 限流窗口 / Rate limit window                                                         |
-| `UPLOAD_MAX_SIZE`      | `10485760`                             | 上传大小上限（字节） / Max upload size (bytes)                                       |
-| `UPLOAD_DIR`           | `./uploads`                            | 上传目录 / Upload directory                                                          |
-| `UPLOAD_ALLOWED_TYPES` | `.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx` | 上传后缀白名单 / Allowed upload extensions                                           |
-| `STORAGE_DRIVER`       | `local`                                | 当前仅本地存储实现 / Currently only local storage is implemented                     |
-| `LOG_LEVEL`            | `debug`                                | 日志级别 / Log level                                                                 |
-| `LOG_FORMAT`           | `json`                                 | 日志格式（当前由 zap config 控制） / Log format (currently controlled by zap config) |
+| 变量 Variable            | 默认值 Default                                                        | 说明 Description                                                                                                                            |
+| ------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_NAME`               | `gonext-template`                                                     | 服务名 / Service name                                                                                                                       |
+| `APP_ENV`                | `development`                                                         | 环境（影响日志、自动迁移等） / Environment (affects logging, auto-migration, etc.)                                                          |
+| `APP_PORT`               | `8080`                                                                | HTTP 监听端口 / HTTP listen port                                                                                                            |
+| `DB_DRIVER`              | `sqlite`                                                              | 数据库驱动：`sqlite`/`postgres` / Database driver: `sqlite`/`postgres`                                                                      |
+| `DB_DSN`                 | `./data/app.db`                                                       | 数据库连接串 / Database connection string                                                                                                   |
+| `JWT_SECRET`             | `change-me-in-production`                                             | JWT 签名密钥 / JWT signing secret                                                                                                           |
+| `JWT_ACCESS_EXPIRY`      | `15m`                                                                 | Access Token 有效期 / Access token expiry                                                                                                   |
+| `JWT_REFRESH_EXPIRY`     | `168h`                                                                | Refresh Token 有效期 / Refresh token expiry                                                                                                 |
+| `CORS_ALLOWED_ORIGINS`   | `http://localhost:3000`                                               | 允许来源，逗号分隔 / Allowed origins, comma-separated                                                                                       |
+| `RATE_LIMIT_REQUESTS`    | `100`                                                                 | 单窗口内允许请求数 / Allowed requests per window                                                                                            |
+| `RATE_LIMIT_DURATION`    | `1m`                                                                  | 限流窗口 / Rate limit window                                                                                                                |
+| `UPLOAD_MAX_SIZE`        | `10485760`                                                            | 上传大小上限（字节） / Max upload size (bytes)                                                                                              |
+| `UPLOAD_DIR`             | `./uploads`                                                           | 上传目录 / Upload directory                                                                                                                 |
+| `UPLOAD_ALLOWED_TYPES`   | `.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx`                                | 上传后缀白名单（每个后缀必须有内置 MIME 兼容规则） / Allowed upload extensions (each extension must have built-in MIME compatibility rules) |
+| `UPLOAD_PUBLIC_BASE_URL` | 为空时回退到 `APP_BASE_URL` / falls back to `APP_BASE_URL` when empty | 上传文件对外访问地址前缀（返回 URL 使用 `<base>/uploads/...`） / Public base URL for upload files (response URLs use `<base>/uploads/...`)  |
+| `STORAGE_DRIVER`         | `local`                                                               | 当前仅本地存储实现 / Currently only local storage is implemented                                                                            |
+| `LOG_LEVEL`              | `debug`                                                               | 日志级别 / Log level                                                                                                                        |
+| `LOG_FORMAT`             | `json`                                                                | 日志格式（当前由 zap config 控制） / Log format (currently controlled by zap config)                                                        |
 
 ## 3. 前端环境变量
 
@@ -84,4 +85,5 @@ The backend performs centralized configuration validation in `backend/internal/c
 5. `RATE_LIMIT_DURATION` 必须是可解析且大于 0 的 Go duration（例如 `30s`、`1m`）。 / `RATE_LIMIT_DURATION` must be a parseable positive Go duration (for example `30s`, `1m`).
 6. `UPLOAD_MAX_SIZE` 必须大于 0。 / `UPLOAD_MAX_SIZE` must be greater than 0.
 7. `UPLOAD_DIR` 必须非空。 / `UPLOAD_DIR` must be non-empty.
-8. `UPLOAD_ALLOWED_TYPES` 必须是非空的逗号分隔后缀列表，且每项满足 `.ext` 形式（如 `.jpg,.png`）。 / `UPLOAD_ALLOWED_TYPES` must be a non-empty comma-separated extension list, and each item must match the `.ext` format (for example `.jpg,.png`).
+8. `UPLOAD_ALLOWED_TYPES` 必须是非空的逗号分隔后缀列表，且每项满足 `.ext` 形式（如 `.jpg,.png`）；列表中的每个后缀都必须有内置 MIME 兼容规则。 / `UPLOAD_ALLOWED_TYPES` must be a non-empty comma-separated extension list, and each item must match the `.ext` format (for example `.jpg,.png`); every configured extension must have built-in MIME compatibility rules.
+9. `UPLOAD_PUBLIC_BASE_URL` 若设置，必须是可解析的 `http`/`https` URL；若留空，则回退到 `APP_BASE_URL`。 / If set, `UPLOAD_PUBLIC_BASE_URL` must be a parseable `http`/`https` URL; when empty, it falls back to `APP_BASE_URL`.

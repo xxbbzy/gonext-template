@@ -83,12 +83,12 @@ func TestUploadPersistsFullContentAndOriginalFilename(t *testing.T) {
 		t.Fatalf("size = %d, want %d", payload.Data.Size, len(content))
 	}
 
-	storedFilename := storedFilenameFromURL(t, payload.Data.URL)
+	storedFilename := storedFilenameFromURL(t, payload.Data.URL, testUploadBaseURL)
 	if storedFilename == "report.txt" {
 		t.Fatalf("stored filename reused original name: %q", storedFilename)
 	}
-	if filepath.Ext(storedFilename) != ".txt" {
-		t.Fatalf("stored extension = %q, want %q", filepath.Ext(storedFilename), ".txt")
+	if ext := filepath.Ext(storedFilename); ext != ".txt" {
+		t.Fatalf("stored extension = %q, want %q", ext, ".txt")
 	}
 	if _, err := uuid.Parse(strings.TrimSuffix(storedFilename, ".txt")); err != nil {
 		t.Fatalf("stored filename does not contain UUID basename: %v", err)
@@ -132,8 +132,8 @@ func TestUploadSameNameTwiceCreatesDistinctFiles(t *testing.T) {
 		t.Fatalf("response filenames should preserve original name")
 	}
 
-	firstStoredFilename := storedFilenameFromURL(t, firstPayload.Data.URL)
-	secondStoredFilename := storedFilenameFromURL(t, secondPayload.Data.URL)
+	firstStoredFilename := storedFilenameFromURL(t, firstPayload.Data.URL, testUploadBaseURL)
+	secondStoredFilename := storedFilenameFromURL(t, secondPayload.Data.URL, testUploadBaseURL)
 
 	if firstStoredFilename == secondStoredFilename {
 		t.Fatalf("stored filenames should differ, got %q", firstStoredFilename)
@@ -194,12 +194,78 @@ func TestUploadRejectsDisallowedFileType(t *testing.T) {
 	}
 }
 
+func TestUploadSanitizesPathLikeFilename(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tempDir := t.TempDir()
+	uploadHandler := newTestUploadHandler(t, tempDir, ".png", 1024*1024)
+
+	resp := performUploadRequest(t, uploadHandler, `C:\fakepath\avatar.png`, samplePNGContent())
+	if resp.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.Code, http.StatusOK)
+	}
+
+	payload := decodeUploadResponse(t, resp)
+	if payload.Data.Filename != "avatar.png" {
+		t.Fatalf("filename = %q, want %q", payload.Data.Filename, "avatar.png")
+	}
+
+	storedFilename := storedFilenameFromURL(t, payload.Data.URL, testUploadBaseURL)
+	if ext := filepath.Ext(storedFilename); ext != ".png" {
+		t.Fatalf("stored extension = %q, want %q", ext, ".png")
+	}
+}
+
+func TestUploadRejectsMIMEMismatch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tempDir := t.TempDir()
+	uploadHandler := newTestUploadHandler(t, tempDir, ".png", 1024)
+
+	resp := performUploadRequest(t, uploadHandler, "avatar.png", []byte("plain text payload"))
+	if resp.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", resp.Code, http.StatusBadRequest)
+	}
+
+	errorPayload := decodeUploadErrorResponse(t, resp)
+	if errorPayload.Message != "file type not allowed" {
+		t.Fatalf("error message = %q, want %q", errorPayload.Message, "file type not allowed")
+	}
+
+	entries, err := os.ReadDir(tempDir)
+	if err != nil {
+		t.Fatalf("ReadDir() error = %v", err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("stored file count = %d, want 0", len(entries))
+	}
+}
+
+func TestUploadUsesConfiguredPublicBaseURL(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tempDir := t.TempDir()
+	const customUploadBaseURL = "https://assets.example.com"
+	uploadHandler := newTestUploadHandlerWithBaseURL(t, tempDir, customUploadBaseURL, ".txt", 1024*1024)
+
+	resp := performUploadRequest(t, uploadHandler, "report.txt", []byte("upload payload"))
+	if resp.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", resp.Code, http.StatusOK)
+	}
+
+	payload := decodeUploadResponse(t, resp)
+	storedFilename := storedFilenameFromURL(t, payload.Data.URL, customUploadBaseURL)
+	if ext := filepath.Ext(storedFilename); ext != ".txt" {
+		t.Fatalf("stored extension = %q, want %q", ext, ".txt")
+	}
+}
+
 func TestUploadReturnsInternalServerErrorWhenStorageFails(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tempDir := t.TempDir()
 	uploadService := service.NewUploadService(failingFileStorageRepository{err: errors.New("storage down")}, zap.NewNop())
-	uploadHandler := newTestUploadHandlerWithService(uploadService, tempDir, ".txt", 1024)
+	uploadHandler := newTestUploadHandlerWithService(uploadService, tempDir, testUploadBaseURL, ".txt", 1024)
 
 	resp := performUploadRequest(t, uploadHandler, "report.txt", []byte("payload"))
 
@@ -242,22 +308,27 @@ func TestUploadRejectsOversizedRequestBodyBeforeMultipartParsing(t *testing.T) {
 }
 
 func newTestUploadHandler(t *testing.T, tempDir, allowedTypes string, maxSize int64) *UploadHandler {
+	return newTestUploadHandlerWithBaseURL(t, tempDir, testUploadBaseURL, allowedTypes, maxSize)
+}
+
+func newTestUploadHandlerWithBaseURL(t *testing.T, tempDir, baseURL, allowedTypes string, maxSize int64) *UploadHandler {
 	t.Helper()
 
-	fileStorage, err := repository.NewLocalFileStorageRepository(tempDir, testUploadBaseURL)
+	fileStorage, err := repository.NewLocalFileStorageRepository(tempDir, baseURL)
 	if err != nil {
 		t.Fatalf("NewLocalFileStorageRepository() error = %v", err)
 	}
 	uploadService := service.NewUploadService(fileStorage, zap.NewNop())
-	return newTestUploadHandlerWithService(uploadService, tempDir, allowedTypes, maxSize)
+	return newTestUploadHandlerWithService(uploadService, tempDir, baseURL, allowedTypes, maxSize)
 }
 
-func newTestUploadHandlerWithService(uploadService *service.UploadService, tempDir, allowedTypes string, maxSize int64) *UploadHandler {
+func newTestUploadHandlerWithService(uploadService *service.UploadService, tempDir, baseURL, allowedTypes string, maxSize int64) *UploadHandler {
 	return NewUploadHandler(uploadService, &config.Config{
 		Upload: config.UploadConfig{
-			MaxSize:      maxSize,
-			Dir:          tempDir,
-			AllowedTypes: allowedTypes,
+			MaxSize:       maxSize,
+			Dir:           tempDir,
+			AllowedTypes:  allowedTypes,
+			PublicBaseURL: baseURL,
 		},
 	})
 }
@@ -267,7 +338,7 @@ func performUploadRequest(t *testing.T, uploadHandler *UploadHandler, filename s
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", filepath.Base(filename))
+	part, err := writer.CreateFormFile("file", filename)
 	if err != nil {
 		t.Fatalf("CreateFormFile() error = %v", err)
 	}
@@ -311,13 +382,35 @@ func decodeUploadErrorResponse(t *testing.T, resp *httptest.ResponseRecorder) re
 	return payload
 }
 
-func storedFilenameFromURL(t *testing.T, rawURL string) string {
+func storedFilenameFromURL(t *testing.T, rawURL, uploadBaseURL string) string {
 	t.Helper()
 
-	prefix := testUploadBaseURL + "/uploads/"
+	prefix := strings.TrimRight(uploadBaseURL, "/") + "/uploads/"
 	if !strings.HasPrefix(rawURL, prefix) {
 		t.Fatalf("url = %q, want prefix %q", rawURL, prefix)
 	}
 
 	return strings.TrimPrefix(rawURL, prefix)
+}
+
+func samplePNGContent() []byte {
+	return []byte{
+		0x89, 0x50, 0x4e, 0x47,
+		0x0d, 0x0a, 0x1a, 0x0a,
+		0x00, 0x00, 0x00, 0x0d,
+		0x49, 0x48, 0x44, 0x52,
+		0x00, 0x00, 0x00, 0x01,
+		0x00, 0x00, 0x00, 0x01,
+		0x08, 0x06, 0x00, 0x00,
+		0x00, 0x1f, 0x15, 0xc4,
+		0x89, 0x00, 0x00, 0x00,
+		0x0a, 0x49, 0x44, 0x41,
+		0x54, 0x78, 0x9c, 0x63,
+		0x00, 0x01, 0x00, 0x00,
+		0x05, 0x00, 0x01, 0x0d,
+		0x0a, 0x2d, 0xb4, 0x00,
+		0x00, 0x00, 0x00, 0x49,
+		0x45, 0x4e, 0x44, 0xae,
+		0x42, 0x60, 0x82,
+	}
 }

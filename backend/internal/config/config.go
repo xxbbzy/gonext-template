@@ -3,10 +3,13 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/spf13/viper"
+
+	uploadvalidation "github.com/xxbbzy/gonext-template/backend/internal/upload"
 )
 
 var (
@@ -72,9 +75,10 @@ type RateLimitConfig struct {
 }
 
 type UploadConfig struct {
-	MaxSize      int64  `mapstructure:"UPLOAD_MAX_SIZE"`
-	Dir          string `mapstructure:"UPLOAD_DIR"`
-	AllowedTypes string `mapstructure:"UPLOAD_ALLOWED_TYPES"`
+	MaxSize       int64  `mapstructure:"UPLOAD_MAX_SIZE"`
+	Dir           string `mapstructure:"UPLOAD_DIR"`
+	AllowedTypes  string `mapstructure:"UPLOAD_ALLOWED_TYPES"`
+	PublicBaseURL string `mapstructure:"UPLOAD_PUBLIC_BASE_URL"`
 }
 
 type LogConfig struct {
@@ -104,6 +108,7 @@ func Load() (*Config, error) {
 	v.SetDefault("UPLOAD_MAX_SIZE", 10485760)
 	v.SetDefault("UPLOAD_DIR", "./uploads")
 	v.SetDefault("UPLOAD_ALLOWED_TYPES", ".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx")
+	v.SetDefault("UPLOAD_PUBLIC_BASE_URL", "")
 	v.SetDefault("STORAGE_DRIVER", "local")
 	v.SetDefault("LOG_LEVEL", "debug")
 	v.SetDefault("LOG_FORMAT", "json")
@@ -137,9 +142,10 @@ func Load() (*Config, error) {
 			Duration: v.GetString("RATE_LIMIT_DURATION"),
 		},
 		Upload: UploadConfig{
-			MaxSize:      v.GetInt64("UPLOAD_MAX_SIZE"),
-			Dir:          v.GetString("UPLOAD_DIR"),
-			AllowedTypes: v.GetString("UPLOAD_ALLOWED_TYPES"),
+			MaxSize:       v.GetInt64("UPLOAD_MAX_SIZE"),
+			Dir:           v.GetString("UPLOAD_DIR"),
+			AllowedTypes:  v.GetString("UPLOAD_ALLOWED_TYPES"),
+			PublicBaseURL: v.GetString("UPLOAD_PUBLIC_BASE_URL"),
 		},
 		Log: LogConfig{
 			Level:  v.GetString("LOG_LEVEL"),
@@ -198,6 +204,18 @@ func (c *Config) Validate() error {
 
 	if _, err := parseAllowedUploadTypes(c.Upload.AllowedTypes); err != nil {
 		validationErrors = append(validationErrors, fmt.Sprintf("UPLOAD_ALLOWED_TYPES %s", err.Error()))
+	} else if err := uploadvalidation.ValidateSupportedExtensions(c.GetAllowedFileTypes()); err != nil {
+		validationErrors = append(validationErrors, fmt.Sprintf("UPLOAD_ALLOWED_TYPES %s", err.Error()))
+	}
+
+	normalizedUploadBaseURL := strings.TrimRight(strings.TrimSpace(c.App.BaseURL), "/")
+	if strings.TrimSpace(c.Upload.PublicBaseURL) != "" {
+		parsedUploadBaseURL, err := parseUploadPublicBaseURL(c.Upload.PublicBaseURL)
+		if err != nil {
+			validationErrors = append(validationErrors, fmt.Sprintf("UPLOAD_PUBLIC_BASE_URL %s", err.Error()))
+		} else {
+			normalizedUploadBaseURL = parsedUploadBaseURL
+		}
 	}
 
 	if len(validationErrors) > 0 {
@@ -206,6 +224,7 @@ func (c *Config) Validate() error {
 
 	c.App.Env = env
 	c.Database.Driver = driver
+	c.Upload.PublicBaseURL = normalizedUploadBaseURL
 
 	return nil
 }
@@ -273,4 +292,24 @@ func parseAllowedUploadTypes(raw string) ([]string, error) {
 	}
 
 	return types, nil
+}
+
+func parseUploadPublicBaseURL(raw string) (string, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return "", fmt.Errorf("must be non-empty")
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
+		return "", fmt.Errorf("must be a valid URL")
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return "", fmt.Errorf("must use http or https")
+	}
+	if parsed.Host == "" {
+		return "", fmt.Errorf("must include host")
+	}
+
+	return strings.TrimRight(parsed.String(), "/"), nil
 }
