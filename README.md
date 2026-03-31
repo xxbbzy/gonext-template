@@ -49,6 +49,23 @@ make dev
 4. If the change touches runtime behavior or APIs, re-run `make e2e` to exercise the register → login → CRUD cycle.
 5. Repeat: edit → lint/type/test → `make check` → `make e2e` (if needed) → commit.
 
+## Observability (Prometheus)
+
+- Prometheus scraping is opt-in. Set `METRICS_ENABLED=true` to expose `http://localhost:8080/metrics`.
+- `/metrics` is an operational endpoint (not part of `api/openapi.yaml` or frontend codegen).
+- Baseline backend metric families:
+  - `http_requests_total{method,route,status}`
+  - `http_request_duration_seconds{method,route}`
+- Scrape output also includes default Go/runtime + process metrics from the Prometheus Go client.
+- Local check:
+
+  ```bash
+  METRICS_ENABLED=true make dev
+  curl -s http://localhost:8080/metrics | head -n 40
+  ```
+
+- Production note: protect `/metrics` with network/proxy controls where needed.
+
 ## Docker Workflow
 
 ```bash

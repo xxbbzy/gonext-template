@@ -1,15 +1,18 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/internal/handler"
 	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
+	"github.com/xxbbzy/gonext-template/backend/internal/observability"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	pkgjwt "github.com/xxbbzy/gonext-template/backend/pkg/jwt"
@@ -28,6 +31,8 @@ type Application struct {
 	UploadHandler     *handler.UploadHandler
 	PublicRateLimiter *middleware.RateLimiter
 	UserRateLimiter   *middleware.RateLimiter
+	HTTPMetrics       *middleware.HTTPMetrics
+	MetricsRegistry   *prometheus.Registry
 }
 
 func newJWTManager(cfg *config.Config) (*pkgjwt.Manager, error) {
@@ -48,6 +53,26 @@ func newPublicRateLimiter(cfg *config.Config) *middleware.RateLimiter {
 
 func newUserRateLimiter(cfg *config.Config) *middleware.RateLimiter {
 	return middleware.NewRateLimiter(cfg.RateLimit.Requests, mustParseRateLimitDuration(cfg))
+}
+
+func newHTTPMetrics(cfg *config.Config) *middleware.HTTPMetrics {
+	if cfg == nil || !cfg.MetricsEnabled() {
+		return nil
+	}
+	return middleware.NewHTTPMetrics(middleware.HTTPMetricsOptions{})
+}
+
+func newPrometheusRegistry(cfg *config.Config, httpMetrics *middleware.HTTPMetrics) (*prometheus.Registry, error) {
+	if cfg == nil || !cfg.MetricsEnabled() {
+		return nil, nil
+	}
+	if httpMetrics == nil {
+		return nil, errors.New("http metrics collector is required when metrics are enabled")
+	}
+	return observability.NewPrometheusRegistry(observability.RegistryOptions{
+		IncludeRuntimeCollectors: true,
+		ApplicationCollectors:    httpMetrics.Collectors(),
+	})
 }
 
 func mustParseRateLimitDuration(cfg *config.Config) time.Duration {
@@ -83,6 +108,8 @@ func newApplication(
 	uploadHandler *handler.UploadHandler,
 	publicRateLimiter *middleware.RateLimiter,
 	userRateLimiter *middleware.RateLimiter,
+	httpMetrics *middleware.HTTPMetrics,
+	metricsRegistry *prometheus.Registry,
 ) *Application {
 	return &Application{
 		Config:            cfg,
@@ -97,5 +124,7 @@ func newApplication(
 		UploadHandler:     uploadHandler,
 		PublicRateLimiter: publicRateLimiter,
 		UserRateLimiter:   userRateLimiter,
+		HTTPMetrics:       httpMetrics,
+		MetricsRegistry:   metricsRegistry,
 	}
 }

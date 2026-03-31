@@ -37,13 +37,14 @@ var (
 
 // Config holds all application configuration.
 type Config struct {
-	App       AppConfig
-	Database  DatabaseConfig
-	JWT       JWTConfig
-	CORS      CORSConfig
-	RateLimit RateLimitConfig
-	Upload    UploadConfig
-	Log       LogConfig
+	App           AppConfig
+	Database      DatabaseConfig
+	JWT           JWTConfig
+	CORS          CORSConfig
+	RateLimit     RateLimitConfig
+	Upload        UploadConfig
+	Log           LogConfig
+	Observability ObservabilityConfig
 }
 
 type AppConfig struct {
@@ -86,6 +87,10 @@ type LogConfig struct {
 	Format string `mapstructure:"LOG_FORMAT"`
 }
 
+type ObservabilityConfig struct {
+	MetricsEnabled bool `mapstructure:"METRICS_ENABLED"`
+}
+
 // Load reads configuration from .env file and environment variables.
 func Load() (*Config, error) {
 	v := viper.New()
@@ -112,6 +117,7 @@ func Load() (*Config, error) {
 	v.SetDefault("STORAGE_DRIVER", "local")
 	v.SetDefault("LOG_LEVEL", "debug")
 	v.SetDefault("LOG_FORMAT", "json")
+	v.SetDefault("METRICS_ENABLED", false)
 
 	loadOptionalConfig(v, "config.yaml")
 	loadOptionalConfig(v, "config.yml")
@@ -150,6 +156,9 @@ func Load() (*Config, error) {
 		Log: LogConfig{
 			Level:  v.GetString("LOG_LEVEL"),
 			Format: v.GetString("LOG_FORMAT"),
+		},
+		Observability: ObservabilityConfig{
+			MetricsEnabled: v.GetBool("METRICS_ENABLED"),
 		},
 	}
 
@@ -232,6 +241,11 @@ func (c *Config) Validate() error {
 // IsDevelopment returns true if the app is running in development mode.
 func (c *Config) IsDevelopment() bool {
 	return c.App.Env == "development"
+}
+
+// MetricsEnabled returns true when the operational Prometheus endpoint should be exposed.
+func (c *Config) MetricsEnabled() bool {
+	return c != nil && c.Observability.MetricsEnabled
 }
 
 // GetAllowedOrigins returns CORS allowed origins as a slice.

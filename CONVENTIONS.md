@@ -44,6 +44,14 @@ summaries live under `docs/`, but repository-wide operational rules belong here.
 - Avoid introducing parallel logging frameworks or per-handler logging patterns unless the change has a clear operational need.
 - Startup and shutdown logging belongs in the runtime entry points, not scattered across feature handlers.
 
+## Prometheus Instrumentation Rules
+
+- Evaluate Prometheus instrumentation in the same change when backend work introduces business-critical workflows, background jobs, rate-sensitive operations, or important failure modes.
+- Prefer **counter** for monotonic event totals, **gauge** for point-in-time state, and **histogram** for latency or value distributions.
+- Keep labels bounded and low-cardinality; use stable enums/templates (for example route templates) instead of raw identifiers.
+- Never use free-text, user input, IDs, emails, tokens, or other identifier-bearing values as Prometheus label values.
+- Keep operational endpoints (for example `/metrics`) outside OpenAPI unless product API behavior explicitly requires contract exposure.
+
 ## Testing
 
 - Put backend tests in the same package area as the code they exercise, using `_test.go` files.
