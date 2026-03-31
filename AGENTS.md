@@ -14,10 +14,14 @@ This repository exposes a compact AI-facing documentation layer at the root:
 - Backend runtime entry point: `backend/cmd/server/main.go`
 - Dependency injection graph: `backend/cmd/server/wire.go`, `backend/cmd/server/providers.go`, `backend/cmd/server/wire_gen.go`
 - Database initialization: `backend/internal/config/database.go`
+- Module scaffold generator: `scripts/new-module.sh`
+- Architecture guardrail check: `scripts/check-architecture.sh`
 - Middleware implementations: `backend/internal/middleware/`
 - Prometheus registry wiring: `backend/internal/observability/` + `backend/cmd/server/providers.go`
 - Response envelope helpers: `backend/pkg/response/response.go`
 - Application error catalog: `backend/pkg/errcode/errcode.go`
+- PR quality gate workflow: `.github/workflows/ci-quality-gate.yml`
+- Post-merge runtime smoke workflow: `.github/workflows/merge-validation.yml`
 - Frontend route tree: `frontend/app/`
 - Generated frontend types: `frontend/types/api.ts` (OpenAPI request/response models refreshed via `make gen-types`, the standard command after contract changes; run `make gen` when committed server code or Swagger artifacts must also be refreshed).
 - Frontend request layer: `frontend/lib/api-client.gen.ts` (typed OpenAPI-backed client wrapper for base URL configuration, bearer token injection, refresh-on-401, and shared operation helpers).
@@ -29,15 +33,16 @@ This repository exposes a compact AI-facing documentation layer at the root:
 
 ### Backend API or Module Change
 
-1. If the request changes API behavior, update `api/openapi.yaml` first.
-2. Update or add DTOs in `backend/internal/dto/`.
-3. Implement handler, service, repository, and model changes in their respective `backend/internal/*` layers.
-4. Wire new dependencies through `backend/cmd/server/wire.go` and `backend/cmd/server/providers.go`.
-5. Register routes in `backend/cmd/server/main.go`.
-6. If the change adds persistence, update model registration for development `AutoMigrate` and add SQL migrations under `backend/migrations/` for deployable schema changes.
-7. After contract changes, run `make gen-types` to refresh frontend types; run `make gen` when committed server code or Swagger artifacts must also be regenerated.
-8. If backend behavior is business-critical (key workflows, background jobs, rate-sensitive operations, critical failures), evaluate whether Prometheus instrumentation should ship in the same change.
-9. Run practical verification before finishing.
+1. If you need a new backend module skeleton, start with `make new-module name=<module>`; it generates convention-aligned layer files, handler/service/repository tests, and a follow-up checklist.
+2. If the request changes API behavior, update `api/openapi.yaml` first.
+3. Update or add DTOs in `backend/internal/dto/`.
+4. Implement handler, service, repository, and model changes in their respective `backend/internal/*` layers.
+5. Wire new dependencies through `backend/cmd/server/wire.go` and `backend/cmd/server/providers.go`.
+6. Register routes in `backend/cmd/server/main.go`.
+7. If the change adds persistence, update model registration for development `AutoMigrate` and add SQL migrations under `backend/migrations/` for deployable schema changes.
+8. After contract changes, run `make gen-types` to refresh frontend types; run `make gen` when committed server code or Swagger artifacts must also be regenerated.
+9. If backend behavior is business-critical (key workflows, background jobs, rate-sensitive operations, critical failures), evaluate whether Prometheus instrumentation should ship in the same change.
+10. Run practical verification before finishing.
 
 ### Frontend Page or Feature Change
 
@@ -68,7 +73,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 
 - Do not bypass the backend layer chain: handler -> service -> repository.
 - Do not treat generated files as the source of truth when `api/openapi.yaml` or Wire inputs disagree.
-- Do not write raw JSON envelopes in handlers; use `backend/pkg/response`.
+- Do not write raw JSON envelopes in handlers; use `backend/pkg/response`, except intentionally compact operational endpoints that are explicitly marked for the guardrail allowlist.
 - Avoid high-cardinality Prometheus labels (raw paths, IDs, free-text, emails, tokens, etc.); prefer bounded labels and route templates.
 - Do not introduce framework drift. This project uses Gin, GORM, Google Wire, Next.js App Router, Zustand, TanStack Query, and OpenAPI-driven types.
 - Prefer minimal, file-local changes over broad rewrites unless the task explicitly requires a refactor.
@@ -80,9 +85,9 @@ This repository exposes a compact AI-facing documentation layer at the root:
 
 `make check` runs the full validation pipeline:
 
-1. **Lint** — `golangci-lint` (backend) + `eslint` (frontend)
+1. **Lint & Guardrails** — `golangci-lint` (backend) + `eslint` (frontend) + `make check-architecture`
 2. **Typecheck** — `tsc --noEmit` (frontend)
-3. **Test** — `go test ./...` (backend) + `vitest run` (frontend)
+3. **Test** — `go test ./...` (backend) + `vitest run` (frontend) + `make test-tooling`
 4. **Build** — `go build` (backend) + `next build` (frontend)
 
 For API behavior changes that involve runtime, also run `make e2e` to exercise the register → login → CRUD cycle.

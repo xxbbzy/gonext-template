@@ -43,9 +43,10 @@ make dev
 
 1. `make init` (once) bootstraps `.env`, installs dependencies and local folders, runs the backend bootstrap (AutoMigrate convenience), and refreshes generated artifacts.
 2. `make dev` (runs backend + frontend watchers). Keep editing UI or Go sources.
-3. Run `make check` (lint + typecheck + test + build) whenever you change logic/code paths to verify the full gate.
+3. Run `make check` (linters, architecture guardrails, typecheck, tests, scaffold regression, and builds) whenever you change logic/code paths to verify the full gate.
 4. If the change touches runtime behavior or APIs, re-run `make e2e` to exercise the register → login → CRUD cycle.
-5. Repeat: edit → lint/type/test → `make check` → `make e2e` (if needed) → commit.
+5. Pull requests that touch backend/API/runtime paths also run `make e2e` in CI before merge; the merge-validation workflow keeps the same smoke coverage post-merge.
+6. Repeat: edit → lint/type/test → `make check` → `make e2e` (if needed) → commit.
 
 ## Upload Storage Modes
 
@@ -112,11 +113,12 @@ Services & ports (per `docker-compose.yml` services):
 
 ## How To Add A New Module
 
-Run `make new-module name=product`, then:
+Run `make new-module name=product` to generate convention-aligned handler/service/repository/model/dto boilerplate, baseline tests, and a follow-up checklist. Then:
 
 1. Update `api/openapi.yaml` if the module is API-backed.
 2. Implement the backend chain in `backend/internal/{handler,service,repository,model,dto}`.
 3. Wire dependencies through `backend/cmd/server/{providers.go,wire.go}`.
 4. Register generated/manual routes in `backend/cmd/server/main.go`.
-5. Refresh generated artifacts as needed (`make gen-types` / `make gen`).
-6. Run `make check`, and `make e2e` if runtime/API behavior changed.
+5. Register the new model in development `AutoMigrate` and add deployable migrations when persistence changes ship.
+6. Refresh generated artifacts as needed (`make gen-types` / `make gen`).
+7. Run `make check`, and `make e2e` if runtime/API behavior changed.

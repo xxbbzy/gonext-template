@@ -98,6 +98,8 @@ Anti-patterns to avoid:
 - Repositories owning business policy.
 - Models acting as default API response structs.
 
+These guardrails are enforced in the repository-owned check at `scripts/check-architecture.sh`, which runs through both `make check-architecture` and `make check`.
+
 ## Extension Points
 
 - Add new modules through `backend/cmd/server/wire.go`, supplement helper constructors in `backend/cmd/server/providers.go`, and register their routes/middleware in `backend/cmd/server/main.go`.
@@ -106,6 +108,7 @@ Anti-patterns to avoid:
 
 ## Recommended Flow For Adding A New Module
 
+- [ ] Start with `make new-module name=<module>` when you want a convention-aligned backend scaffold, baseline handler/service/repository tests, and a follow-up checklist.
 - [ ] Update `api/openapi.yaml` when API behavior changes.
 - [ ] Add or update DTOs in `backend/internal/dto/`.
 - [ ] Implement handler/service/repository/model changes in their respective layers.

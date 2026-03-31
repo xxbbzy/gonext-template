@@ -23,4 +23,5 @@ jobs:
       - name: run-e2e-smoke
         run: make e2e
 
+      # PR-time smoke validation lives in ci-quality-gate.yml; this workflow keeps post-merge coverage aligned.
       # `/run-e2e` comment-command triggering is intentionally deferred.

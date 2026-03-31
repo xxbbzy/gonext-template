@@ -1,4 +1,4 @@
-.PHONY: all help init dev dev-backend dev-frontend lint lint-backend lint-frontend typecheck-frontend check test test-backend test-frontend build build-backend build-frontend seed swagger gen gen-server gen-client gen-types check-codegen-drift migrate-up migrate-down new-migration new-module e2e docker-up docker-down docker-build clean
+.PHONY: all help init dev dev-backend dev-frontend lint lint-backend lint-frontend check-architecture typecheck-frontend check test test-backend test-frontend test-tooling build build-backend build-frontend seed swagger gen gen-server gen-client gen-types check-codegen-drift migrate-up migrate-down new-migration new-module e2e docker-up docker-down docker-build clean
 
 BACKEND_GO_CACHE := $(CURDIR)/backend/.cache/go-build
 BACKEND_LINT_CACHE := $(CURDIR)/backend/.cache/golangci-lint
@@ -44,7 +44,7 @@ dev-frontend: ## Start frontend dev server
 
 # ===== Code Quality =====
 
-lint: lint-backend lint-frontend ## Run all linters
+lint: lint-backend lint-frontend check-architecture ## Run all linters and guardrails
 
 lint-backend: ## Run Go linters
 	@echo "==> Linting backend..."
@@ -57,6 +57,10 @@ lint-frontend: ## Run frontend linters
 	@echo "==> Linting frontend..."
 	@cd frontend && npm run lint
 
+check-architecture: ## Run repository architecture guardrails
+	@echo "==> Checking architecture guardrails..."
+	@bash scripts/check-architecture.sh
+
 typecheck-frontend: ## Run frontend type checking
 	@echo "==> Type checking frontend..."
 	@cd frontend && npm run typecheck
@@ -66,7 +70,7 @@ check: lint typecheck-frontend test build ## Full validation pipeline
 
 # ===== Testing =====
 
-test: test-backend test-frontend ## Run all tests
+test: test-backend test-frontend test-tooling ## Run all tests
 
 test-backend: ## Run backend tests
 	@echo "==> Testing backend..."
@@ -77,6 +81,11 @@ test-backend: ## Run backend tests
 test-frontend: ## Run frontend tests
 	@echo "==> Testing frontend..."
 	@cd frontend && npm test
+
+test-tooling: ## Run repository tooling regression tests
+	@echo "==> Testing repository tooling..."
+	@bash scripts/test-new-module.sh
+	@bash scripts/test-check-architecture.sh
 
 # ===== Build =====
 

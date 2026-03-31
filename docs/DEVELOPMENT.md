@@ -9,11 +9,20 @@ This page is the concise workflow summary for human contributors; repository-wid
 2. 启动开发环境 / Start dev servers: `make dev`
 3. 进行改动 / Implement changes in the existing layer structure
 4. 本地检查 / Run practical checks: `make check`
+   - 现在同时包含架构 guardrails 与脚手架回归检查。
+   - This now includes architecture guardrails and scaffold regression coverage.
 5. 生成产物（如需要）/ Refresh generated artifacts when needed:
    - `make gen-types`
    - `make swagger`
    - `make gen`
 6. 更新必要文档 / Update the minimal docs affected by the change
+
+## 后端模块脚手架 / Backend Module Scaffolding
+
+- 新增后端模块时，优先执行 `make new-module name=<module>`，它会生成与仓库约定对齐的 handler/service/repository/model/dto 模板、基础测试和后续检查清单。
+- When adding a backend module, start with `make new-module name=<module>`; it generates convention-aligned handler/service/repository/model/dto templates, baseline tests, and a follow-up checklist.
+- 生成后仍需回到 `api/openapi.yaml`、Wire、路由注册、AutoMigrate/migrations 与验证命令，把模板补齐成真实功能。
+- After scaffolding, you still need to finish the OpenAPI contract, Wire registration, route mounting, AutoMigrate/migrations, and verification commands.
 
 ## API 变更 / API Changes
 
@@ -49,6 +58,8 @@ This page is the concise workflow summary for human contributors; repository-wid
 - For new backend dependencies, start with `backend/cmd/server/wire.go`, `backend/cmd/server/providers.go`, and `backend/cmd/server/main.go`.
 - 不要直接编辑 `backend/cmd/server/wire_gen.go`。
 - Do not edit `backend/cmd/server/wire_gen.go` directly.
+- 影响 backend/API/runtime 路径的 PR 现在会在 `CI / Quality Gate` 中运行 `make e2e`；`CI / Merge Validation` 继续提供合并后的 smoke 覆盖。
+- PRs that touch backend/API/runtime paths now run `make e2e` in `CI / Quality Gate`; `CI / Merge Validation` still provides post-merge smoke coverage.
 - 相关原因见 `docs/adr/003-wire-for-di.md`。
 - See `docs/adr/003-wire-for-di.md` for the decision record.
 

@@ -62,9 +62,9 @@ make check
 
 执行内容：
 
-1. `make lint`（包含 `lint-backend` 与 `lint-frontend`）
+1. `make lint`（包含 `lint-backend`、`lint-frontend` 与 `check-architecture`）
 2. `make typecheck-frontend`
-3. `make test`（包含 `test-backend` 与 `test-frontend`）
+3. `make test`（包含 `test-backend`、`test-frontend` 与 `test-tooling`）
 4. `make build`（包含 `build-backend` 与 `build-frontend`）
 
 ## 6. 常用命令速查
@@ -76,6 +76,8 @@ make gen-types        # 基于 OpenAPI 生成前端 TypeScript 类型（frontend
 make gen              # 全量生成：Go server stub + 前端类型 + Swagger（gen-server + gen-types + swagger，提交/合并前推荐）
                      # Full regeneration: Go server stub + frontend types + Swagger (gen-server + gen-types + swagger, recommended before commit/merge)
 make new-module name=product
+                     # 生成约定对齐的后端模块模板、基础测试与后续检查清单
+                     # Generate a convention-aligned backend module scaffold, baseline tests, and a follow-up checklist
 make new-migration name=add_xxx
 make docker-up       # 用 docker compose 启动 / Start with docker compose
 make docker-down

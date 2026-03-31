@@ -18,16 +18,18 @@ Workflow directory: `.github/workflows`
 
 核心设计 / Core design:
 
-1. 先执行 `detect-changes`，输出 `backend/frontend/api/shared/codegen` 影响范围。  
-   Run `detect-changes` first to determine affected scopes (`backend/frontend/api/shared/codegen`).
+1. 先执行 `detect-changes`，输出 `backend/frontend/api/shared/codegen/runtime` 影响范围。  
+   Run `detect-changes` first to determine affected scopes (`backend/frontend/api/shared/codegen/runtime`).
 2. 根据输出有条件运行。  
    Conditionally run jobs based on detected scope:
-   - `backend-quality`：lint + unit tests + build  
-     `backend-quality`: lint + unit tests + build
+   - `backend-quality`：lint + architecture guardrails + scaffold regression + unit tests + build  
+     `backend-quality`: lint + architecture guardrails + scaffold regression + unit tests + build
    - `frontend-quality`：lint + typecheck + unit tests + build  
      `frontend-quality`: lint + typecheck + unit tests + build
    - `codegen-drift`：版本策略检查 + `make check-codegen-drift`  
      `codegen-drift`: runtime-version policy checks + `make check-codegen-drift`
+   - `pr-e2e-smoke`：仅在 PR（或手动触发）且命中 runtime 路径时执行 `make e2e`，失败时在 job summary 中附带日志摘录  
+     `pr-e2e-smoke`: runs `make e2e` only for PRs (or manual runs) that touch runtime paths, and adds a log excerpt to the job summary on failure
 3. 最终由 `quality-gate` 汇总上游作业结果，作为稳定门禁结果。  
    The final `quality-gate` job summarizes upstream results and serves as the stable gate output.
 
@@ -48,8 +50,8 @@ Workflow directory: `.github/workflows`
 
 说明 / Notes:
 
-- 初始版本仅提供合并后 + 手动触发。  
-  The initial version supports post-merge and manual triggers only.
+- 现在 PR 侧的 runtime smoke 已经前移到 `CI / Quality Gate`；这里保留合并后 + 手动重验证，确保主分支继续有同样的 smoke 覆盖。  
+  PR-time runtime smoke now lives in `CI / Quality Gate`; this workflow keeps post-merge and manual re-validation so protected branches retain the same smoke coverage.
 - `/run-e2e` 这类评论命令触发暂不纳入本阶段，后续可扩展。  
   Comment-command triggers such as `/run-e2e` are intentionally deferred and may be added later.
 
