@@ -99,7 +99,7 @@ jobs:
       - name: backend-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: latest
+          version: v1.64.0
           working-directory: backend
 
       - name: backend-unit-tests

@@ -75,9 +75,9 @@ check_absent() {
 check_present_re '^go 1\.25(\.0)?$' backend/go.mod "Go 1.25 declaration"
 check_present_re '^toolchain go1\.25\.3$' backend/go.mod "Go toolchain 1.25.3"
 
-check_present "go-version: \"1.25.x\"" .github/workflows/ci-quality-gate.yml "ci-quality-gate go-version 1.25.x"
+check_present_re "go-version:[[:space:]]*[\"']?1\\.25\\.x[\"']?" .github/workflows/ci-quality-gate.yml "ci-quality-gate go-version 1.25.x"
 check_absent "go-version-file:" .github/workflows/ci-quality-gate.yml "ci-quality-gate go-version-file"
-check_present "go-version: \"1.25.x\"" .github/workflows/merge-validation.yml "merge-validation go-version 1.25.x"
+check_present_re "go-version:[[:space:]]*[\"']?1\\.25\\.x[\"']?" .github/workflows/merge-validation.yml "merge-validation go-version 1.25.x"
 check_absent "go-version-file:" .github/workflows/merge-validation.yml "merge-validation go-version-file"
 
 check_present_re "node-version:[[:space:]]*[\"']?20[\"']?" .github/workflows/ci-quality-gate.yml "ci-quality-gate node-version 20"
