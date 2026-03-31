@@ -50,9 +50,33 @@ EOF
 
 (
   cd "$TMP_DIR"
-  PATH="/usr/bin:/bin" ./scripts/check-architecture.sh
-) >"$TMP_DIR/output.txt"
+  ./scripts/check-architecture.sh
+) >"$TMP_DIR/output.txt" 2>&1
 
 assert_contains "$TMP_DIR/output.txt" "Architecture guardrail check passed."
+
+cat >"$TMP_DIR/backend/internal/handler/bad_example.go" <<'EOF'
+package handler
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+func ExampleBad(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "bad"})
+}
+EOF
+
+if (
+  cd "$TMP_DIR"
+  ./scripts/check-architecture.sh
+) >"$TMP_DIR/bad-output.txt" 2>&1; then
+  fail "expected raw c.JSON guardrail violation to fail"
+fi
+
+assert_contains "$TMP_DIR/bad-output.txt" "Architecture guardrail check failed"
+assert_contains "$TMP_DIR/bad-output.txt" "handlers must not emit raw c.JSON(...) responses"
 
 echo "Architecture guardrail regression test passed."

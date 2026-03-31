@@ -70,6 +70,13 @@ chmod +x "$TMP_DIR/scripts/new-module.sh"
 
 if (
   cd "$TMP_DIR"
+  ./scripts/new-module.sh product
+) >"$TMP_DIR/overwrite-output.txt" 2>&1; then
+  fail "expected duplicate module scaffold generation to be rejected"
+fi
+
+if (
+  cd "$TMP_DIR"
   ./scripts/new-module.sh type
 ) >"$TMP_DIR/type-output.txt" 2>&1; then
   fail "expected Go keyword module name to be rejected"
@@ -113,6 +120,7 @@ assert_contains "$TMP_DIR/backend/internal/dto/key.go" "type ListKeysQuery struc
 assert_contains "$TMP_DIR/backend/internal/handler/key.go" "keys := r.Group(\"/keys\")"
 assert_not_contains "$TMP_DIR/backend/internal/handler/key.go" "keies := r.Group(\"/keies\")"
 
+assert_contains "$TMP_DIR/overwrite-output.txt" "Refusing to overwrite"
 assert_contains "$TMP_DIR/type-output.txt" "module_name must not be a Go keyword after normalization."
 assert_file_not_exists "$TMP_DIR/backend/internal/model/type.go"
 assert_file_not_exists "$TMP_DIR/backend/internal/repository/type.go"
