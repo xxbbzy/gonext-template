@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
+	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	"github.com/xxbbzy/gonext-template/backend/pkg/response"
@@ -282,8 +283,8 @@ func performUploadRequest(t *testing.T, uploadHandler *UploadHandler, filename s
 	resp := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(resp)
 	ctx.Request = req
-	ctx.Set("request_id", testUploadRequestID)
-	ctx.Writer.Header().Set("X-Request-ID", testUploadRequestID)
+	ctx.Set(middleware.RequestIDKey, testUploadRequestID)
+	ctx.Writer.Header().Set(middleware.RequestIDHeader, testUploadRequestID)
 
 	uploadHandler.Upload(ctx)
 

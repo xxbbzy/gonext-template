@@ -92,6 +92,7 @@
     "uploadedFiles": "Uploaded files",
     "success": "Upload successful",
     "failed": "Upload failed",
-    "retry": "Please try again"
+    "retry": "Please try again",
+    "requestIdSuffix": "(request id: {id})"
   }
 }

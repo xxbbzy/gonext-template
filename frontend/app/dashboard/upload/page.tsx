@@ -35,7 +35,7 @@ export default function UploadPage() {
       const message = getApiErrorMessage(error, tUpload("retry"));
       const metadata = getApiErrorMetadata(error);
       const description = metadata?.requestId
-        ? `${message} (request id: ${metadata.requestId})`
+        ? `${message} ${tUpload("requestIdSuffix", { id: metadata.requestId })}`
         : message;
       addToast({
         title: tUpload("failed"),
