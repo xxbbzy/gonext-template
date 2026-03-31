@@ -85,6 +85,7 @@ test-frontend: ## Run frontend tests
 test-tooling: ## Run repository tooling regression tests
 	@echo "==> Testing repository tooling..."
 	@bash scripts/test-new-module.sh
+	@bash scripts/test-check-architecture.sh
 
 # ===== Build =====
 

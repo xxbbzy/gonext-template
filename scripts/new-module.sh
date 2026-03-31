@@ -14,6 +14,16 @@ normalize_module_name() {
   printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr '-' '_'
 }
 
+is_go_keyword() {
+  case "$1" in
+    break|default|func|interface|select|case|defer|go|map|struct|chan|else|goto|package|switch|const|fallthrough|if|range|type|continue|for|import|return|var)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
 to_pascal_case() {
   local input="$1"
   local result=""
@@ -71,6 +81,11 @@ MODULE_NAME_LOWER="$(normalize_module_name "$MODULE_NAME_RAW")"
 
 if [[ ! "$MODULE_NAME_LOWER" =~ ^[a-z][a-z0-9_]*$ ]]; then
   echo "module_name must start with a letter and contain only letters, numbers, '_' or '-'." >&2
+  exit 1
+fi
+
+if is_go_keyword "$MODULE_NAME_LOWER"; then
+  echo "module_name must not be a Go keyword after normalization." >&2
   exit 1
 fi
 

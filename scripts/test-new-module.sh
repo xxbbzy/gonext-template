@@ -24,6 +24,13 @@ assert_file_exists() {
   fi
 }
 
+assert_file_not_exists() {
+  local file="$1"
+  if [ -e "$file" ]; then
+    fail "did not expect file to exist: $file"
+  fi
+}
+
 assert_contains() {
   local file="$1"
   local needle="$2"
@@ -60,6 +67,13 @@ chmod +x "$TMP_DIR/scripts/new-module.sh"
   cd "$TMP_DIR"
   ./scripts/new-module.sh key
 ) >"$TMP_DIR/key-output.txt"
+
+if (
+  cd "$TMP_DIR"
+  ./scripts/new-module.sh type
+) >"$TMP_DIR/type-output.txt" 2>&1; then
+  fail "expected Go keyword module name to be rejected"
+fi
 
 for generated_file in \
   "$TMP_DIR/backend/internal/model/product.go" \
@@ -98,6 +112,10 @@ assert_not_contains "$TMP_DIR/backend/internal/model/key.go" "return \"keies\""
 assert_contains "$TMP_DIR/backend/internal/dto/key.go" "type ListKeysQuery struct {"
 assert_contains "$TMP_DIR/backend/internal/handler/key.go" "keys := r.Group(\"/keys\")"
 assert_not_contains "$TMP_DIR/backend/internal/handler/key.go" "keies := r.Group(\"/keies\")"
+
+assert_contains "$TMP_DIR/type-output.txt" "module_name must not be a Go keyword after normalization."
+assert_file_not_exists "$TMP_DIR/backend/internal/model/type.go"
+assert_file_not_exists "$TMP_DIR/backend/internal/repository/type.go"
 
 assert_contains "$TMP_DIR/output.txt" "Review api/openapi.yaml before finalizing routes or response shapes"
 assert_contains "$TMP_DIR/output.txt" "backend/cmd/server/providers.go"

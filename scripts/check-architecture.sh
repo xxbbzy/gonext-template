@@ -6,18 +6,58 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FAILURES=0
+SEARCH_TOOL=""
+
+if command -v rg >/dev/null 2>&1; then
+  SEARCH_TOOL="rg"
+elif command -v grep >/dev/null 2>&1; then
+  SEARCH_TOOL="grep"
+else
+  echo "scripts/check-architecture.sh requires \"rg\" or \"grep\" but neither is installed." >&2
+  exit 1
+fi
+
+search_matches() {
+  local pattern="$1"
+  shift
+
+  if [[ "$SEARCH_TOOL" == "rg" ]]; then
+    rg -n --with-filename --color never "$pattern" "$@"
+  else
+    grep -n -H -E "$pattern" "$@"
+  fi
+}
+
+search_matches_in_file() {
+  local pattern="$1"
+  local file="$2"
+
+  if [[ "$SEARCH_TOOL" == "rg" ]]; then
+    rg -n --color never "$pattern" "$file"
+  else
+    grep -n -E "$pattern" "$file"
+  fi
+}
 
 collect_go_files() {
   local search_root="$1"
   local output=""
   local status=0
 
+  if [ ! -d "$ROOT_DIR/$search_root" ]; then
+    return
+  fi
+
   set +e
-  output="$(cd "$ROOT_DIR" && rg --files "$search_root" -g '*.go' -g '!**/*_test.go' -g '!*_test.go' 2>&1)"
+  if [[ "$SEARCH_TOOL" == "rg" ]]; then
+    output="$(cd "$ROOT_DIR" && rg --files "$search_root" -g '*.go' -g '!**/*_test.go' -g '!*_test.go' 2>&1)"
+  else
+    output="$(cd "$ROOT_DIR" && find "$search_root" -type f -name '*.go' ! -name '*_test.go' -print 2>&1)"
+  fi
   status=$?
   set -e
 
-  if [ "$status" -eq 1 ]; then
+  if [ "$status" -eq 1 ] && [[ "$SEARCH_TOOL" == "rg" ]]; then
     return
   fi
 
@@ -48,7 +88,10 @@ check_pattern() {
   fi
 
   set +e
-  output="$(cd "$ROOT_DIR" && rg -n --color never "$pattern" "${files[@]}" 2>&1)"
+  output="$(
+    cd "$ROOT_DIR"
+    search_matches "$pattern" "${files[@]}"
+  )"
   status=$?
   set -e
 
@@ -89,7 +132,7 @@ check_raw_json_pattern() {
   local title="$1"
   local advice="$2"
   local search_root="$3"
-  local pattern='\.JSON\s*\('
+  local pattern='\.JSON[[:space:]]*\('
   local -a files=()
   local -a violations=()
   local file=""
@@ -101,6 +144,10 @@ check_raw_json_pattern() {
     [ -n "$file" ] && files+=("$file")
   done < <(collect_go_files "$search_root")
 
+  if [ "${#files[@]}" -eq 0 ]; then
+    return
+  fi
+
   for file in "${files[@]}"; do
     while IFS= read -r match; do
       [ -z "$match" ] && continue
@@ -110,7 +157,7 @@ check_raw_json_pattern() {
         continue
       fi
       violations+=("${file}:${line}:${text}")
-    done < <(cd "$ROOT_DIR" && rg -n --color never "$pattern" "$file")
+    done < <(cd "$ROOT_DIR" && search_matches_in_file "$pattern" "$file" || true)
   done
 
   if [ "${#violations[@]}" -eq 0 ]; then
