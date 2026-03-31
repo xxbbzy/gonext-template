@@ -15,7 +15,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build -o /server ./cmd/server/
 # Run stage
 FROM alpine:3.22
 
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk add --no-cache ca-certificates tzdata wget \
 	&& addgroup -S gonext \
 	&& adduser -S -G gonext -h /app gonext
 
