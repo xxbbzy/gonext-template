@@ -245,7 +245,7 @@ func TestRegisterHealthRoutesLiveness(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	router.Use(middleware.RequestID())
-	RegisterHealthRoutes(router, func() bool { return true })
+	RegisterHealthRoutes(router, func() bool { return false })
 
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	resp := httptest.NewRecorder()
@@ -258,6 +258,9 @@ func TestRegisterHealthRoutesLiveness(t *testing.T) {
 	payload := decodeAuthPayload(t, resp.Body.Bytes())
 	if payload["status"] != "alive" {
 		t.Fatalf("status payload = %v, want alive", payload["status"])
+	}
+	if got := resp.Header().Get(middleware.RequestIDHeader); got == "" {
+		t.Fatal("request id header should not be empty")
 	}
 }
 
@@ -285,6 +288,16 @@ func TestRegisterHealthRoutesReadiness(t *testing.T) {
 	if payload.Message != "service not ready" {
 		t.Fatalf("message = %q, want %q", payload.Message, "service not ready")
 	}
+	details, ok := payload.Details.(map[string]any)
+	if !ok {
+		t.Fatalf("details = %#v, want object", payload.Details)
+	}
+	if details["status"] != "not_ready" {
+		t.Fatalf("details.status = %v, want not_ready", details["status"])
+	}
+	if details["dependency"] != "database" {
+		t.Fatalf("details.dependency = %v, want database", details["dependency"])
+	}
 	if payload.RequestID == "" {
 		t.Fatal("request_id should not be empty")
 	}
@@ -310,5 +323,8 @@ func TestRegisterHealthRoutesReadinessReady(t *testing.T) {
 	payload := decodeAuthPayload(t, resp.Body.Bytes())
 	if payload["status"] != "ready" {
 		t.Fatalf("status payload = %v, want ready", payload["status"])
+	}
+	if got := resp.Header().Get(middleware.RequestIDHeader); got == "" {
+		t.Fatal("request id header should not be empty")
 	}
 }

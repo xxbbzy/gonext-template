@@ -1,0 +1,6 @@
+.cache
+data
+tmp
+uploads
+*.log
+.DS_Store

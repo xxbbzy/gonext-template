@@ -159,17 +159,27 @@ func (h *AuthHandler) RegisterRoutes(
 	}
 }
 
-// RegisterHealthRoutes registers health check endpoints.
-func RegisterHealthRoutes(r *gin.Engine, healthCheck func() bool) {
+// RegisterHealthRoutes registers liveness/readiness endpoints for orchestration.
+func RegisterHealthRoutes(r *gin.Engine, readinessCheck func() bool) {
 	r.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "alive"})
 	})
 
 	r.GET("/readyz", func(c *gin.Context) {
-		if healthCheck() {
+		if readinessCheck() {
 			c.JSON(http.StatusOK, gin.H{"status": "ready"})
-		} else {
-			response.Error(c, http.StatusServiceUnavailable, http.StatusServiceUnavailable, "service not ready")
+			return
 		}
+
+		response.ErrorWithDetails(
+			c,
+			http.StatusServiceUnavailable,
+			http.StatusServiceUnavailable,
+			"service not ready",
+			gin.H{
+				"dependency": "database",
+				"status":     "not_ready",
+			},
+		)
 	})
 }
