@@ -232,12 +232,18 @@ func TestAuthFailureErrorCodesAreLogged(t *testing.T) {
 				t.Fatalf("status = %d, want %d", resp.Code, tc.wantCode)
 			}
 
-			var body response.Response
+			var body response.ErrorResponse
 			if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
 				t.Fatalf("unmarshal response: %v", err)
 			}
 			if body.Code != tc.wantError {
 				t.Fatalf("body.code = %d, want %d", body.Code, tc.wantError)
+			}
+			if body.RequestID == "" {
+				t.Fatal("body.request_id should not be empty")
+			}
+			if got := resp.Header().Get(RequestIDHeader); got != body.RequestID {
+				t.Fatalf("header request id = %q, want %q", got, body.RequestID)
 			}
 
 			fields := singleRequestLog(t, recorded)

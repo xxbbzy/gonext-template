@@ -19,11 +19,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
+	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
+	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
 
 const testUploadBaseURL = "http://localhost:8080"
+const testUploadRequestID = "req-upload-test"
 
 type uploadResponseEnvelope struct {
 	Code    int                `json:"code"`
@@ -171,6 +174,16 @@ func TestUploadRejectsDisallowedFileType(t *testing.T) {
 	if resp.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", resp.Code, http.StatusBadRequest)
 	}
+	errorPayload := decodeUploadErrorResponse(t, resp)
+	if errorPayload.Code != http.StatusBadRequest {
+		t.Fatalf("error code = %d, want %d", errorPayload.Code, http.StatusBadRequest)
+	}
+	if errorPayload.Message != "file type not allowed" {
+		t.Fatalf("error message = %q, want %q", errorPayload.Message, "file type not allowed")
+	}
+	if errorPayload.RequestID != testUploadRequestID {
+		t.Fatalf("request_id = %q, want %q", errorPayload.RequestID, testUploadRequestID)
+	}
 
 	entries, err := os.ReadDir(tempDir)
 	if err != nil {
@@ -193,6 +206,16 @@ func TestUploadReturnsInternalServerErrorWhenStorageFails(t *testing.T) {
 	if resp.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want %d", resp.Code, http.StatusInternalServerError)
 	}
+	errorPayload := decodeUploadErrorResponse(t, resp)
+	if errorPayload.Code != http.StatusInternalServerError {
+		t.Fatalf("error code = %d, want %d", errorPayload.Code, http.StatusInternalServerError)
+	}
+	if errorPayload.Message != "internal server error" {
+		t.Fatalf("error message = %q, want %q", errorPayload.Message, "internal server error")
+	}
+	if errorPayload.RequestID != testUploadRequestID {
+		t.Fatalf("request_id = %q, want %q", errorPayload.RequestID, testUploadRequestID)
+	}
 }
 
 func TestUploadRejectsOversizedRequestBodyBeforeMultipartParsing(t *testing.T) {
@@ -205,6 +228,16 @@ func TestUploadRejectsOversizedRequestBodyBeforeMultipartParsing(t *testing.T) {
 	resp := performUploadRequest(t, uploadHandler, "oversize.txt", largeContent)
 	if resp.Code != http.StatusRequestEntityTooLarge {
 		t.Fatalf("status = %d, want %d", resp.Code, http.StatusRequestEntityTooLarge)
+	}
+	errorPayload := decodeUploadErrorResponse(t, resp)
+	if errorPayload.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("error code = %d, want %d", errorPayload.Code, http.StatusRequestEntityTooLarge)
+	}
+	if errorPayload.Message != "file too large" {
+		t.Fatalf("error message = %q, want %q", errorPayload.Message, "file too large")
+	}
+	if errorPayload.RequestID != testUploadRequestID {
+		t.Fatalf("request_id = %q, want %q", errorPayload.RequestID, testUploadRequestID)
 	}
 }
 
@@ -250,6 +283,8 @@ func performUploadRequest(t *testing.T, uploadHandler *UploadHandler, filename s
 	resp := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(resp)
 	ctx.Request = req
+	ctx.Set(middleware.RequestIDKey, testUploadRequestID)
+	ctx.Writer.Header().Set(middleware.RequestIDHeader, testUploadRequestID)
 
 	uploadHandler.Upload(ctx)
 
@@ -260,6 +295,16 @@ func decodeUploadResponse(t *testing.T, resp *httptest.ResponseRecorder) uploadR
 	t.Helper()
 
 	var payload uploadResponseEnvelope
+	if err := json.Unmarshal(resp.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("json.Unmarshal() error = %v", err)
+	}
+	return payload
+}
+
+func decodeUploadErrorResponse(t *testing.T, resp *httptest.ResponseRecorder) response.ErrorResponse {
+	t.Helper()
+
+	var payload response.ErrorResponse
 	if err := json.Unmarshal(resp.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v", err)
 	}

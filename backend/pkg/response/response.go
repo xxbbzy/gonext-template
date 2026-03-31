@@ -1,6 +1,7 @@
 package response
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,11 +9,21 @@ import (
 	"github.com/xxbbzy/gonext-template/backend/pkg/requestlog"
 )
 
+const requestIDContextKey = "request_id"
+
 // Response is the standard API response structure.
 type Response struct {
 	Code    int         `json:"code"`
 	Data    interface{} `json:"data"`
 	Message string      `json:"message"`
+}
+
+// ErrorResponse is the canonical API error response structure.
+type ErrorResponse struct {
+	Code      int         `json:"code"`
+	Message   string      `json:"message"`
+	RequestID string      `json:"request_id"`
+	Details   interface{} `json:"details,omitempty"`
 }
 
 // PagedData wraps paginated results.
@@ -62,14 +73,43 @@ func PagedSuccess(c *gin.Context, items interface{}, total int64, page, pageSize
 	})
 }
 
+// BuildErrorPayload builds the canonical error payload and records request-log metadata.
+func BuildErrorPayload(ctx context.Context, code int, message string, details interface{}) ErrorResponse {
+	requestlog.SetErrorCodeFromContext(ctx, code)
+	return ErrorResponse{
+		Code:      code,
+		Message:   message,
+		RequestID: requestIDFromContext(ctx),
+		Details:   details,
+	}
+}
+
 // Error returns an error response.
 func Error(c *gin.Context, httpStatus int, code int, message string) {
-	requestlog.SetErrorCode(c, code)
-	c.JSON(httpStatus, Response{
-		Code:    code,
-		Data:    nil,
-		Message: message,
-	})
+	ErrorWithDetails(c, httpStatus, code, message, nil)
+}
+
+// ErrorWithDetails returns a canonical error response with optional details metadata.
+func ErrorWithDetails(c *gin.Context, httpStatus int, code int, message string, details interface{}) {
+	c.JSON(httpStatus, BuildErrorPayload(c, code, message, details))
+}
+
+func requestIDFromContext(ctx context.Context) string {
+	ginCtx, ok := ctx.(*gin.Context)
+	if !ok || ginCtx == nil {
+		return ""
+	}
+
+	if requestID := ginCtx.Writer.Header().Get("X-Request-ID"); requestID != "" {
+		return requestID
+	}
+
+	requestID, _ := ginCtx.Get(requestIDContextKey)
+	value, ok := requestID.(string)
+	if !ok {
+		return ""
+	}
+	return value
 }
 
 // BadRequest returns a 400 error.

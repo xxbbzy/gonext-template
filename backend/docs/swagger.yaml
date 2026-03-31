@@ -46,17 +46,26 @@ components:
 
     ErrorResponse:
       type: object
-      required: [code, data, message]
+      required: [code, message, request_id]
       properties:
         code:
           type: integer
           description: Non-zero application error code
-        data:
-          nullable: true
-          description: Always null for error responses
         message:
           type: string
           description: Human-readable error message
+        request_id:
+          type: string
+          description: Request ID for backend log correlation
+        details:
+          nullable: true
+          description: Optional structured diagnostics for error handling
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: array
+              items: {}
+            - type: string
 
     RegisterRequest:
       type: object
@@ -302,6 +311,10 @@ paths:
           headers:
             X-Request-ID:
               $ref: "#/components/headers/XRequestID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/auth/register:
     post:

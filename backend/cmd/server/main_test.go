@@ -39,7 +39,7 @@ func TestGeneratedWrapperBindingFailuresUseStandardErrorEnvelope(t *testing.T) {
 		t.Fatalf("status = %d, want %d", resp.Code, http.StatusBadRequest)
 	}
 
-	var body response.Response
+	var body response.ErrorResponse
 	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
 		t.Fatalf("unmarshal response: %v", err)
 	}
@@ -48,6 +48,12 @@ func TestGeneratedWrapperBindingFailuresUseStandardErrorEnvelope(t *testing.T) {
 	}
 	if !strings.Contains(body.Message, "Invalid format for parameter page") {
 		t.Fatalf("body.message = %q, want parse error details", body.Message)
+	}
+	if body.RequestID == "" {
+		t.Fatal("body.request_id should not be empty")
+	}
+	if got := resp.Header().Get(middleware.RequestIDHeader); got != body.RequestID {
+		t.Fatalf("header request id = %q, want %q", got, body.RequestID)
 	}
 
 	entries := recorded.FilterMessage("HTTP Request").All()
@@ -88,7 +94,7 @@ func TestStrictHandlerJSONBindingFailuresUseStandardErrorEnvelope(t *testing.T) 
 		t.Fatalf("status = %d, want %d", resp.Code, http.StatusBadRequest)
 	}
 
-	var body response.Response
+	var body response.ErrorResponse
 	if err := json.Unmarshal(resp.Body.Bytes(), &body); err != nil {
 		t.Fatalf("unmarshal response: %v", err)
 	}
@@ -97,6 +103,12 @@ func TestStrictHandlerJSONBindingFailuresUseStandardErrorEnvelope(t *testing.T) 
 	}
 	if !strings.Contains(body.Message, "unexpected EOF") {
 		t.Fatalf("body.message = %q, want JSON parse error details", body.Message)
+	}
+	if body.RequestID == "" {
+		t.Fatal("body.request_id should not be empty")
+	}
+	if got := resp.Header().Get(middleware.RequestIDHeader); got != body.RequestID {
+		t.Fatalf("header request id = %q, want %q", got, body.RequestID)
 	}
 
 	entries := recorded.FilterMessage("HTTP Request").All()

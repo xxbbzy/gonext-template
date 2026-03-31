@@ -118,19 +118,36 @@
             "description": "Non-zero application error code",
             "type": "integer"
           },
-          "data": {
-            "description": "Always null for error responses",
-            "nullable": true
+          "details": {
+            "description": "Optional structured diagnostics for error handling",
+            "nullable": true,
+            "oneOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "string"
+              }
+            ]
           },
           "message": {
             "description": "Human-readable error message",
+            "type": "string"
+          },
+          "request_id": {
+            "description": "Request ID for backend log correlation",
             "type": "string"
           }
         },
         "required": [
           "code",
-          "data",
-          "message"
+          "message",
+          "request_id"
         ],
         "type": "object"
       },
@@ -1389,6 +1406,13 @@
             }
           },
           "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
             "description": "Service is not ready",
             "headers": {
               "X-Request-ID": {

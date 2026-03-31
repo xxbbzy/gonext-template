@@ -92,6 +92,7 @@
     "uploadedFiles": "已上传文件",
     "success": "上传成功",
     "failed": "上传失败",
-    "retry": "请重试"
+    "retry": "请重试",
+    "requestIdSuffix": "（请求 ID：{id}）"
   }
 }
