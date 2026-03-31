@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -13,13 +12,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"go.uber.org/zap"
 )
 
 // FileStorageRepository defines persistence operations for uploaded files.
 type FileStorageRepository interface {
 	SaveFile(ctx context.Context, storedName string, src io.Reader) error
 	DeleteFile(ctx context.Context, storedName string) error
-	GetFileURL(storedName string) string
+	GetFileURL(storedName string) (string, error)
 }
 
 // LocalFileStorageRepository persists files on the local filesystem.
@@ -94,8 +94,12 @@ func (r *LocalFileStorageRepository) DeleteFile(_ context.Context, storedName st
 }
 
 // GetFileURL returns the public URL of a stored file.
-func (r *LocalFileStorageRepository) GetFileURL(storedName string) string {
-	return r.baseURL + "/uploads/" + url.PathEscape(storedName)
+func (r *LocalFileStorageRepository) GetFileURL(storedName string) (string, error) {
+	safeStoredName, err := sanitizeStoredName(storedName)
+	if err != nil {
+		return "", err
+	}
+	return r.baseURL + "/uploads/" + url.PathEscape(safeStoredName), nil
 }
 
 type s3ObjectClient interface {
@@ -114,6 +118,7 @@ type S3FileStorageConfig struct {
 	UseSSL          bool
 	ForcePathStyle  bool
 	PublicBaseURL   string
+	Logger          *zap.Logger
 }
 
 // S3FileStorageRepository persists files in S3-compatible object storage.
@@ -126,6 +131,7 @@ type S3FileStorageRepository struct {
 	useSSL         bool
 	forcePathStyle bool
 	publicBaseURL  string
+	logger         *zap.Logger
 }
 
 // NewS3FileStorageRepository creates an S3-compatible file storage repository.
@@ -166,6 +172,7 @@ func newS3FileStorageRepositoryWithClient(client s3ObjectClient, cfg S3FileStora
 		useSSL:         cfg.UseSSL,
 		forcePathStyle: cfg.ForcePathStyle,
 		publicBaseURL:  cfg.PublicBaseURL,
+		logger:         loggerOrNop(cfg.Logger),
 	}
 }
 
@@ -207,29 +214,33 @@ func (r *S3FileStorageRepository) DeleteFile(ctx context.Context, storedName str
 }
 
 // GetFileURL returns the public URL of an uploaded object.
-func (r *S3FileStorageRepository) GetFileURL(storedName string) string {
+func (r *S3FileStorageRepository) GetFileURL(storedName string) (string, error) {
 	safeStoredName, err := sanitizeStoredName(storedName)
 	if err != nil {
-		log.Printf("repository: S3FileStorageRepository.GetFileURL sanitizeStoredName failed: %v", err)
-		return ""
+		r.logger.Error(
+			"failed to sanitize stored name for S3 file URL",
+			zap.String("stored_name", storedName),
+			zap.Error(err),
+		)
+		return "", err
 	}
 
 	objectKey := buildObjectKey(r.prefix, safeStoredName)
 	escapedKey := escapeObjectKey(objectKey)
 	if r.publicBaseURL != "" {
-		return r.publicBaseURL + "/" + escapedKey
+		return r.publicBaseURL + "/" + escapedKey, nil
 	}
 
 	if r.endpoint != "" {
 		if r.forcePathStyle {
-			return fmt.Sprintf("%s/%s/%s", r.endpoint, r.bucket, escapedKey)
+			return fmt.Sprintf("%s/%s/%s", r.endpoint, r.bucket, escapedKey), nil
 		}
 		endpointURL, err := url.Parse(r.endpoint)
 		if err == nil && endpointURL.Host != "" {
 			endpointURL.Host = r.bucket + "." + endpointURL.Host
 			endpointURL.Path = joinURLPath(endpointURL.Path, objectKey)
 			endpointURL.RawPath = joinURLPath(endpointURL.EscapedPath(), escapedKey)
-			return endpointURL.String()
+			return endpointURL.String(), nil
 		}
 	}
 
@@ -238,9 +249,9 @@ func (r *S3FileStorageRepository) GetFileURL(storedName string) string {
 		scheme = "http"
 	}
 	if r.forcePathStyle {
-		return fmt.Sprintf("%s://s3.%s.amazonaws.com/%s/%s", scheme, r.region, r.bucket, escapedKey)
+		return fmt.Sprintf("%s://s3.%s.amazonaws.com/%s/%s", scheme, r.region, r.bucket, escapedKey), nil
 	}
-	return fmt.Sprintf("%s://%s.s3.%s.amazonaws.com/%s", scheme, r.bucket, r.region, escapedKey)
+	return fmt.Sprintf("%s://%s.s3.%s.amazonaws.com/%s", scheme, r.bucket, r.region, escapedKey), nil
 }
 
 func normalizeS3FileStorageConfig(cfg S3FileStorageConfig) (S3FileStorageConfig, error) {
@@ -267,6 +278,13 @@ func normalizeS3FileStorageConfig(cfg S3FileStorageConfig) (S3FileStorageConfig,
 	}
 
 	return normalized, nil
+}
+
+func loggerOrNop(logger *zap.Logger) *zap.Logger {
+	if logger != nil {
+		return logger
+	}
+	return zap.NewNop()
 }
 
 func joinURLPath(basePath, suffix string) string {

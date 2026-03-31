@@ -44,7 +44,7 @@ func newJWTManager(cfg *config.Config) (*pkgjwt.Manager, error) {
 	)
 }
 
-func newUploadStorageRepository(cfg *config.Config) (repository.FileStorageRepository, error) {
+func newUploadStorageRepository(cfg *config.Config, logger *zap.Logger) (repository.FileStorageRepository, error) {
 	switch cfg.Storage.Driver {
 	case "local":
 		return repository.NewLocalFileStorageRepository(cfg.Upload.Dir, cfg.ResolvedUploadPublicBaseURL())
@@ -58,7 +58,8 @@ func newUploadStorageRepository(cfg *config.Config) (repository.FileStorageRepos
 			Prefix:          cfg.Storage.S3.Prefix,
 			UseSSL:          cfg.Storage.S3.UseSSL,
 			ForcePathStyle:  cfg.Storage.S3.ForcePathStyle,
-			PublicBaseURL:   cfg.Upload.PublicBaseURL,
+			PublicBaseURL:   cfg.ResolvedUploadPublicBaseURL(),
+			Logger:          logger,
 		})
 	default:
 		return nil, fmt.Errorf("unsupported storage driver %q", cfg.Storage.Driver)

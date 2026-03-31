@@ -8,6 +8,11 @@ A compact full-stack starter with:
 
 ## Quick Start
 
+Requirements:
+
+- Go 1.25+
+- Node.js 20+
+
 ```bash
 cp .env.example .env
 make init

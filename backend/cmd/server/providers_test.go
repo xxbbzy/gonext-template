@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 
+	"go.uber.org/zap"
+
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"
 )
@@ -20,7 +22,7 @@ func TestNewUploadStorageRepositoryCreatesLocalRepository(t *testing.T) {
 		},
 	}
 
-	storage, err := newUploadStorageRepository(cfg)
+	storage, err := newUploadStorageRepository(cfg, zap.NewNop())
 	if err != nil {
 		t.Fatalf("newUploadStorageRepository() error = %v", err)
 	}
@@ -31,6 +33,9 @@ func TestNewUploadStorageRepositoryCreatesLocalRepository(t *testing.T) {
 
 func TestNewUploadStorageRepositoryCreatesS3Repository(t *testing.T) {
 	cfg := &config.Config{
+		App: config.AppConfig{
+			BaseURL: "http://localhost:8080",
+		},
 		Upload: config.UploadConfig{
 			PublicBaseURL: "",
 		},
@@ -49,12 +54,20 @@ func TestNewUploadStorageRepositoryCreatesS3Repository(t *testing.T) {
 		},
 	}
 
-	storage, err := newUploadStorageRepository(cfg)
+	storage, err := newUploadStorageRepository(cfg, zap.NewNop())
 	if err != nil {
 		t.Fatalf("newUploadStorageRepository() error = %v", err)
 	}
 	if _, ok := storage.(*repository.S3FileStorageRepository); !ok {
 		t.Fatalf("storage type = %T, want *repository.S3FileStorageRepository", storage)
+	}
+
+	gotURL, err := storage.GetFileURL("avatar.png")
+	if err != nil {
+		t.Fatalf("storage.GetFileURL() error = %v", err)
+	}
+	if gotURL != "http://localhost:8080/uploads/avatar.png" {
+		t.Fatalf("storage.GetFileURL() = %q, want %q", gotURL, "http://localhost:8080/uploads/avatar.png")
 	}
 }
 
@@ -65,7 +78,7 @@ func TestNewUploadStorageRepositoryRejectsUnknownDriver(t *testing.T) {
 		},
 	}
 
-	_, err := newUploadStorageRepository(cfg)
+	_, err := newUploadStorageRepository(cfg, zap.NewNop())
 	if err == nil {
 		t.Fatal("newUploadStorageRepository() error = nil, want error")
 	}

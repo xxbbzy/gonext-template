@@ -1,11 +1,9 @@
 package repository
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io"
-	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -13,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestLocalFileStorageRepositoryRejectsExistingFilename(t *testing.T) {
@@ -105,7 +105,10 @@ func TestLocalFileStorageRepositoryGetFileURLEscapesPathSegment(t *testing.T) {
 	}
 
 	rawName := "name with space#?.txt"
-	got := storage.GetFileURL(rawName)
+	got, err := storage.GetFileURL(rawName)
+	if err != nil {
+		t.Fatalf("GetFileURL() error = %v", err)
+	}
 	want := "http://localhost:8080/uploads/" + url.PathEscape(rawName)
 	if got != want {
 		t.Fatalf("GetFileURL() = %q, want %q", got, want)
@@ -187,7 +190,10 @@ func TestS3FileStorageRepositoryGetFileURLUsesPublicBaseURLOverride(t *testing.T
 		UseSSL:          true,
 	})
 
-	got := repo.GetFileURL("avatar with space.png")
+	got, err := repo.GetFileURL("avatar with space.png")
+	if err != nil {
+		t.Fatalf("GetFileURL() error = %v", err)
+	}
 	want := "https://cdn.example.com/assets/avatar%20with%20space.png"
 	if got != want {
 		t.Fatalf("GetFileURL() = %q, want %q", got, want)
@@ -206,7 +212,10 @@ func TestS3FileStorageRepositoryGetFileURLUsesPathStyleEndpoint(t *testing.T) {
 		UseSSL:          false,
 	})
 
-	got := repo.GetFileURL("avatar.png")
+	got, err := repo.GetFileURL("avatar.png")
+	if err != nil {
+		t.Fatalf("GetFileURL() error = %v", err)
+	}
 	want := "http://minio.local:9000/media-bucket/assets/avatar.png"
 	if got != want {
 		t.Fatalf("GetFileURL() = %q, want %q", got, want)
@@ -225,7 +234,10 @@ func TestS3FileStorageRepositoryGetFileURLUsesVirtualHostedEndpoint(t *testing.T
 		UseSSL:          true,
 	})
 
-	got := repo.GetFileURL("avatar.png")
+	got, err := repo.GetFileURL("avatar.png")
+	if err != nil {
+		t.Fatalf("GetFileURL() error = %v", err)
+	}
 	want := "https://media-bucket.s3.example.com/assets/avatar.png"
 	if got != want {
 		t.Fatalf("GetFileURL() = %q, want %q", got, want)
@@ -233,27 +245,29 @@ func TestS3FileStorageRepositoryGetFileURLUsesVirtualHostedEndpoint(t *testing.T
 }
 
 func TestS3FileStorageRepositoryGetFileURLLogsInvalidStoredName(t *testing.T) {
+	core, observed := observer.New(zap.ErrorLevel)
 	repo := newS3FileStorageRepositoryWithClient(&fakeS3Client{}, S3FileStorageConfig{
 		Bucket:          "media-bucket",
 		Region:          "us-east-1",
 		AccessKeyID:     "access",
 		SecretAccessKey: "secret",
 		UseSSL:          true,
+		Logger:          zap.New(core),
 	})
 
-	var buf bytes.Buffer
-	originalWriter := log.Writer()
-	log.SetOutput(&buf)
-	t.Cleanup(func() {
-		log.SetOutput(originalWriter)
-	})
-
-	got := repo.GetFileURL("../avatar.png")
+	got, err := repo.GetFileURL("../avatar.png")
+	if err == nil {
+		t.Fatal("GetFileURL() error = nil, want error")
+	}
 	if got != "" {
 		t.Fatalf("GetFileURL() = %q, want empty string", got)
 	}
-	if !strings.Contains(buf.String(), "sanitizeStoredName failed") {
-		t.Fatalf("log output = %q, want sanitizeStoredName failure", buf.String())
+	if observed.Len() != 1 {
+		t.Fatalf("observed logs = %d, want 1", observed.Len())
+	}
+	entry := observed.All()[0]
+	if entry.Message != "failed to sanitize stored name for S3 file URL" {
+		t.Fatalf("log message = %q, want %q", entry.Message, "failed to sanitize stored name for S3 file URL")
 	}
 }
 
@@ -269,7 +283,10 @@ func TestS3FileStorageRepositoryGetFileURLPreservesEndpointPathAndEscapesOnce(t 
 		UseSSL:          true,
 	})
 
-	got := repo.GetFileURL("avatar with space.png")
+	got, err := repo.GetFileURL("avatar with space.png")
+	if err != nil {
+		t.Fatalf("GetFileURL() error = %v", err)
+	}
 	want := "https://media-bucket.objects.example.com/storage/assets/avatar%20with%20space.png"
 	if got != want {
 		t.Fatalf("GetFileURL() = %q, want %q", got, want)
@@ -287,7 +304,10 @@ func TestS3FileStorageRepositoryGetFileURLFallsBackToAWSStyle(t *testing.T) {
 		UseSSL:          true,
 	})
 
-	got := repo.GetFileURL("avatar.png")
+	got, err := repo.GetFileURL("avatar.png")
+	if err != nil {
+		t.Fatalf("GetFileURL() error = %v", err)
+	}
 	want := "https://media-bucket.s3.ap-southeast-1.amazonaws.com/assets/avatar.png"
 	if got != want {
 		t.Fatalf("GetFileURL() = %q, want %q", got, want)
