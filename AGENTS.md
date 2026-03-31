@@ -15,6 +15,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 - Dependency injection graph: `backend/cmd/server/wire.go`, `backend/cmd/server/providers.go`, `backend/cmd/server/wire_gen.go`
 - Database initialization: `backend/internal/config/database.go`
 - Middleware implementations: `backend/internal/middleware/`
+- Prometheus registry wiring: `backend/internal/observability/` + `backend/cmd/server/providers.go`
 - Response envelope helpers: `backend/pkg/response/response.go`
 - Application error catalog: `backend/pkg/errcode/errcode.go`
 - Frontend route tree: `frontend/app/`
@@ -35,7 +36,8 @@ This repository exposes a compact AI-facing documentation layer at the root:
 5. Register routes in `backend/cmd/server/main.go`.
 6. If the change adds persistence, update model registration for development `AutoMigrate` and add SQL migrations under `backend/migrations/` for deployable schema changes.
 7. After contract changes, run `make gen-types` to refresh frontend types; run `make gen` when committed server code or Swagger artifacts must also be regenerated.
-8. Run practical verification before finishing.
+8. If backend behavior is business-critical (key workflows, background jobs, rate-sensitive operations, critical failures), evaluate whether Prometheus instrumentation should ship in the same change.
+9. Run practical verification before finishing.
 
 ### Frontend Page or Feature Change
 
@@ -67,6 +69,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 - Do not bypass the backend layer chain: handler -> service -> repository.
 - Do not treat generated files as the source of truth when `api/openapi.yaml` or Wire inputs disagree.
 - Do not write raw JSON envelopes in handlers; use `backend/pkg/response`.
+- Do not add high-cardinality Prometheus labels (raw paths, IDs, free-text, emails, tokens, etc.); prefer bounded labels and route templates.
 - Do not introduce framework drift. This project uses Gin, GORM, Google Wire, Next.js App Router, Zustand, TanStack Query, and OpenAPI-driven types.
 - Prefer minimal, file-local changes over broad rewrites unless the task explicitly requires a refactor.
 

@@ -248,6 +248,23 @@ func TestConfigValidateFallsBackToAppBaseURLForUploadPublicBaseURL(t *testing.T)
 	}
 }
 
+func TestMetricsEnabledDefaultsToFalse(t *testing.T) {
+	cfg := newValidConfig()
+
+	if cfg.MetricsEnabled() {
+		t.Fatal("MetricsEnabled() = true, want false by default")
+	}
+}
+
+func TestMetricsEnabledReflectsObservabilityConfig(t *testing.T) {
+	cfg := newValidConfig()
+	cfg.Observability.MetricsEnabled = true
+
+	if !cfg.MetricsEnabled() {
+		t.Fatal("MetricsEnabled() = false, want true when enabled")
+	}
+}
+
 func newValidConfig() *Config {
 	return &Config{
 		App: AppConfig{
@@ -270,6 +287,7 @@ func newValidConfig() *Config {
 			AllowedTypes:  ".jpg,.png",
 			PublicBaseURL: "http://localhost:8080",
 		},
+		Observability: ObservabilityConfig{},
 	}
 }
 
