@@ -169,7 +169,7 @@ func RegisterHealthRoutes(r *gin.Engine, healthCheck func() bool) {
 		if healthCheck() {
 			c.JSON(http.StatusOK, gin.H{"status": "ready"})
 		} else {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
+			response.Error(c, http.StatusServiceUnavailable, http.StatusServiceUnavailable, "service not ready")
 		}
 	})
 }

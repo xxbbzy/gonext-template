@@ -13,7 +13,7 @@ import (
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	"github.com/xxbbzy/gonext-template/backend/pkg/pagination"
-	"github.com/xxbbzy/gonext-template/backend/pkg/requestlog"
+	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
 
 // Server implements StrictServerInterface, bridging generated types to existing services.
@@ -112,11 +112,11 @@ func requestIDFromContext(ctx context.Context) string {
 }
 
 func errorResponseBody(ctx context.Context, code int, message string) ErrorResponse {
-	requestlog.SetErrorCodeFromContext(ctx, code)
+	payload := response.BuildErrorPayload(ctx, code, message, nil)
 	return ErrorResponse{
-		Code:    code,
-		Data:    nil,
-		Message: message,
+		Code:      payload.Code,
+		Message:   payload.Message,
+		RequestId: payload.RequestID,
 	}
 }
 

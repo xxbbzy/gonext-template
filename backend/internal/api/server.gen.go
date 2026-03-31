@@ -281,11 +281,28 @@ type ErrorResponse struct {
 	// Code Non-zero application error code
 	Code int `json:"code"`
 
-	// Data Always null for error responses
-	Data interface{} `json:"data"`
+	// Details Optional structured diagnostics for error handling
+	Details *ErrorResponse_Details `json:"details,omitempty"`
 
 	// Message Human-readable error message
 	Message string `json:"message"`
+
+	// RequestId Request ID for backend log correlation
+	RequestId string `json:"request_id"`
+}
+
+// ErrorResponseDetails0 defines model for .
+type ErrorResponseDetails0 map[string]interface{}
+
+// ErrorResponseDetails1 defines model for .
+type ErrorResponseDetails1 = []interface{}
+
+// ErrorResponseDetails2 defines model for .
+type ErrorResponseDetails2 = string
+
+// ErrorResponse_Details Optional structured diagnostics for error handling
+type ErrorResponse_Details struct {
+	union json.RawMessage
 }
 
 // ItemResponse defines model for ItemResponse.
@@ -462,6 +479,94 @@ type CreateItemJSONRequestBody = CreateItemRequest
 
 // UpdateItemJSONRequestBody defines body for UpdateItem for application/json ContentType.
 type UpdateItemJSONRequestBody = UpdateItemRequest
+
+// AsErrorResponseDetails0 returns the union data inside the ErrorResponse_Details as a ErrorResponseDetails0
+func (t ErrorResponse_Details) AsErrorResponseDetails0() (ErrorResponseDetails0, error) {
+	var body ErrorResponseDetails0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromErrorResponseDetails0 overwrites any union data inside the ErrorResponse_Details as the provided ErrorResponseDetails0
+func (t *ErrorResponse_Details) FromErrorResponseDetails0(v ErrorResponseDetails0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeErrorResponseDetails0 performs a merge with any union data inside the ErrorResponse_Details, using the provided ErrorResponseDetails0
+func (t *ErrorResponse_Details) MergeErrorResponseDetails0(v ErrorResponseDetails0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsErrorResponseDetails1 returns the union data inside the ErrorResponse_Details as a ErrorResponseDetails1
+func (t ErrorResponse_Details) AsErrorResponseDetails1() (ErrorResponseDetails1, error) {
+	var body ErrorResponseDetails1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromErrorResponseDetails1 overwrites any union data inside the ErrorResponse_Details as the provided ErrorResponseDetails1
+func (t *ErrorResponse_Details) FromErrorResponseDetails1(v ErrorResponseDetails1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeErrorResponseDetails1 performs a merge with any union data inside the ErrorResponse_Details, using the provided ErrorResponseDetails1
+func (t *ErrorResponse_Details) MergeErrorResponseDetails1(v ErrorResponseDetails1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsErrorResponseDetails2 returns the union data inside the ErrorResponse_Details as a ErrorResponseDetails2
+func (t ErrorResponse_Details) AsErrorResponseDetails2() (ErrorResponseDetails2, error) {
+	var body ErrorResponseDetails2
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromErrorResponseDetails2 overwrites any union data inside the ErrorResponse_Details as the provided ErrorResponseDetails2
+func (t *ErrorResponse_Details) FromErrorResponseDetails2(v ErrorResponseDetails2) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeErrorResponseDetails2 performs a merge with any union data inside the ErrorResponse_Details, using the provided ErrorResponseDetails2
+func (t *ErrorResponse_Details) MergeErrorResponseDetails2(v ErrorResponseDetails2) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ErrorResponse_Details) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ErrorResponse_Details) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -1970,36 +2075,38 @@ func (sh *strictHandler) UpdateItem(ctx *gin.Context, id int, params UpdateItemP
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"DXJrOQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

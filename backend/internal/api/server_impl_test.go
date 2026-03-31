@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	"github.com/xxbbzy/gonext-template/backend/pkg/requestlog"
 )
@@ -50,5 +51,29 @@ func TestOpenAPIErrorHelpersSetRequestLogErrorCode(t *testing.T) {
 				t.Fatalf("error_code = %d, want %d", got, tc.wantLogCode)
 			}
 		})
+	}
+}
+
+func TestErrorResponseBodyUsesUnifiedPayloadFields(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Set(middleware.RequestIDKey, "req-openapi-123")
+	c.Writer.Header().Set(middleware.RequestIDHeader, "req-openapi-123")
+
+	body := errorResponseBody(c, errcode.ErrBadRequest, "bad request")
+
+	if body.Code != errcode.ErrBadRequest {
+		t.Fatalf("body.code = %d, want %d", body.Code, errcode.ErrBadRequest)
+	}
+	if body.Message != "bad request" {
+		t.Fatalf("body.message = %q, want %q", body.Message, "bad request")
+	}
+	if body.RequestId != "req-openapi-123" {
+		t.Fatalf("body.request_id = %q, want %q", body.RequestId, "req-openapi-123")
+	}
+	if body.Details != nil {
+		t.Fatalf("body.details should be nil, got %#v", body.Details)
 	}
 }

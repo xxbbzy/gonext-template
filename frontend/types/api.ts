@@ -172,10 +172,14 @@ export interface components {
         ErrorResponse: {
             /** @description Non-zero application error code */
             code: number;
-            /** @description Always null for error responses */
-            data: unknown;
             /** @description Human-readable error message */
             message: string;
+            /** @description Request ID for backend log correlation */
+            request_id: string;
+            /** @description Optional structured diagnostics for error handling */
+            details?: ({
+                [key: string]: unknown;
+            } | unknown[] | string) | null;
         };
         RegisterRequest: {
             username: string;
@@ -343,7 +347,9 @@ export interface operations {
                     "X-Request-ID": components["headers"]["XRequestID"];
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };

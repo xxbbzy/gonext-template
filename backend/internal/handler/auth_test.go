@@ -11,12 +11,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/dto"
+	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/internal/model"
 	"github.com/xxbbzy/gonext-template/backend/internal/repository"
 	"github.com/xxbbzy/gonext-template/backend/internal/service"
 	"github.com/xxbbzy/gonext-template/backend/internal/testutil"
 	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	pkgjwt "github.com/xxbbzy/gonext-template/backend/pkg/jwt"
+	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
 
 func testAuthHandler(t *testing.T) (*AuthHandler, *repository.UserRepository, *pkgjwt.Manager) {
@@ -242,6 +244,7 @@ func TestAuthGetProfileReturnsFullProfile(t *testing.T) {
 func TestRegisterHealthRoutesLiveness(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
+	router.Use(middleware.RequestID())
 	RegisterHealthRoutes(router, func() bool { return true })
 
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
@@ -261,6 +264,7 @@ func TestRegisterHealthRoutesLiveness(t *testing.T) {
 func TestRegisterHealthRoutesReadiness(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
+	router.Use(middleware.RequestID())
 	RegisterHealthRoutes(router, func() bool { return false })
 
 	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
@@ -271,15 +275,28 @@ func TestRegisterHealthRoutesReadiness(t *testing.T) {
 		t.Fatalf("status = %d, want %d", resp.Code, http.StatusServiceUnavailable)
 	}
 
-	payload := decodeAuthPayload(t, resp.Body.Bytes())
-	if payload["status"] != "not ready" {
-		t.Fatalf("status payload = %v, want not ready", payload["status"])
+	var payload response.ErrorResponse
+	if err := json.Unmarshal(resp.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal response: %v", err)
+	}
+	if payload.Code != http.StatusServiceUnavailable {
+		t.Fatalf("error code = %d, want %d", payload.Code, http.StatusServiceUnavailable)
+	}
+	if payload.Message != "service not ready" {
+		t.Fatalf("message = %q, want %q", payload.Message, "service not ready")
+	}
+	if payload.RequestID == "" {
+		t.Fatal("request_id should not be empty")
+	}
+	if got := resp.Header().Get(middleware.RequestIDHeader); got != payload.RequestID {
+		t.Fatalf("header request id = %q, want %q", got, payload.RequestID)
 	}
 }
 
 func TestRegisterHealthRoutesReadinessReady(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
+	router.Use(middleware.RequestID())
 	RegisterHealthRoutes(router, func() bool { return true })
 
 	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)

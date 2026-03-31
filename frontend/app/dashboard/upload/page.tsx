@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+  getApiErrorMetadata,
   getApiErrorMessage,
   uploadFile,
   type UploadResponse,
@@ -31,9 +32,14 @@ export default function UploadPage() {
         variant: "success",
       });
     } catch (error) {
+      const message = getApiErrorMessage(error, tUpload("retry"));
+      const metadata = getApiErrorMetadata(error);
+      const description = metadata?.requestId
+        ? `${message} (request id: ${metadata.requestId})`
+        : message;
       addToast({
         title: tUpload("failed"),
-        description: getApiErrorMessage(error, tUpload("retry")),
+        description,
         variant: "error",
       });
     } finally {

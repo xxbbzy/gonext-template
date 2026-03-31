@@ -8,6 +8,7 @@ const DEFAULT_API_PORT = "8080";
 export type ApiPaths = paths;
 export type ApiSchemas = components["schemas"];
 export type ApiErrorResponse = components["schemas"]["ErrorResponse"];
+export type ApiErrorDetails = ApiErrorResponse["details"];
 export type AuthResponse = components["schemas"]["AuthResponse"];
 export type UserResponse = components["schemas"]["UserResponse"];
 export type CreateItemRequest = components["schemas"]["CreateItemRequest"];
@@ -18,6 +19,13 @@ export type UploadResponse = components["schemas"]["UploadResponse"];
 export type ListItemsQuery = NonNullable<
   paths["/api/v1/items"]["get"]["parameters"]["query"]
 >;
+
+export type ApiErrorMetadata = {
+  status: number | null;
+  code: number | null;
+  requestId: string | null;
+  details: ApiErrorDetails | null;
+};
 
 type SuccessEnvelope<T> = {
   code: 0;
@@ -73,6 +81,8 @@ export const client = createClient<paths>({ baseUrl });
 export class ApiClientError extends Error {
   readonly status: number;
   readonly code: number | null;
+  readonly requestId: string | null;
+  readonly details: ApiErrorDetails | null;
   readonly payload: ApiErrorResponse | null;
 
   constructor(
@@ -85,8 +95,45 @@ export class ApiClientError extends Error {
     this.name = "ApiClientError";
     this.status = status;
     this.code = code;
+    this.requestId =
+      typeof payload?.request_id === "string" &&
+      payload.request_id.trim() !== ""
+        ? payload.request_id
+        : null;
+    this.details = payload?.details ?? null;
     this.payload = payload;
   }
+}
+
+export function getApiErrorMetadata(error: unknown): ApiErrorMetadata | null {
+  if (error instanceof ApiClientError) {
+    return {
+      status: error.status,
+      code: error.code,
+      requestId: error.requestId,
+      details: error.details,
+    };
+  }
+
+  if (!error || typeof error !== "object") {
+    return null;
+  }
+
+  const candidate = error as Partial<ApiErrorResponse> & { status?: unknown };
+  const code = typeof candidate.code === "number" ? candidate.code : null;
+  const status = typeof candidate.status === "number" ? candidate.status : null;
+  const requestId =
+    typeof candidate.request_id === "string" &&
+    candidate.request_id.trim() !== ""
+      ? candidate.request_id
+      : null;
+  const details = "details" in candidate ? (candidate.details ?? null) : null;
+
+  if (code === null && requestId === null && details === null) {
+    return null;
+  }
+
+  return { status, code, requestId, details };
 }
 
 export function getApiErrorMessage(error: unknown, fallback: string) {

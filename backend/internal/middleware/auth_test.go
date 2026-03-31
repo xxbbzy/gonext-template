@@ -1,13 +1,16 @@
 package middleware
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	pkgjwt "github.com/xxbbzy/gonext-template/backend/pkg/jwt"
+	"github.com/xxbbzy/gonext-template/backend/pkg/response"
 )
 
 func TestAuthRejectsMissingAuthorizationHeader(t *testing.T) {
@@ -19,6 +22,7 @@ func TestAuthRejectsMissingAuthorizationHeader(t *testing.T) {
 	}
 
 	router := gin.New()
+	router.Use(RequestID())
 	router.GET("/protected", Auth(jwtManager), func(c *gin.Context) {
 		c.Status(http.StatusOK)
 	})
@@ -29,6 +33,23 @@ func TestAuthRejectsMissingAuthorizationHeader(t *testing.T) {
 
 	if resp.Code != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want %d", resp.Code, http.StatusUnauthorized)
+	}
+
+	var payload response.ErrorResponse
+	if err := json.Unmarshal(resp.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal response: %v", err)
+	}
+	if payload.Code != errcode.ErrUnauthorized {
+		t.Fatalf("payload.code = %d, want %d", payload.Code, errcode.ErrUnauthorized)
+	}
+	if payload.Message != "unauthorized" {
+		t.Fatalf("payload.message = %q, want %q", payload.Message, "unauthorized")
+	}
+	if payload.RequestID == "" {
+		t.Fatal("payload.request_id should not be empty")
+	}
+	if got := resp.Header().Get(RequestIDHeader); got != payload.RequestID {
+		t.Fatalf("header request id = %q, want %q", got, payload.RequestID)
 	}
 }
 
@@ -46,6 +67,7 @@ func TestAuthAcceptsValidBearerToken(t *testing.T) {
 	}
 
 	router := gin.New()
+	router.Use(RequestID())
 	router.GET("/protected", Auth(jwtManager), func(c *gin.Context) {
 		userID, _ := c.Get("user_id")
 		role, _ := c.Get("user_role")
