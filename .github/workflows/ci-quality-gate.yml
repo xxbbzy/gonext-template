@@ -1,0 +1,235 @@
+name: CI / Quality Gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  detect-changes:
+    name: detect-changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.scope.outputs.backend }}
+      frontend: ${{ steps.scope.outputs.frontend }}
+      api: ${{ steps.scope.outputs.api }}
+      shared: ${{ steps.scope.outputs.shared }}
+      codegen: ${{ steps.scope.outputs.codegen }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ github.token }}
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            api:
+              - 'api/openapi.yaml'
+            shared:
+              - 'Makefile'
+              - 'scripts/**'
+              - '.github/workflows/**'
+              - 'backend/go.mod'
+              - 'backend/go.sum'
+              - 'frontend/package.json'
+              - 'frontend/package-lock.json'
+              - 'package-lock.json'
+            codegen:
+              - 'backend/internal/api/**'
+              - 'backend/docs/**'
+              - 'frontend/types/**'
+              - 'scripts/swagger/**'
+
+      - id: scope
+        env:
+          FILTER_BACKEND: ${{ steps.filter.outputs.backend }}
+          FILTER_FRONTEND: ${{ steps.filter.outputs.frontend }}
+          FILTER_API: ${{ steps.filter.outputs.api }}
+          FILTER_SHARED: ${{ steps.filter.outputs.shared }}
+          FILTER_CODEGEN: ${{ steps.filter.outputs.codegen }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            backend=true
+            frontend=true
+            api=true
+            shared=true
+            codegen=true
+          else
+            backend="${FILTER_BACKEND:-false}"
+            frontend="${FILTER_FRONTEND:-false}"
+            api="${FILTER_API:-false}"
+            shared="${FILTER_SHARED:-false}"
+            codegen="${FILTER_CODEGEN:-false}"
+          fi
+
+          echo "backend=${backend:-false}" >> "$GITHUB_OUTPUT"
+          echo "frontend=${frontend:-false}" >> "$GITHUB_OUTPUT"
+          echo "api=${api:-false}" >> "$GITHUB_OUTPUT"
+          echo "shared=${shared:-false}" >> "$GITHUB_OUTPUT"
+          echo "codegen=${codegen:-false}" >> "$GITHUB_OUTPUT"
+
+  backend-quality:
+    name: backend-quality
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.api == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+          cache-dependency-path: backend/go.sum
+
+      - name: backend-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: latest
+          working-directory: backend
+
+      - name: backend-unit-tests
+        working-directory: backend
+        run: |
+          go mod download
+          go test -v ./...
+
+      - name: backend-build
+        working-directory: backend
+        run: CGO_ENABLED=1 go build -o ../bin/server ./cmd/server/
+
+  frontend-quality:
+    name: frontend-quality
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.api == 'true' || needs.detect-changes.outputs.shared == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: install-frontend-dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: frontend-lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: frontend-typecheck
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: frontend-unit-tests
+        working-directory: frontend
+        run: npm test
+
+      - name: frontend-build
+        working-directory: frontend
+        run: npm run build
+
+  codegen-drift:
+    name: codegen-drift
+    needs: detect-changes
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.api == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.codegen == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check-runtime-version-policy
+        run: ./scripts/check-versions.sh
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+          cache-dependency-path: backend/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: install-backend-dependencies
+        working-directory: backend
+        run: go mod download
+
+      - name: install-frontend-dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: check-codegen-drift
+        run: make check-codegen-drift
+
+  quality-gate:
+    name: quality-gate
+    if: ${{ always() }}
+    needs:
+      - detect-changes
+      - backend-quality
+      - frontend-quality
+      - codegen-drift
+    runs-on: ubuntu-latest
+    steps:
+      - name: summarize-upstream-results
+        env:
+          DETECT_CHANGES_RESULT: ${{ needs.detect-changes.result }}
+          BACKEND_RESULT: ${{ needs.backend-quality.result }}
+          FRONTEND_RESULT: ${{ needs.frontend-quality.result }}
+          CODEGEN_RESULT: ${{ needs.codegen-drift.result }}
+        run: |
+          set -euo pipefail
+
+          failed=0
+
+          check_required() {
+            local job="$1"
+            local result="$2"
+            if [[ "$result" == "success" ]]; then
+              echo "✅ ${job}: ${result}"
+              return
+            fi
+            echo "❌ ${job}: ${result}"
+            failed=1
+          }
+
+          check_optional() {
+            local job="$1"
+            local result="$2"
+            if [[ "$result" == "success" || "$result" == "skipped" ]]; then
+              echo "✅ ${job}: ${result}"
+              return
+            fi
+            echo "❌ ${job}: ${result}"
+            failed=1
+          }
+
+          check_required "detect-changes" "$DETECT_CHANGES_RESULT"
+          check_optional "backend-quality" "$BACKEND_RESULT"
+          check_optional "frontend-quality" "$FRONTEND_RESULT"
+          check_optional "codegen-drift" "$CODEGEN_RESULT"
+
+          if [[ "$failed" -ne 0 ]]; then
+            echo "quality-gate failed because one or more required upstream jobs did not succeed."
+            exit 1
+          fi
+
+          echo "quality-gate passed."

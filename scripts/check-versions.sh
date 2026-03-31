@@ -75,11 +75,12 @@ check_absent() {
 check_present_re '^go 1\.25(\.0)?$' backend/go.mod "Go 1.25 declaration"
 check_present_re '^toolchain go1\.25\.3$' backend/go.mod "Go toolchain 1.25.3"
 
-check_present "go-version: \"1.25.x\"" .github/workflows/backend-ci.yml "backend-ci go-version 1.25.x"
-check_absent "go-version-file:" .github/workflows/backend-ci.yml "backend-ci go-version-file"
+check_present "go-version: \"1.25.x\"" .github/workflows/ci-quality-gate.yml "ci-quality-gate go-version 1.25.x"
+check_absent "go-version-file:" .github/workflows/ci-quality-gate.yml "ci-quality-gate go-version-file"
+check_present "go-version: \"1.25.x\"" .github/workflows/merge-validation.yml "merge-validation go-version 1.25.x"
+check_absent "go-version-file:" .github/workflows/merge-validation.yml "merge-validation go-version-file"
 
-check_present_re "node-version:[[:space:]]*[\"']?20[\"']?" .github/workflows/frontend-ci.yml "frontend-ci node-version 20"
-check_present_re "node-version:[[:space:]]*[\"']?20[\"']?" .github/workflows/codegen-check.yml "codegen-check node-version 20"
+check_present_re "node-version:[[:space:]]*[\"']?20[\"']?" .github/workflows/ci-quality-gate.yml "ci-quality-gate node-version 20"
 
 check_present_re "Go.*1\\.25\\+" README.md "README Go 1.25+"
 check_present_re "Node\\.js.*20\\+" README.md "README Node.js 20+"
