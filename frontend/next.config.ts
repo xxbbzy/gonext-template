@@ -12,13 +12,18 @@ function getAllowedDevOrigins() {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  const interfaceOrigins = Object.values(os.networkInterfaces())
-    .flat()
-    .filter((details): details is NonNullable<typeof details> =>
-      Boolean(details)
-    )
-    .filter((details) => details.family === "IPv4" && !details.internal)
-    .map((details) => `http://${details.address}:${port}`);
+  let interfaceOrigins: string[] = [];
+  try {
+    interfaceOrigins = Object.values(os.networkInterfaces())
+      .flat()
+      .filter((details): details is NonNullable<typeof details> =>
+        Boolean(details)
+      )
+      .filter((details) => details.family === "IPv4" && !details.internal)
+      .map((details) => `http://${details.address}:${port}`);
+  } catch {
+    interfaceOrigins = [];
+  }
 
   return Array.from(
     new Set([

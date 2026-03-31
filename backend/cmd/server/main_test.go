@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 
 	genapi "github.com/xxbbzy/gonext-template/backend/internal/api"
+	"github.com/xxbbzy/gonext-template/backend/internal/config"
 	"github.com/xxbbzy/gonext-template/backend/internal/middleware"
 	"github.com/xxbbzy/gonext-template/backend/pkg/errcode"
 	"github.com/xxbbzy/gonext-template/backend/pkg/response"
@@ -144,6 +145,52 @@ func TestRequestErrorCodeMapping(t *testing.T) {
 	}
 }
 
+func TestRegisterUploadStaticRouteMountsUploadsInLocalMode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	registerUploadStaticRoute(router, &Application{
+		Config: &config.Config{
+			Upload: config.UploadConfig{
+				Dir: "./uploads",
+			},
+			Storage: config.StorageConfig{
+				Driver: "local",
+			},
+		},
+	})
+
+	if !hasRoute(router, http.MethodGet, "/uploads/*filepath") {
+		t.Fatalf("expected GET /uploads/*filepath to be registered in local mode")
+	}
+	if !hasRoute(router, http.MethodHead, "/uploads/*filepath") {
+		t.Fatalf("expected HEAD /uploads/*filepath to be registered in local mode")
+	}
+}
+
+func TestRegisterUploadStaticRouteSkipsUploadsInS3Mode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	router := gin.New()
+	registerUploadStaticRoute(router, &Application{
+		Config: &config.Config{
+			Upload: config.UploadConfig{
+				Dir: "./uploads",
+			},
+			Storage: config.StorageConfig{
+				Driver: "s3",
+			},
+		},
+	})
+
+	if hasRoute(router, http.MethodGet, "/uploads/*filepath") {
+		t.Fatalf("did not expect GET /uploads/*filepath route in s3 mode")
+	}
+	if hasRoute(router, http.MethodHead, "/uploads/*filepath") {
+		t.Fatalf("did not expect HEAD /uploads/*filepath route in s3 mode")
+	}
+}
+
 type noopGeneratedServer struct{}
 
 func (noopGeneratedServer) LoginUser(c *gin.Context, _ genapi.LoginUserParams) {
@@ -242,4 +289,13 @@ func asInt(t *testing.T, value interface{}) int {
 		t.Fatalf("unexpected numeric type %T (%v)", value, value)
 		return 0
 	}
+}
+
+func hasRoute(router *gin.Engine, method, path string) bool {
+	for _, route := range router.Routes() {
+		if route.Method == method && route.Path == path {
+			return true
+		}
+	}
+	return false
 }

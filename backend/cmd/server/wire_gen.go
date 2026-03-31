@@ -33,7 +33,7 @@ func InitializeApplication() (*Application, error) {
 	itemRepository := repository.NewItemRepository(db)
 	authService := newAuthService(userRepository, jwtManager)
 	itemService := newItemService(itemRepository)
-	fileStorageRepository, err := newUploadStorageRepository(cfg)
+	fileStorageRepository, err := newUploadStorageRepository(cfg, logger)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -43,8 +44,26 @@ func newJWTManager(cfg *config.Config) (*pkgjwt.Manager, error) {
 	)
 }
 
-func newUploadStorageRepository(cfg *config.Config) (repository.FileStorageRepository, error) {
-	return repository.NewLocalFileStorageRepository(cfg.Upload.Dir, cfg.Upload.PublicBaseURL)
+func newUploadStorageRepository(cfg *config.Config, logger *zap.Logger) (repository.FileStorageRepository, error) {
+	switch cfg.Storage.Driver {
+	case "local":
+		return repository.NewLocalFileStorageRepository(cfg.Upload.Dir, cfg.ResolvedUploadPublicBaseURL())
+	case "s3":
+		return repository.NewS3FileStorageRepository(context.Background(), repository.S3FileStorageConfig{
+			Bucket:          cfg.Storage.S3.Bucket,
+			Region:          cfg.Storage.S3.Region,
+			Endpoint:        cfg.Storage.S3.Endpoint,
+			AccessKeyID:     cfg.Storage.S3.AccessKeyID,
+			SecretAccessKey: cfg.Storage.S3.SecretAccessKey,
+			Prefix:          cfg.Storage.S3.Prefix,
+			UseSSL:          cfg.Storage.S3.UseSSL,
+			ForcePathStyle:  cfg.Storage.S3.ForcePathStyle,
+			PublicBaseURL:   cfg.ResolvedUploadPublicBaseURL(),
+			Logger:          logger,
+		})
+	default:
+		return nil, fmt.Errorf("unsupported storage driver %q", cfg.Storage.Driver)
+	}
 }
 
 func newPublicRateLimiter(cfg *config.Config) *middleware.RateLimiter {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"io"
 	"path/filepath"
 	"strings"
@@ -41,7 +42,22 @@ func (s *UploadService) UploadFile(ctx context.Context, originalName string, src
 		}
 		return "", errcode.ErrInternalServer
 	}
-	return s.fileStorage.GetFileURL(storedName), nil
+	url, err := s.fileStorage.GetFileURL(storedName)
+	if err != nil || url == "" {
+		if err == nil {
+			err = errors.New("file storage returned empty URL")
+		}
+		if s.logger != nil {
+			s.logger.Error(
+				"failed to build uploaded file URL",
+				zap.String("stored_name", storedName),
+				zap.String("original_name", originalName),
+				zap.Error(err),
+			)
+		}
+		return "", errcode.ErrInternalServer
+	}
+	return url, nil
 }
 
 // RemoveFile removes a stored file by its stored name.
@@ -60,8 +76,22 @@ func (s *UploadService) RemoveFile(ctx context.Context, storedName string) error
 }
 
 // GetFileURL returns the public URL for a stored file.
-func (s *UploadService) GetFileURL(storedName string) string {
-	return s.fileStorage.GetFileURL(storedName)
+func (s *UploadService) GetFileURL(storedName string) (string, error) {
+	url, err := s.fileStorage.GetFileURL(storedName)
+	if err != nil || url == "" {
+		if err == nil {
+			err = errors.New("file storage returned empty URL")
+		}
+		if s.logger != nil {
+			s.logger.Error(
+				"failed to build file URL",
+				zap.String("stored_name", storedName),
+				zap.Error(err),
+			)
+		}
+		return "", errcode.ErrInternalServer
+	}
+	return url, nil
 }
 
 func generateStoredFilename(originalName string) string {

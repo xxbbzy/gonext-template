@@ -1,42 +1,40 @@
 # GoNext Template
 
-> AI-native full-stack template for solo builders who work like a team.
+A compact full-stack starter with:
 
-## Prerequisites
-
-- Go 1.25+ toolchain (see `backend/go.mod` toolchain declaration).
-- Node.js 20+ with matching `npm` (`>=20.9.0` recommended for Next.js 16).
-- GNU `make` (for the included targets and workflows).
-- Optional tooling: Docker/Compose for the Docker workflow and the migrate CLI when adding SQL migrations.
-
-## Who This Is For
-
-- Solo founders and consultants who need a Google Wire-based Go + Next.js scaffold before their engineers get back online.
-- AI engineers prototyping agent-assisted workflows that must stay in sync between backend, frontend, and instrumentation.
-- Bootcampers or learners who want a production-like full-stack example with OpenAPI-driven types and strong conventions.
-- Agencies building bespoke products that must move fast without sacrificing backend structure or deployment hygiene.
-
-**Not ideal for:** Regulated enterprises with large, siloed teams needing multi-tenant SSO or legacy transformation initiatives.
+- **Backend:** Go + Gin + GORM + Wire + OpenAPI
+- **Frontend:** Next.js App Router + TypeScript + Tailwind + Zustand + TanStack Query
+- **Contract-first API:** `api/openapi.yaml` drives generated frontend types and backend server stubs
 
 ## Quick Start
 
+Requirements:
+
+- Go 1.25+
+- Node.js 20+
+
 ```bash
-git clone <your-repo-url>
-cd gonext-template
+cp .env.example .env
 make init
 make dev
 ```
 
-**Success checks**
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8080`
+- Swagger UI: `http://localhost:8080/swagger/index.html`
 
-- Backend health: `http://localhost:8080/healthz`
-- Frontend dev: `http://localhost:3000`
+## Repo Guides
 
-## Tech Stack & Architecture Conventions
+- AI-facing playbook: `AGENTS.md`
+- Runtime topology: `ARCHITECTURE.md`
+- Coding/testing rules: `CONVENTIONS.md`
+- Human bilingual docs index: `docs/README.md`
+- API contract: `api/openapi.yaml`
 
-- **Backend:** Go, Gin, GORM, Google Wire compile-time dependency injection, Zap logging, Viper configs.
-- **Frontend:** Next.js 16 (App Router), TypeScript, shadcn/ui, Zustand, TanStack Query, OpenAPI fetch client.
-- **OpenAPI contract:** `api/openapi.yaml` is the source of truth for every request/response shape.
+## Core Workflow Expectations
+
+- **Contract-first:** update `api/openapi.yaml` before or alongside API behavior changes.
+- **Type refresh:** run `make gen-types` after contract changes; run `make gen` when generated Go server/docs artifacts must also change.
 - **Layering rule:** handlers → services → repositories; keep handlers thin and services orchestrating logic.
 - **Response envelope:** use helpers in `backend/pkg/response` instead of raw JSON writes.
 - **Generated files:** treat artifacts such as `frontend/types/api.ts` and `backend/internal/api/server.gen.go` as outputs, never the source of truth.
@@ -48,6 +46,29 @@ make dev
 3. Run `make check` (lint + typecheck + test + build) whenever you change logic/code paths to verify the full gate.
 4. If the change touches runtime behavior or APIs, re-run `make e2e` to exercise the register → login → CRUD cycle.
 5. Repeat: edit → lint/type/test → `make check` → `make e2e` (if needed) → commit.
+
+## Upload Storage Modes
+
+- **Default (local):** keep `STORAGE_DRIVER=local` and uploaded files are saved under `UPLOAD_DIR`, served by backend `/uploads/...`.
+- **Object storage (S3-compatible):** set `STORAGE_DRIVER=s3` and configure:
+  - `S3_BUCKET`, `S3_REGION`
+  - `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`
+  - Optional: `S3_ENDPOINT` (for MinIO/custom endpoints), `S3_PREFIX`, `S3_USE_SSL`, `S3_FORCE_PATH_STYLE`
+- `UPLOAD_PUBLIC_BASE_URL` is optional in both modes. When set, upload responses use that public base URL (useful for CDN/custom domains).
+
+Example MinIO settings:
+
+```env
+STORAGE_DRIVER=s3
+S3_BUCKET=gonext-uploads
+S3_REGION=us-east-1
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+S3_PREFIX=uploads
+S3_USE_SSL=false
+S3_FORCE_PATH_STYLE=true
+```
 
 ## Observability (Prometheus)
 
@@ -93,21 +114,9 @@ Services & ports (per `docker-compose.yml` services):
 
 Run `make new-module name=product`, then:
 
-1. Update `api/openapi.yaml` first if the module exposes an API surface.
-2. Implement handler → service → repository (DTOs live under `backend/internal/dto/`).
-3. Declare providers/constructors in `backend/cmd/server/wire.go` and `providers.go`, then run `wire` (or `go run github.com/google/wire/cmd/wire`; if using `go generate`, run `go generate -tags wireinject`) in `backend/cmd/server` to refresh `wire_gen.go`.
-4. Register routes in `backend/cmd/server/main.go`.
-5. Add deployable SQL migrations under `backend/migrations` (AutoMigrate remains a dev convenience) and any seed data if needed.
-6. Verify with `make check` and `make e2e` (if behavior changed) before merging.
-
-## Roadmap
-
-**Near-term focus:** sharpen developer onboarding, shore up e2e coverage, and automate doc generation for latest APIs.
-**Longer-term direction:** invest in AI-native ops (agent-friendly scripts, observability), scale modules for plugin scenarios, and explore multi-cluster Docker compose support.
-
-## Documentation Map
-
-- [AGENTS.md](AGENTS.md)
-- [ARCHITECTURE.md](ARCHITECTURE.md)
-- [CONVENTIONS.md](CONVENTIONS.md)
-- [docs/README.md](docs/README.md)
+1. Update `api/openapi.yaml` if the module is API-backed.
+2. Implement the backend chain in `backend/internal/{handler,service,repository,model,dto}`.
+3. Wire dependencies through `backend/cmd/server/{providers.go,wire.go}`.
+4. Register generated/manual routes in `backend/cmd/server/main.go`.
+5. Refresh generated artifacts as needed (`make gen-types` / `make gen`).
+6. Run `make check`, and `make e2e` if runtime/API behavior changed.

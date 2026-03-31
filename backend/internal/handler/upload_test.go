@@ -52,8 +52,8 @@ func (r failingFileStorageRepository) DeleteFile(context.Context, string) error 
 	return nil
 }
 
-func (r failingFileStorageRepository) GetFileURL(string) string {
-	return testUploadBaseURL + "/uploads/failing.txt"
+func (r failingFileStorageRepository) GetFileURL(string) (string, error) {
+	return testUploadBaseURL + "/uploads/failing.txt", nil
 }
 
 func TestUploadPersistsFullContentAndOriginalFilename(t *testing.T) {

@@ -62,6 +62,11 @@ func TestConfigValidateNormalizesEnvAndDriver(t *testing.T) {
 	cfg := newValidConfig()
 	cfg.App.Env = " Production "
 	cfg.Database.Driver = " SQLITE "
+	cfg.Storage.Driver = " S3 "
+	cfg.Storage.S3.Bucket = " test-bucket "
+	cfg.Storage.S3.Region = " us-east-1 "
+	cfg.Storage.S3.AccessKeyID = " test-access "
+	cfg.Storage.S3.SecretAccessKey = " test-secret "
 	cfg.JWT.Secret = "strong-secret"
 
 	if err := cfg.Validate(); err != nil {
@@ -73,6 +78,12 @@ func TestConfigValidateNormalizesEnvAndDriver(t *testing.T) {
 	}
 	if cfg.Database.Driver != "sqlite" {
 		t.Fatalf("expected normalized DB_DRIVER to be %q, got %q", "sqlite", cfg.Database.Driver)
+	}
+	if cfg.Storage.Driver != "s3" {
+		t.Fatalf("expected normalized STORAGE_DRIVER to be %q, got %q", "s3", cfg.Storage.Driver)
+	}
+	if cfg.Storage.S3.Bucket != "test-bucket" {
+		t.Fatalf("expected normalized S3_BUCKET to be %q, got %q", "test-bucket", cfg.Storage.S3.Bucket)
 	}
 }
 
@@ -181,6 +192,53 @@ func TestConfigValidateRejectsInvalidValues(t *testing.T) {
 			},
 			wantSubstr: "UPLOAD_PUBLIC_BASE_URL",
 		},
+		{
+			name: "storage driver must be supported",
+			mutate: func(cfg *Config) {
+				cfg.Storage.Driver = "oss"
+			},
+			wantSubstr: "STORAGE_DRIVER",
+		},
+		{
+			name: "s3 bucket required when storage driver is s3",
+			mutate: func(cfg *Config) {
+				cfg.Storage.Driver = "s3"
+				cfg.Storage.S3.Bucket = ""
+			},
+			wantSubstr: "S3_BUCKET",
+		},
+		{
+			name: "s3 region required when storage driver is s3",
+			mutate: func(cfg *Config) {
+				cfg.Storage.Driver = "s3"
+				cfg.Storage.S3.Region = ""
+			},
+			wantSubstr: "S3_REGION",
+		},
+		{
+			name: "s3 access key required when storage driver is s3",
+			mutate: func(cfg *Config) {
+				cfg.Storage.Driver = "s3"
+				cfg.Storage.S3.AccessKeyID = ""
+			},
+			wantSubstr: "S3_ACCESS_KEY_ID",
+		},
+		{
+			name: "s3 secret key required when storage driver is s3",
+			mutate: func(cfg *Config) {
+				cfg.Storage.Driver = "s3"
+				cfg.Storage.S3.SecretAccessKey = ""
+			},
+			wantSubstr: "S3_SECRET_ACCESS_KEY",
+		},
+		{
+			name: "s3 endpoint must be parseable when configured",
+			mutate: func(cfg *Config) {
+				cfg.Storage.Driver = "s3"
+				cfg.Storage.S3.Endpoint = "://bad-endpoint"
+			},
+			wantSubstr: "S3_ENDPOINT",
+		},
 	}
 
 	for _, tt := range tests {
@@ -239,12 +297,32 @@ func TestConfigValidateFallsBackToAppBaseURLForUploadPublicBaseURL(t *testing.T)
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("Validate() error = %v", err)
 	}
-	if cfg.Upload.PublicBaseURL != "https://api.example.com" {
+	if cfg.Upload.PublicBaseURL != "" {
 		t.Fatalf(
-			"Upload.PublicBaseURL = %q, want %q",
+			"Upload.PublicBaseURL = %q, want empty string",
 			cfg.Upload.PublicBaseURL,
+		)
+	}
+	if cfg.ResolvedUploadPublicBaseURL() != "https://api.example.com" {
+		t.Fatalf(
+			"ResolvedUploadPublicBaseURL() = %q, want %q",
+			cfg.ResolvedUploadPublicBaseURL(),
 			"https://api.example.com",
 		)
+	}
+}
+
+func TestConfigValidateNormalizesS3EndpointWithoutSchemeUsingUseSSL(t *testing.T) {
+	cfg := newValidConfig()
+	cfg.Storage.Driver = "s3"
+	cfg.Storage.S3.UseSSL = false
+	cfg.Storage.S3.Endpoint = "minio.local:9000/"
+
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+	if cfg.Storage.S3.Endpoint != "http://minio.local:9000" {
+		t.Fatalf("Storage.S3.Endpoint = %q, want %q", cfg.Storage.S3.Endpoint, "http://minio.local:9000")
 	}
 }
 
@@ -294,6 +372,16 @@ func newValidConfig() *Config {
 			Dir:           "./uploads",
 			AllowedTypes:  ".jpg,.png",
 			PublicBaseURL: "http://localhost:8080",
+		},
+		Storage: StorageConfig{
+			Driver: "local",
+			S3: S3StorageConfig{
+				Bucket:          "bucket",
+				Region:          "us-east-1",
+				AccessKeyID:     "access",
+				SecretAccessKey: "secret",
+				UseSSL:          true,
+			},
 		},
 		Observability: ObservabilityConfig{},
 	}

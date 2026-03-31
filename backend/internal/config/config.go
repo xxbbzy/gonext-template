@@ -25,6 +25,11 @@ var (
 		"postgres": {},
 	}
 
+	allowedStorageDrivers = map[string]struct{}{
+		"local": {},
+		"s3":    {},
+	}
+
 	disallowedProductionJWTSecrets = map[string]struct{}{
 		"change-me-in-production":    {},
 		"changeme":                   {},
@@ -43,6 +48,7 @@ type Config struct {
 	CORS          CORSConfig
 	RateLimit     RateLimitConfig
 	Upload        UploadConfig
+	Storage       StorageConfig
 	Log           LogConfig
 	Observability ObservabilityConfig
 }
@@ -82,6 +88,22 @@ type UploadConfig struct {
 	PublicBaseURL string `mapstructure:"UPLOAD_PUBLIC_BASE_URL"`
 }
 
+type StorageConfig struct {
+	Driver string          `mapstructure:"STORAGE_DRIVER"`
+	S3     S3StorageConfig `mapstructure:",squash"`
+}
+
+type S3StorageConfig struct {
+	Bucket          string `mapstructure:"S3_BUCKET"`
+	Region          string `mapstructure:"S3_REGION"`
+	Endpoint        string `mapstructure:"S3_ENDPOINT"`
+	AccessKeyID     string `mapstructure:"S3_ACCESS_KEY_ID"`
+	SecretAccessKey string `mapstructure:"S3_SECRET_ACCESS_KEY"`
+	Prefix          string `mapstructure:"S3_PREFIX"`
+	UseSSL          bool   `mapstructure:"S3_USE_SSL"`
+	ForcePathStyle  bool   `mapstructure:"S3_FORCE_PATH_STYLE"`
+}
+
 type LogConfig struct {
 	Level  string `mapstructure:"LOG_LEVEL"`
 	Format string `mapstructure:"LOG_FORMAT"`
@@ -115,6 +137,14 @@ func Load() (*Config, error) {
 	v.SetDefault("UPLOAD_ALLOWED_TYPES", ".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx")
 	v.SetDefault("UPLOAD_PUBLIC_BASE_URL", "")
 	v.SetDefault("STORAGE_DRIVER", "local")
+	v.SetDefault("S3_BUCKET", "")
+	v.SetDefault("S3_REGION", "")
+	v.SetDefault("S3_ENDPOINT", "")
+	v.SetDefault("S3_ACCESS_KEY_ID", "")
+	v.SetDefault("S3_SECRET_ACCESS_KEY", "")
+	v.SetDefault("S3_PREFIX", "")
+	v.SetDefault("S3_USE_SSL", true)
+	v.SetDefault("S3_FORCE_PATH_STYLE", false)
 	v.SetDefault("LOG_LEVEL", "debug")
 	v.SetDefault("LOG_FORMAT", "json")
 	v.SetDefault("METRICS_ENABLED", false)
@@ -152,6 +182,19 @@ func Load() (*Config, error) {
 			Dir:           v.GetString("UPLOAD_DIR"),
 			AllowedTypes:  v.GetString("UPLOAD_ALLOWED_TYPES"),
 			PublicBaseURL: v.GetString("UPLOAD_PUBLIC_BASE_URL"),
+		},
+		Storage: StorageConfig{
+			Driver: v.GetString("STORAGE_DRIVER"),
+			S3: S3StorageConfig{
+				Bucket:          v.GetString("S3_BUCKET"),
+				Region:          v.GetString("S3_REGION"),
+				Endpoint:        v.GetString("S3_ENDPOINT"),
+				AccessKeyID:     v.GetString("S3_ACCESS_KEY_ID"),
+				SecretAccessKey: v.GetString("S3_SECRET_ACCESS_KEY"),
+				Prefix:          v.GetString("S3_PREFIX"),
+				UseSSL:          v.GetBool("S3_USE_SSL"),
+				ForcePathStyle:  v.GetBool("S3_FORCE_PATH_STYLE"),
+			},
 		},
 		Log: LogConfig{
 			Level:  v.GetString("LOG_LEVEL"),
@@ -207,8 +250,13 @@ func (c *Config) Validate() error {
 		validationErrors = append(validationErrors, "UPLOAD_MAX_SIZE must be greater than 0")
 	}
 
-	if strings.TrimSpace(c.Upload.Dir) == "" {
-		validationErrors = append(validationErrors, "UPLOAD_DIR must be non-empty")
+	storageDriver := strings.ToLower(strings.TrimSpace(c.Storage.Driver))
+	if _, ok := allowedStorageDrivers[storageDriver]; !ok {
+		validationErrors = append(validationErrors, "STORAGE_DRIVER must be one of: local, s3")
+	}
+
+	if storageDriver == "local" && strings.TrimSpace(c.Upload.Dir) == "" {
+		validationErrors = append(validationErrors, "UPLOAD_DIR must be non-empty when STORAGE_DRIVER=local")
 	}
 
 	if _, err := parseAllowedUploadTypes(c.Upload.AllowedTypes); err != nil {
@@ -217,7 +265,7 @@ func (c *Config) Validate() error {
 		validationErrors = append(validationErrors, fmt.Sprintf("UPLOAD_ALLOWED_TYPES %s", err.Error()))
 	}
 
-	normalizedUploadBaseURL := strings.TrimRight(strings.TrimSpace(c.App.BaseURL), "/")
+	normalizedUploadBaseURL := ""
 	if strings.TrimSpace(c.Upload.PublicBaseURL) != "" {
 		parsedUploadBaseURL, err := parseUploadPublicBaseURL(c.Upload.PublicBaseURL)
 		if err != nil {
@@ -227,13 +275,47 @@ func (c *Config) Validate() error {
 		}
 	}
 
+	normalizedS3Endpoint := ""
+	if storageDriver == "s3" {
+		if strings.TrimSpace(c.Storage.S3.Bucket) == "" {
+			validationErrors = append(validationErrors, "S3_BUCKET must be non-empty when STORAGE_DRIVER=s3")
+		}
+		if strings.TrimSpace(c.Storage.S3.Region) == "" {
+			validationErrors = append(validationErrors, "S3_REGION must be non-empty when STORAGE_DRIVER=s3")
+		}
+		if strings.TrimSpace(c.Storage.S3.AccessKeyID) == "" {
+			validationErrors = append(validationErrors, "S3_ACCESS_KEY_ID must be non-empty when STORAGE_DRIVER=s3")
+		}
+		if strings.TrimSpace(c.Storage.S3.SecretAccessKey) == "" {
+			validationErrors = append(validationErrors, "S3_SECRET_ACCESS_KEY must be non-empty when STORAGE_DRIVER=s3")
+		}
+
+		if strings.TrimSpace(c.Storage.S3.Endpoint) != "" {
+			endpoint, err := parseS3Endpoint(c.Storage.S3.Endpoint, c.Storage.S3.UseSSL)
+			if err != nil {
+				validationErrors = append(validationErrors, fmt.Sprintf("S3_ENDPOINT %s", err.Error()))
+			} else {
+				normalizedS3Endpoint = endpoint
+			}
+		}
+	}
+
 	if len(validationErrors) > 0 {
 		return fmt.Errorf("config validation failed: %s", strings.Join(validationErrors, "; "))
 	}
 
 	c.App.Env = env
+	c.App.BaseURL = strings.TrimRight(strings.TrimSpace(c.App.BaseURL), "/")
 	c.Database.Driver = driver
 	c.Upload.PublicBaseURL = normalizedUploadBaseURL
+	c.Upload.Dir = strings.TrimSpace(c.Upload.Dir)
+	c.Storage.Driver = storageDriver
+	c.Storage.S3.Bucket = strings.TrimSpace(c.Storage.S3.Bucket)
+	c.Storage.S3.Region = strings.TrimSpace(c.Storage.S3.Region)
+	c.Storage.S3.Endpoint = normalizedS3Endpoint
+	c.Storage.S3.AccessKeyID = strings.TrimSpace(c.Storage.S3.AccessKeyID)
+	c.Storage.S3.SecretAccessKey = strings.TrimSpace(c.Storage.S3.SecretAccessKey)
+	c.Storage.S3.Prefix = strings.Trim(c.Storage.S3.Prefix, "/ ")
 
 	return nil
 }
@@ -269,6 +351,19 @@ func (c *Config) GetAllowedFileTypes() []string {
 		}
 	}
 	return result
+}
+
+// ResolvedUploadPublicBaseURL returns UPLOAD_PUBLIC_BASE_URL, or APP_BASE_URL when unset.
+func (c *Config) ResolvedUploadPublicBaseURL() string {
+	if strings.TrimSpace(c.Upload.PublicBaseURL) != "" {
+		return c.Upload.PublicBaseURL
+	}
+	return c.App.BaseURL
+}
+
+// UsesLocalUploadStorage returns true when local file storage is selected.
+func (c *Config) UsesLocalUploadStorage() bool {
+	return c.Storage.Driver == "local"
 }
 
 func loadOptionalConfig(v *viper.Viper, path string) {
@@ -312,6 +407,34 @@ func parseUploadPublicBaseURL(raw string) (string, error) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
 		return "", fmt.Errorf("must be non-empty")
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
+		return "", fmt.Errorf("must be a valid URL")
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return "", fmt.Errorf("must use http or https")
+	}
+	if parsed.Host == "" {
+		return "", fmt.Errorf("must include host")
+	}
+
+	return strings.TrimRight(parsed.String(), "/"), nil
+}
+
+func parseS3Endpoint(raw string, useSSL bool) (string, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return "", fmt.Errorf("must be non-empty")
+	}
+
+	if !strings.Contains(trimmed, "://") {
+		scheme := "http"
+		if useSSL {
+			scheme = "https"
+		}
+		trimmed = scheme + "://" + trimmed
 	}
 
 	parsed, err := url.Parse(trimmed)
