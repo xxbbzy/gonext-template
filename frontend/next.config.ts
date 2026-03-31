@@ -32,6 +32,7 @@ function getAllowedDevOrigins() {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: getAllowedDevOrigins(),
+  output: "standalone",
   turbopack: {
     root: path.resolve(__dirname),
   },

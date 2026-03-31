@@ -16,6 +16,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     volumes:
       - uploads:/app/uploads
     restart: unless-stopped
@@ -29,7 +36,22 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8080
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:3000/healthz",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
     restart: unless-stopped
 
   db:
@@ -46,7 +68,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U gonext"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 5s
     restart: unless-stopped
 
 volumes:
