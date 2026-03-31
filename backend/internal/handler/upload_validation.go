@@ -36,8 +36,10 @@ func sanitizeUploadFilename(raw string) string {
 }
 
 func hasAllowedUploadExtension(extension string, allowedExtensions []string) bool {
+	normalizedExtension := strings.TrimSpace(strings.ToLower(extension))
 	for _, allowed := range allowedExtensions {
-		if strings.TrimSpace(allowed) == extension {
+		normalizedAllowed := strings.TrimSpace(strings.ToLower(allowed))
+		if normalizedAllowed == normalizedExtension {
 			return true
 		}
 	}

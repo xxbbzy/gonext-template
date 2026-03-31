@@ -7,8 +7,11 @@ import (
 )
 
 var compatibleMIMETypesByExtension = map[string][]string{
-	".doc":  {"application/msword"},
-	".docx": {"application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
+	".doc": {"application/msword"},
+	".docx": {
+		"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		"application/zip",
+	},
 	".gif":  {"image/gif"},
 	".jpeg": {"image/jpeg"},
 	".jpg":  {"image/jpeg"},
