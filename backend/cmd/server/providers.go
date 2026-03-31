@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -64,6 +65,9 @@ func newHTTPMetrics(cfg *config.Config) *middleware.HTTPMetrics {
 func newPrometheusRegistry(cfg *config.Config, httpMetrics *middleware.HTTPMetrics) (*prometheus.Registry, error) {
 	if cfg == nil || !cfg.MetricsEnabled() {
 		return nil, nil
+	}
+	if httpMetrics == nil {
+		return nil, errors.New("http metrics collector is required when metrics are enabled")
 	}
 	return observability.NewPrometheusRegistry(observability.RegistryOptions{
 		IncludeRuntimeCollectors: true,

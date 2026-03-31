@@ -37,3 +37,20 @@ func TestNewPrometheusRegistryDisabledWhenMetricsOff(t *testing.T) {
 		t.Fatal("newPrometheusRegistry() returned registry when metrics are disabled")
 	}
 }
+
+func TestNewPrometheusRegistryEnabledWhenMetricsOn(t *testing.T) {
+	cfg := &config.Config{
+		Observability: config.ObservabilityConfig{
+			MetricsEnabled: true,
+		},
+	}
+
+	httpMetrics := newHTTPMetrics(cfg)
+	registry, err := newPrometheusRegistry(cfg, httpMetrics)
+	if err != nil {
+		t.Fatalf("newPrometheusRegistry() error = %v", err)
+	}
+	if registry == nil {
+		t.Fatal("newPrometheusRegistry() = nil, want registry when metrics are enabled")
+	}
+}

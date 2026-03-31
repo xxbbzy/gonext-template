@@ -69,7 +69,7 @@ This repository exposes a compact AI-facing documentation layer at the root:
 - Do not bypass the backend layer chain: handler -> service -> repository.
 - Do not treat generated files as the source of truth when `api/openapi.yaml` or Wire inputs disagree.
 - Do not write raw JSON envelopes in handlers; use `backend/pkg/response`.
-- Do not add high-cardinality Prometheus labels (raw paths, IDs, free-text, emails, tokens, etc.); prefer bounded labels and route templates.
+- Avoid high-cardinality Prometheus labels (raw paths, IDs, free-text, emails, tokens, etc.); prefer bounded labels and route templates.
 - Do not introduce framework drift. This project uses Gin, GORM, Google Wire, Next.js App Router, Zustand, TanStack Query, and OpenAPI-driven types.
 - Prefer minimal, file-local changes over broad rewrites unless the task explicitly requires a refactor.
 

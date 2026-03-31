@@ -265,6 +265,14 @@ func TestMetricsEnabledReflectsObservabilityConfig(t *testing.T) {
 	}
 }
 
+func TestMetricsEnabledNilSafe(t *testing.T) {
+	var cfg *Config
+
+	if cfg.MetricsEnabled() {
+		t.Fatal("MetricsEnabled() = true, want false for nil config")
+	}
+}
+
 func newValidConfig() *Config {
 	return &Config{
 		App: AppConfig{

@@ -256,12 +256,15 @@ func findCounterMetric(families map[string]*dto.MetricFamily, family string, lab
 
 func labelsMatch(pairs []*dto.LabelPair, want map[string]string) bool {
 	if len(want) == 0 {
-		return true
+		return len(pairs) == 0
 	}
 
 	got := make(map[string]string, len(pairs))
 	for _, pair := range pairs {
 		got[pair.GetName()] = pair.GetValue()
+	}
+	if len(got) != len(want) {
+		return false
 	}
 
 	for key, value := range want {
