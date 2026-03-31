@@ -167,6 +167,20 @@ func TestConfigValidateRejectsInvalidValues(t *testing.T) {
 			},
 			wantSubstr: "UPLOAD_ALLOWED_TYPES",
 		},
+		{
+			name: "upload allowed types must have MIME compatibility support",
+			mutate: func(cfg *Config) {
+				cfg.Upload.AllowedTypes = ".png,.heic"
+			},
+			wantSubstr: "UPLOAD_ALLOWED_TYPES",
+		},
+		{
+			name: "upload public base url must be parseable",
+			mutate: func(cfg *Config) {
+				cfg.Upload.PublicBaseURL = "://bad-url"
+			},
+			wantSubstr: "UPLOAD_PUBLIC_BASE_URL",
+		},
 	}
 
 	for _, tt := range tests {
@@ -201,10 +215,44 @@ func TestGetAllowedFileTypesNormalizesWhitespaceAndCase(t *testing.T) {
 	}
 }
 
+func TestConfigValidateNormalizesUploadPublicBaseURL(t *testing.T) {
+	cfg := newValidConfig()
+	cfg.Upload.PublicBaseURL = " https://assets.example.com/ "
+
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+	if cfg.Upload.PublicBaseURL != "https://assets.example.com" {
+		t.Fatalf(
+			"Upload.PublicBaseURL = %q, want %q",
+			cfg.Upload.PublicBaseURL,
+			"https://assets.example.com",
+		)
+	}
+}
+
+func TestConfigValidateFallsBackToAppBaseURLForUploadPublicBaseURL(t *testing.T) {
+	cfg := newValidConfig()
+	cfg.App.BaseURL = " https://api.example.com/ "
+	cfg.Upload.PublicBaseURL = " "
+
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("Validate() error = %v", err)
+	}
+	if cfg.Upload.PublicBaseURL != "https://api.example.com" {
+		t.Fatalf(
+			"Upload.PublicBaseURL = %q, want %q",
+			cfg.Upload.PublicBaseURL,
+			"https://api.example.com",
+		)
+	}
+}
+
 func newValidConfig() *Config {
 	return &Config{
 		App: AppConfig{
-			Env: "development",
+			Env:     "development",
+			BaseURL: "http://localhost:8080",
 		},
 		Database: DatabaseConfig{
 			Driver: "sqlite",
@@ -217,9 +265,10 @@ func newValidConfig() *Config {
 			Duration: "1m",
 		},
 		Upload: UploadConfig{
-			MaxSize:      1024,
-			Dir:          "./uploads",
-			AllowedTypes: ".jpg,.png",
+			MaxSize:       1024,
+			Dir:           "./uploads",
+			AllowedTypes:  ".jpg,.png",
+			PublicBaseURL: "http://localhost:8080",
 		},
 	}
 }

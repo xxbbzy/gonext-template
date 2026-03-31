@@ -2,11 +2,13 @@ package handler
 
 import (
 	"errors"
+	"io"
 	"math"
 	"net/http"
 	"path/filepath"
 	"strings"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/gin-gonic/gin"
 
 	"github.com/xxbbzy/gonext-template/backend/internal/config"
@@ -65,15 +67,9 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	}
 
 	// Check file type
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	allowed := false
-	for _, t := range h.cfg.GetAllowedFileTypes() {
-		if strings.TrimSpace(t) == ext {
-			allowed = true
-			break
-		}
-	}
-	if !allowed {
+	sanitizedFilename := sanitizeUploadFilename(file.Filename)
+	ext := strings.ToLower(filepath.Ext(sanitizedFilename))
+	if !hasAllowedUploadExtension(ext, h.cfg.GetAllowedFileTypes()) {
 		response.BadRequest(c, "file type not allowed")
 		return
 	}
@@ -86,7 +82,21 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 	}
 	defer func() { _ = f.Close() }()
 
-	url, err := h.uploadService.UploadFile(c.Request.Context(), file.Filename, f)
+	detectedMIME, err := mimetype.DetectReader(f)
+	if err != nil {
+		response.InternalServerError(c, "failed to read file")
+		return
+	}
+	if !isCompatibleUploadMIME(ext, detectedMIME) {
+		response.BadRequest(c, "file type not allowed")
+		return
+	}
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		response.InternalServerError(c, "failed to read file")
+		return
+	}
+
+	url, err := h.uploadService.UploadFile(c.Request.Context(), sanitizedFilename, f)
 	if err != nil {
 		if appErr, ok := err.(*errcode.AppError); ok {
 			response.Error(c, appErr.HTTPStatus, appErr.Code, appErr.Message)
@@ -98,7 +108,7 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 
 	response.Success(c, gin.H{
 		"url":      url,
-		"filename": file.Filename,
+		"filename": sanitizedFilename,
 		"size":     file.Size,
 	})
 }
